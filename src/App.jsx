@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Login from './Login';
+import Signup from './Signup';
+import CreateProject from './createProject';
+import StudentDashboard from './student/dashboard';
+import TeacherDashboard from './teacher/dashboard';
+import SubmitStep from './student/submitStep';
+import StepOneIndex from './student/step1/stepOneIndex';
+import StepOneUpload from './student/step1/stepOneUpload';
+import StepTwoIndex from './student/step2/stepTwoIndex';
+import StepTwoUpload from './student/step2/stepTwoUpload';
+import StepThreeIndex from './student/step3/stepThreeIndex';
+import StepThreeUpload from './student/step3/stepThreeUpload';
+import StepFourIndex from './student/step4/stepFourIndex';
+import StepFourUpload from './student/step4/stepFourUpload';
+import StepFiveIndex from './student/step5/stepFiveIndex';
+import StepFiveUpload from './student/step5/stepFiveUpload';
+import StepApproval from './teacher/stepApproval';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/createProject" element={<CreateProject />} />
+        <Route path="/student/dashboard" element={<StudentDashboard />} />
+        <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+        <Route path="/student/submitStep" element={<SubmitStep />} />
+        <Route path="/student/step1/stepOneIndex" element={<StepOneIndex />} />
+        <Route path="/student/step1/stepOneUpload" element={<StepOneUpload />} />
+        <Route path="/student/step2/stepTwoIndex" element={<StepTwoIndex />} />
+        <Route path="/student/step2/stepTwoUpload" element={<StepTwoUpload />} />
+        <Route path="/student/step3/stepThreeIndex" element={<StepThreeIndex />} />
+        <Route path="/student/step3/stepThreeUpload" element={<StepThreeUpload />} />
+        <Route path="/student/step4/stepFourIndex" element={<StepFourIndex />} />
+        <Route path="/student/step4/stepFourUpload" element={<StepFourUpload />} />
+        <Route path="/student/step5/stepFiveIndex" element={<StepFiveIndex />} />
+        <Route path="/student/step5/stepFiveUpload" element={<StepFiveUpload />} />
+        <Route path="/teacher/step-approval/:projectId/:stepNumber" element={<StepApproval />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
