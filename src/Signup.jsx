@@ -50,7 +50,7 @@ export default function Signup() {
     alert('Sign-up successful. Check your email to confirm.');
 
     // Optional: navigate to login page or auto-login
-    navigate('/');
+      navigate('/login');
     setLoading(false);
   };
 

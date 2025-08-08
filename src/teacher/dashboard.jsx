@@ -16,7 +16,7 @@ export default function TeacherDashboard() {
       } = await supabase.auth.getSession();
 
       if (error || !session?.user) {
-        navigate('/');
+        navigate('/login');
         return;
       }
 
@@ -58,7 +58,7 @@ export default function TeacherDashboard() {
     if (error) {
       console.error('Error signing out:', error.message);
     } else {
-      navigate('/');
+      navigate('/login');
     }
   };
 
@@ -212,6 +212,27 @@ export default function TeacherDashboard() {
         ) : (
           <p style={styles.noProjects}>No projects assigned yet.</p>
         )}
+
+        {/* Teacher ID Section */}
+        <div style={styles.teacherIdSection}>
+          <h3 style={styles.teacherIdTitle}>Student Signup Information</h3>
+          <p style={styles.teacherIdDescription}>
+            Students need your Teacher ID to sign up. Share this ID with your students:
+          </p>
+          <div style={styles.teacherIdContainer}>
+            <span style={styles.teacherIdLabel}>Your Teacher ID:</span>
+            <code style={styles.teacherId}>{user?.id}</code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(user?.id);
+                alert('Teacher ID copied to clipboard!');
+              }}
+              style={styles.copyButton}
+            >
+              Copy ID
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -302,5 +323,54 @@ const styles = {
     textAlign: 'center',
     marginTop: '3rem',
     color: '#666666',
+  },
+  teacherIdSection: {
+    marginTop: '3rem',
+    padding: '2rem',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '8px',
+    border: '1px solid #dee2e6',
+  },
+  teacherIdTitle: {
+    fontSize: '20px',
+    marginBottom: '0.5rem',
+    color: '#111111',
+  },
+  teacherIdDescription: {
+    fontSize: '16px',
+    marginBottom: '1rem',
+    color: '#666666',
+  },
+  teacherIdContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    flexWrap: 'wrap',
+  },
+  teacherIdLabel: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#111111',
+  },
+  teacherId: {
+    padding: '0.5rem 1rem',
+    backgroundColor: '#ffffff',
+    border: '1px solid #dee2e6',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontFamily: 'monospace',
+    color: '#495057',
+    userSelect: 'all',
+  },
+  copyButton: {
+    padding: '0.5rem 1rem',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    transition: 'background-color 0.2s',
   },
 };

@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-// Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Set up PDF.js worker to match react-pdf version
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.3.31/build/pdf.worker.min.mjs`;
 
 export default function StepApproval() {
   const { projectId, stepNumber } = useParams();
@@ -13,6 +13,7 @@ export default function StepApproval() {
   const [user, setUser] = useState(null);
   const [comment, setComment] = useState('');
   const [submissionFile, setSubmissionFile] = useState(null);
+  const [youtubeLink, setYoutubeLink] = useState(null);
   const [loading, setLoading] = useState(true);
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -27,7 +28,7 @@ export default function StepApproval() {
       } = await supabase.auth.getSession();
 
       if (error || !session?.user) {
-        navigate('/');
+        navigate('/login');
         return;
       }
 
@@ -48,22 +49,60 @@ export default function StepApproval() {
 
       setProject(projectData);
 
-      // Fetch submission file for this step
+      // Fetch the most recent submission file for this step
       const { data: fileData, error: fileError } = await supabase
         .from('submissions')
-        .select('file_url, teacher_comments')
+        .select('file_url, teacher_comments, submitted_at, youtube_link')
         .eq('project_id', projectId)
         .eq('step_number', stepNumber)
-        .single();
+        .order('submitted_at', { ascending: false })
+        .limit(1);
 
       if (fileError) {
         console.error('Error fetching submission file:', fileError.message);
-      } else if (fileData) {
-        if (fileData.file_url) {
-          setSubmissionFile(fileData.file_url);
+      } else if (fileData && fileData.length > 0) {
+        const latestSubmission = fileData[0];
+        
+        // Check if this is step 5 and if there's a YouTube link
+        if (parseInt(stepNumber) === 5 && latestSubmission.youtube_link) {
+          setYoutubeLink(latestSubmission.youtube_link);
         }
-        if (fileData.teacher_comments) {
-          setComment(fileData.teacher_comments);
+        
+        // Handle regular file upload (for any step that has a file_url)
+        if (latestSubmission.file_url) {
+          console.log('Original PDF file URL:', latestSubmission.file_url); // Debug log
+          
+          // Try to get a signed URL for better access
+          try {
+            // Extract the file path from the public URL
+            const urlParts = latestSubmission.file_url.split('/storage/v1/object/public/student-submissions/');
+            if (urlParts.length > 1) {
+              const filePath = urlParts[1];
+              console.log('File path:', filePath); // Debug log
+              
+              // Get a signed URL for authenticated access
+              const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+                .from('student-submissions')
+                .createSignedUrl(filePath, 3600); // 1 hour expiry
+              
+              if (signedUrlError) {
+                console.error('Error creating signed URL:', signedUrlError);
+                setSubmissionFile(latestSubmission.file_url); // Fall back to public URL
+              } else {
+                console.log('Using signed URL:', signedUrlData.signedUrl);
+                setSubmissionFile(signedUrlData.signedUrl);
+              }
+            } else {
+              setSubmissionFile(latestSubmission.file_url);
+            }
+          } catch (error) {
+            console.error('Error processing file URL:', error);
+            setSubmissionFile(latestSubmission.file_url);
+          }
+        }
+        
+        if (latestSubmission.teacher_comments) {
+          setComment(latestSubmission.teacher_comments);
         }
       }
 
@@ -75,7 +114,81 @@ export default function StepApproval() {
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+    console.log('PDF loaded successfully, pages:', numPages); // Debug log
   };
+
+  const onDocumentLoadError = (error) => {
+    console.error('PDF load error:', error);
+  };
+
+  // Memoize the PDF viewer to prevent unnecessary re-renders when comment changes
+  const pdfViewer = useMemo(() => {
+    // For step 5, show YouTube link instead of PDF if available
+    if (parseInt(stepNumber) === 5 && youtubeLink) {
+      return (
+        <div style={styles.youtubeContainer}>
+          <h3 style={styles.youtubeTitle}>Student Submission (YouTube Video)</h3>
+          <div style={styles.youtubeLink}>
+            <a 
+              href={youtubeLink} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={styles.linkButton}
+            >
+              🎬 Open YouTube Video
+            </a>
+            <p style={styles.linkText}>{youtubeLink}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!submissionFile) {
+      return <div style={styles.noPdf}>No submission file found for this step.</div>;
+    }
+
+    return (
+      <>
+        <div style={styles.pdfControls}>
+          <button
+            disabled={pageNumber <= 1}
+            onClick={() => setPageNumber(pageNumber - 1)}
+            style={styles.pageButton}
+          >
+            Previous
+          </button>
+          <span style={styles.pageInfo}>
+            Page {pageNumber} of {numPages || '?'}
+          </span>
+          <button
+            disabled={pageNumber >= numPages}
+            onClick={() => setPageNumber(pageNumber + 1)}
+            style={styles.pageButton}
+          >
+            Next
+          </button>
+        </div>
+        <Document
+          file={submissionFile}
+          onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={onDocumentLoadError}
+          loading={<div style={styles.pdfLoading}>Loading PDF...</div>}
+          error={<div style={styles.pdfError}>Error loading PDF. Please check if the file exists and is accessible.</div>}
+          options={{
+            cMapUrl: 'https://unpkg.com/pdfjs-dist@5.3.31/cmaps/',
+            cMapPacked: true,
+          }}
+        >
+          <Page 
+            pageNumber={pageNumber} 
+            width={600}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+          />
+        </Document>
+      </>
+    );
+  }, [submissionFile, youtubeLink, stepNumber, pageNumber, numPages]); // Include youtubeLink and stepNumber in dependencies
 
   const handleSaveComment = async () => {
     if (!comment.trim()) return;
@@ -83,26 +196,44 @@ export default function StepApproval() {
     setIsSavingComment(true);
 
     try {
-      // Try to save comment to the submissions table
-      const { error } = await supabase
+      // Save comment to the submissions table
+      const { error: commentError } = await supabase
         .from('submissions')
         .update({ 
-          teacher_comments: comment.trim(),
-          comment_updated_at: new Date().toISOString()
+          teacher_comments: comment.trim()
         })
         .eq('project_id', projectId)
         .eq('step_number', parseInt(stepNumber));
 
-      if (error) {
-        console.error('Error saving comment:', error.message);
+      if (commentError) {
+        console.error('Error saving comment:', commentError.message);
         // If the column doesn't exist, show a helpful message
-        if (error.message.includes('teacher_comments')) {
+        if (commentError.message.includes('teacher_comments')) {
           alert('Database needs to be updated to support teacher comments. Please contact the administrator.');
         } else {
           alert('Error saving comment. Please try again.');
         }
+        setIsSavingComment(false);
+        return;
+      }
+
+      // Set the step status back to "In Progress" so student can resubmit
+      const currentStepStatusField = `step${stepNumber}_status`;
+      const updateData = {
+        [currentStepStatusField]: 'In Progress',
+        current_step: parseInt(stepNumber), // Ensure current step is set back to this step
+      };
+
+      const { error: statusError } = await supabase
+        .from('projects')
+        .update(updateData)
+        .eq('project_id', projectId);
+
+      if (statusError) {
+        console.error('Error updating project status:', statusError.message);
+        alert('Comment saved, but error updating status. Please try again.');
       } else {
-        alert('Comment saved successfully!');
+        alert('Comment saved and step set back to In Progress. Student can now see feedback and resubmit.');
       }
     } catch (error) {
       console.error('Error saving comment:', error);
@@ -121,8 +252,7 @@ export default function StepApproval() {
         const { error: commentError } = await supabase
           .from('submissions')
           .update({ 
-            teacher_comments: comment.trim(),
-            comment_updated_at: new Date().toISOString()
+            teacher_comments: comment.trim()
           })
           .eq('project_id', projectId)
           .eq('step_number', parseInt(stepNumber));
@@ -217,44 +347,7 @@ export default function StepApproval() {
       <div style={styles.content}>
         <div style={styles.leftPanel}>
           <div style={styles.pdfContainer}>
-            {submissionFile ? (
-              <>
-                <div style={styles.pdfControls}>
-                  <button
-                    disabled={pageNumber <= 1}
-                    onClick={() => setPageNumber(pageNumber - 1)}
-                    style={styles.pageButton}
-                  >
-                    Previous
-                  </button>
-                  <span style={styles.pageInfo}>
-                    Page {pageNumber} of {numPages || '?'}
-                  </span>
-                  <button
-                    disabled={pageNumber >= numPages}
-                    onClick={() => setPageNumber(pageNumber + 1)}
-                    style={styles.pageButton}
-                  >
-                    Next
-                  </button>
-                </div>
-                <Document
-                  file={submissionFile}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  loading={<div style={styles.pdfLoading}>Loading PDF...</div>}
-                  error={<div style={styles.pdfError}>Error loading PDF</div>}
-                >
-                  <Page 
-                    pageNumber={pageNumber} 
-                    width={600}
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
-                  />
-                </Document>
-              </>
-            ) : (
-              <div style={styles.noPdf}>No submission file found for this step.</div>
-            )}
+            {pdfViewer}
           </div>
         </div>
 
@@ -394,6 +487,42 @@ const styles = {
     fontSize: '18px',
     color: '#666',
   },
+  youtubeContainer: {
+    textAlign: 'center',
+    padding: '2rem',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+  },
+  youtubeTitle: {
+    fontSize: '20px',
+    marginBottom: '1.5rem',
+    color: '#111111',
+  },
+  youtubeLink: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  linkButton: {
+    display: 'inline-block',
+    padding: '1rem 2rem',
+    backgroundColor: '#ff0000',
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '8px',
+    fontSize: '18px',
+    fontWeight: '600',
+    transition: 'background-color 0.2s',
+    cursor: 'pointer',
+  },
+  linkText: {
+    fontSize: '14px',
+    color: '#666',
+    wordBreak: 'break-all',
+    maxWidth: '500px',
+    margin: 0,
+  },
   commentSection: {
     border: '1px solid #ddd',
     borderRadius: '8px',
@@ -414,6 +543,7 @@ const styles = {
     resize: 'vertical',
     marginBottom: '1rem',
     fontFamily: 'Arial, sans-serif',
+    boxSizing: 'border-box',
   },
   buttonGroup: {
     display: 'flex',

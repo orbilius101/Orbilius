@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
-export default function Step5UploadPage({ projectId }) {
+export default function Step5UploadPage() {
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [youtubeLink, setYoutubeLink] = useState('');
@@ -11,28 +11,49 @@ export default function Step5UploadPage({ projectId }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [teacherComments, setTeacherComments] = useState('Waiting for feedback...');
   const [status, setStatus] = useState('Not Submitted');
+  const [projectId, setProjectId] = useState(null);
 
   useEffect(() => {
     const fetchExistingData = async () => {
       try {
-        // Fetch project status
+        // First get the current user's session
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError || !session?.user) {
+          navigate('/login');
+          return;
+        }
+
+        // Fetch the user's project to get projectId
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
-          .select('step5_status')
-          .eq('project_id', projectId)
+          .select('project_id, step5_status')
+          .eq('student_id', session.user.id)
           .single();
 
         if (projectError) {
           console.error('Error fetching project:', projectError.message);
-        } else if (projectData) {
-          setStatus(projectData.step5_status || 'Not Submitted');
+          setErrorMsg('Error loading project data');
+          return;
         }
+
+        if (!projectData) {
+          setErrorMsg('No project found. Please create a project first.');
+          return;
+        }
+
+        const currentProjectId = projectData.project_id;
+        setProjectId(currentProjectId);
+        setStatus(projectData.step5_status || 'Not Submitted');
 
         // Fetch submission data including teacher comments and YouTube link
         const { data: submissionData, error: submissionError } = await supabase
           .from('submissions')
           .select('teacher_comments, youtube_link')
-          .eq('project_id', projectId)
+          .eq('project_id', currentProjectId)
           .eq('step_number', 5)
           .single();
 
@@ -48,13 +69,12 @@ export default function Step5UploadPage({ projectId }) {
         }
       } catch (err) {
         console.error('Error fetching existing data:', err.message);
+        setErrorMsg('Error loading data');
       }
     };
 
-    if (projectId) {
-      fetchExistingData();
-    }
-  }, [projectId]);
+    fetchExistingData();
+  }, [navigate]);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -65,6 +85,11 @@ export default function Step5UploadPage({ projectId }) {
   };
 
   const handleSubmit = async () => {
+    if (!projectId) {
+      setErrorMsg('Project not loaded. Please try refreshing the page.');
+      return;
+    }
+
     setUploading(true);
     setErrorMsg('');
     setSuccess(false);
@@ -112,7 +137,7 @@ export default function Step5UploadPage({ projectId }) {
         .update({
           current_step_status: 'Submitted',
           step5_status: 'Submitted',
-          
+
         })
         .eq('project_id', projectId);
 
@@ -144,34 +169,49 @@ export default function Step5UploadPage({ projectId }) {
           This is it. You're almost done! Please make sure that your file is in PDF format and upload the document by clicking the button. After your teacher approves this step, you will be able to access Step 5.
         </p>
 
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={handleFileChange}
-          style={styles.fileInput}
-        />
+        {status !== 'Submitted' && status !== 'Approved' ? (
+          <>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={handleFileChange}
+              style={styles.fileInput}
+            />
 
-        <div style={styles.youtubeLinkSection}>
-          <p style={styles.sectionLabel}><strong>Insert Project YouTube Video Link:</strong></p>
-          <input
-            type="url"
-            value={youtubeLink}
-            onChange={handleYoutubeLinkChange}
-            placeholder="https://www.youtube.com/watch?v=..."
-            style={styles.youtubeInput}
-          />
-        </div>
+            <div style={styles.youtubeLinkSection}>
+              <p style={styles.sectionLabel}><strong>Insert Project YouTube Video Link:</strong></p>
+              <input
+                type="url"
+                value={youtubeLink}
+                onChange={handleYoutubeLinkChange}
+                placeholder="https://www.youtube.com/watch?v=..."
+                style={styles.youtubeInput}
+              />
+            </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={uploading || !file || !youtubeLink.trim()}
-          style={{
-            ...styles.submitButton,
-            ...(uploading || !file || !youtubeLink.trim() ? styles.submitButtonDisabled : {})
-          }}
-        >
-          {uploading ? 'Uploading...' : 'Submit!!!'}
-        </button>
+            <button
+              onClick={handleSubmit}
+              disabled={uploading || !file || !youtubeLink.trim()}
+              style={{
+                ...styles.submitButton,
+                ...(uploading || !file || !youtubeLink.trim() ? styles.submitButtonDisabled : {})
+              }}
+            >
+              {uploading ? 'Uploading...' : 'Submit!!!'}
+            </button>
+          </>
+        ) : (
+          <div style={styles.submittedMessage}>
+            <p style={styles.submittedText}>
+              ✅ Your submission has been uploaded and is {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
+            </p>
+            {youtubeLink && (
+              <p style={styles.submittedText}>
+                <strong>YouTube Link:</strong> <a href={youtubeLink} target="_blank" rel="noopener noreferrer" style={styles.link}>{youtubeLink}</a>
+              </p>
+            )}
+          </div>
+        )}
 
         {success && <p style={styles.successMessage}>Submission successful!</p>}
         {errorMsg && <p style={styles.errorMessage}>{errorMsg}</p>}
@@ -303,5 +343,22 @@ const styles = {
     marginBottom: '2rem',
     color: '#495057',
     transition: 'all 0.2s',
+  },
+  submittedMessage: {
+    backgroundColor: '#d4edda',
+    border: '1px solid #c3e6cb',
+    borderRadius: '8px',
+    padding: '2rem',
+    marginTop: '2rem',
+    marginBottom: '2rem',
+  },
+  submittedText: {
+    fontSize: '18px',
+    color: '#155724',
+    margin: '0.5rem 0',
+  },
+  link: {
+    color: '#007bff',
+    textDecoration: 'underline',
   },
 };
