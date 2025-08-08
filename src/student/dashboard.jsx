@@ -16,7 +16,7 @@ export default function StudentDashboard() {
       } = await supabase.auth.getSession();
 
       if (error || !session?.user) {
-        navigate('/');
+        navigate('/login');
         return;
       }
 
@@ -59,7 +59,7 @@ export default function StudentDashboard() {
     if (error) {
       console.error('Error signing out:', error.message);
     } else {
-      navigate('/');
+      navigate('/login');
     }
   };
 

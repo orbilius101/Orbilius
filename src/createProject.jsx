@@ -24,7 +24,7 @@ export default function CreateProject() {
       } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        navigate('/');
+        navigate('/login');
         return;
       }
 
