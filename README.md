@@ -1,10 +1,10 @@
-# Orbilius - Student Project Management System
+# Orbilius PM - Student Project Management System
 
-A comprehensive React-based web application designed to streamline the management of student projects through a structured 5-step workflow with teacher oversight and approval processes. Built with modern web technologies and powered by Supabase for real-time data management and file storage.
+A comprehensive React-based web application designed to streamline the management of student projects through a structured 5-step workflow with teacher oversight, admin certification, and approval processes. Built with modern web technologies and powered by Supabase for real-time data management and secure file storage.
 
 ## Project Overview
 
-Orbilius is an educational project management platform that facilitates collaboration between students and teachers in a structured learning environment. The system guides students through a comprehensive project development process while providing teachers with tools to monitor progress, provide feedback, and approve work at each stage.
+Orbilius PM is an educational project management platform that facilitates collaboration between students, teachers, and administrators in a structured learning environment. The system guides students through a comprehensive project development process while providing teachers with tools to monitor progress, provide feedback, and approve work at each stage. Administrators can manage system settings and certify completed projects for final submission to the Orbilius archive.
 
 ### The Problem It Solves
 
@@ -14,67 +14,100 @@ Traditional project management in educational settings often lacks:
 - Centralized file storage and submission systems
 - Real-time progress monitoring
 - Standardized approval workflows
+- Administrative oversight and certification processes
+- Seamless communication tools
 
-Orbilius addresses these challenges by providing a digital platform that ensures accountability, transparency, and effective communication throughout the project lifecycle.
+Orbilius PM addresses these challenges by providing a digital platform that ensures accountability, transparency, and effective communication throughout the project lifecycle.
 
 ## Core Features
 
 ### Student Features
 - **Secure Authentication**: Sign up with teacher-provided ID for class enrollment
-- **Project Creation**: Initialize new projects with personal and academic details
+- **Password Reset**: Self-service password reset functionality via email
+- **Project Creation**: Initialize new projects with automatic due date generation (1 month per step)
+- **Editable Project Details**: Modify project title and due dates until steps are approved
 - **5-Step Workflow**: Navigate through structured project phases:
-  1. **Initial Research** - Foundation and background research
-  2. **Design Brief** - Project planning and design documentation
+  1. **Initial Research** - Foundation and background research with downloadable resource PDFs
+  2. **Design Brief** - Project planning and design documentation with downloadable resources
   3. **Planning** - Detailed implementation planning
   4. **Implementation** - Active project development
   5. **Archival Records** - Final documentation and reflection
-- **File Submission**: Upload PDF documents for each step
-- **Progress Tracking**: View current step status and next actions
-- **Teacher Feedback**: Receive comments and revision requests
-- **Resubmission Capability**: Revise and resubmit work based on feedback
+- **File Submission**: Upload PDF documents for each step with duplicate upload prevention
+- **Progress Tracking**: View current step status, due dates, and timeline
+- **Teacher Feedback**: Receive detailed comments and revision requests
+- **Resubmission Capability**: Revise and resubmit work based on teacher feedback
+- **Resource Downloads**: Access step-specific resource PDFs from Supabase Storage
 
 ### Teacher Features
-- **Comprehensive Dashboard**: Monitor all assigned students and projects
-- **Project Oversight**: View student progress across all project phases
+- **Comprehensive Dashboard**: Monitor all assigned students and projects with student details
+- **Student Information Display**: View student names and email addresses via database relationships
+- **Project Oversight**: Track student progress across all project phases with status indicators
 - **PDF Review System**: In-browser PDF viewing with navigation controls
 - **Feedback System**: Leave detailed comments for student improvement
-- **Approval Workflow**: Approve completed steps or request revisions
-- **Student Communication**: Direct email integration for student contact
-- **Teacher ID Sharing**: Easy access to unique teacher ID for student enrollment
+- **Approval Workflow**: Approve completed steps or request revisions with status updates
+- **Email Integration**: Direct mailto links with pre-filled subject and body content for student communication
+- **Teacher ID Management**: Easy access to unique teacher ID for student enrollment with copy functionality
+- **Admin Code Validation**: Secure teacher registration with admin-controlled access codes
+- **Project Certification**: Automatic submission to Orbilius archive when all 5 steps are approved
+
+### Admin Features
+- **Admin Dashboard**: Comprehensive administrative control panel
+- **Admin Code Management**: View and update teacher registration codes with improved security
+- **Project Certification**: Review and certify completed student projects for final archive submission
+- **Database Management**: Handle Row Level Security (RLS) policies with graceful error handling
+- **System Oversight**: Monitor all projects across the platform with certification status tracking
 
 ### Technical Features
 - **Real-time Updates**: Instant synchronization of project status changes
-- **Secure File Storage**: Supabase Storage with Row Level Security (RLS)
-- **Responsive Design**: Optimized for desktop and mobile devices
-- **PDF Processing**: Advanced PDF viewing with react-pdf integration
-- **Authentication & Authorization**: Secure user management with Supabase Auth
+- **Secure File Storage**: Supabase Storage with Row Level Security (RLS) and public URL access for resources
+- **Responsive Design**: Optimized for desktop and mobile devices with accessible UI elements
+- **PDF Processing**: Advanced PDF viewing with react-pdf integration and error handling
+- **Authentication & Authorization**: Multi-role user management (student/teacher/admin) with Supabase Auth
+- **Database Management**: PostgreSQL backend with automatic scaling and foreign key relationships
+- **Professional UI/UX**: Clean, modern interface with consistent styling and accessibility features
 - **Database Management**: PostgreSQL backend with automatic scaling
 
 ## User Workflow
 
 ### For Students:
-1. **Registration**: Sign up using teacher-provided Teacher ID
-2. **Project Setup**: Create new project with personal details and project title
-3. **Step-by-Step Progress**: 
+1. **Registration**: Sign up using teacher-provided Teacher ID with validation
+2. **Project Setup**: Create new project with automatic due date generation (1 month intervals)
+3. **Project Management**: Edit project title and due dates until steps are approved
+4. **Step-by-Step Progress**: 
    - Navigate to current step (sequential access enforced)
+   - Download step-specific resource PDFs when available
    - Review step requirements and guidelines
-   - Upload required PDF documentation
+   - Upload required PDF documentation (with duplicate prevention)
    - Submit for teacher review
    - Receive feedback and make revisions if needed
    - Proceed to next step upon approval
-4. **Completion**: Complete all 5 steps for project graduation
+5. **Completion**: Complete all 5 steps for automatic submission to Orbilius archive
 
 ### For Teachers:
-1. **Dashboard Access**: View all assigned student projects in one interface
-2. **Progress Monitoring**: Track student progress across multiple projects
-3. **Review Process**:
+1. **Registration**: Sign up with admin-provided access code for verification
+2. **Dashboard Access**: View all assigned student projects with comprehensive details
+3. **Student Management**: View student names, emails, and contact information
+4. **Progress Monitoring**: Track student progress with visual status indicators
+5. **Review Process**:
    - Click on submitted project titles to access review interface
-   - View student-submitted PDF documents
+   - View student-submitted PDF documents with full navigation
    - Navigate through multi-page documents
    - Leave detailed feedback comments
-   - Choose to approve step or request revisions
-4. **Student Management**: Email students directly from the dashboard
-5. **ID Distribution**: Share unique Teacher ID with students for enrollment
+   - Choose to approve step or request revisions with automatic status updates
+6. **Communication**: Send pre-filled emails to students directly from dashboard
+7. **ID Distribution**: Share unique Teacher ID with students for enrollment via copy function
+8. **Project Completion**: Automatically submit completed projects (all 5 steps approved) to Orbilius
+
+### For Administrators:
+1. **System Access**: Access admin dashboard with elevated privileges
+2. **Teacher Management**: 
+   - View and update admin codes for teacher registration
+   - Manage teacher access to the system
+3. **Project Oversight**:
+   - View all projects across the platform
+   - Certify completed projects for final archive submission
+   - Monitor system-wide project completion rates
+4. **Database Management**: Handle RLS policies and system maintenance with error recovery
 
 ## System Architecture
 
@@ -87,26 +120,53 @@ Orbilius addresses these challenges by providing a digital platform that ensures
 
 ### Backend (Supabase)
 - **Database**: PostgreSQL with the following key tables:
-  - `users`: User profiles and authentication data
-  - `projects`: Project information and step tracking
+  - `users`: User profiles and authentication data with role-based access (student/teacher/admin)
+  - `projects`: Project information and step tracking with foreign key relationships
   - `submissions`: File submissions and teacher feedback
-- **Authentication**: Email/password authentication with secure session management
-- **Storage**: File upload and retrieval with signed URLs for security
-- **Real-time**: Automatic updates when data changes
+  - `admin_code`: Secure admin codes for teacher registration
+- **Authentication**: Multi-role email/password authentication with secure session management
+- **Storage**: File upload and retrieval with signed URLs for security and public URLs for resources
+- **Real-time**: Automatic updates when data changes across all user interfaces
+- **Row Level Security**: Comprehensive RLS policies for multi-tenant data isolation
 
 ### Security Features
-- **Row Level Security (RLS)**: Database-level access controls
+- **Row Level Security (RLS)**: Database-level access controls with admin override capabilities
 - **Authenticated File Access**: Secure file storage with user-specific permissions
-- **Session Management**: Automatic login state persistence and logout
+- **Session Management**: Automatic login state persistence and secure logout
+- **Role-based Authorization**: Different access levels for students, teachers, and administrators
+- **Admin Code Protection**: Secure teacher registration with encrypted access codes
 - **Teacher-Student Isolation**: Students can only access their own projects
 
 ## Features
 
-- Student login/signup and project creation
-- 5-step project workflow with file submissions
-- Teacher dashboard with approval system
-- PDF viewing and commenting
-- File upload to Supabase Storage
+### Core Functionality
+- Multi-role authentication (Student/Teacher/Admin) with secure registration
+- Password reset functionality via email
+- 5-step project workflow with sequential progression
+- File upload/download with PDF viewing and navigation
+- Teacher approval system with detailed feedback
+- Real-time project status updates
+- Admin dashboard for system management
+- Project certification and archive submission
+
+### User Experience
+- Professional, accessible UI/UX design
+- Responsive layout for all device types
+- Intuitive navigation with clear status indicators
+- Comprehensive error handling and user feedback
+- Resource downloads with user-friendly file management
+
+### Communication & Collaboration
+- Direct teacher-student email integration with pre-filled content
+- Teacher ID sharing system for easy student enrollment
+- Admin code management for teacher registration
+- Comment system for detailed feedback on submissions
+
+### Security & Data Management
+- Row Level Security (RLS) with graceful error handling
+- Secure file storage with appropriate access controls
+- Foreign key relationships for data integrity
+- Automatic due date generation and timeline management
 
 ## Setup for Development
 
@@ -177,6 +237,7 @@ Orbilius addresses these challenges by providing a digital platform that ensures
      step3_due_date DATE,
      step4_due_date DATE,
      step5_due_date DATE,
+     submitted_to_orbilius BOOLEAN DEFAULT FALSE,
      created_at TIMESTAMP DEFAULT NOW()
    );
    ```
@@ -192,10 +253,28 @@ Orbilius addresses these challenges by providing a digital platform that ensures
      submitted_at TIMESTAMP DEFAULT NOW()
    );
    ```
+
+   **admin_code table:**
+   ```sql
+   CREATE TABLE admin_code (
+     id SERIAL PRIMARY KEY,
+     code TEXT NOT NULL,
+     updated_at TIMESTAMP DEFAULT NOW()
+   );
+   
+   -- Insert initial admin code
+   INSERT INTO admin_code (code) VALUES ('ADMIN2024');
+   ```
    
    **Set up Storage:**
    - Create a storage bucket named `student-submissions`
+   - Create a storage bucket named `resources` for downloadable materials
    - Configure RLS policies for secure file access
+   
+   **Upload Resource Files:**
+   - Upload `step1_resource.pdf` to the `resources` bucket
+   - Upload `step2_resource.pdf` to the `resources` bucket
+   - Set appropriate access policies for public resource access
    
    **Row Level Security Policies:**
    ```sql
@@ -203,6 +282,7 @@ Orbilius addresses these challenges by providing a digital platform that ensures
    ALTER TABLE users ENABLE ROW LEVEL SECURITY;
    ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
    ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE admin_code ENABLE ROW LEVEL SECURITY;
    
    -- Users can only see their own profile
    CREATE POLICY "Users can view own profile" ON users
@@ -212,6 +292,16 @@ Orbilius addresses these challenges by providing a digital platform that ensures
    CREATE POLICY "Project access" ON projects
      FOR SELECT USING (
        auth.uid() = student_id OR auth.uid() = teacher_id
+     );
+   
+   -- Admin users can update admin_code table
+   CREATE POLICY "Admin can update admin code" ON admin_code
+     FOR ALL USING (
+       EXISTS (
+         SELECT 1 FROM users 
+         WHERE users.id = auth.uid() 
+         AND users.user_type = 'admin'
+       )
      );
    
    -- Similar policies for submissions table
@@ -264,22 +354,26 @@ orbilius/
 ├── src/
 │   ├── assets/            # React logo and other assets
 │   ├── student/           # Student-specific components
-│   │   ├── dashboard.jsx  # Student project dashboard
+│   │   ├── dashboard.jsx  # Student project dashboard with editable fields
 │   │   ├── submitStep.jsx # Generic step submission component
 │   │   └── step1-5/       # Individual step components
-│   │       ├── stepXIndex.jsx   # Step overview pages
-│   │       └── stepXUpload.jsx  # Step upload pages
+│   │       ├── stepXIndex.jsx   # Step overview pages with resource downloads
+│   │       └── stepXUpload.jsx  # Step upload pages with duplicate prevention
 │   ├── teacher/           # Teacher-specific components
-│   │   ├── dashboard.jsx  # Teacher project oversight dashboard
-│   │   └── stepApproval.jsx # PDF review and approval interface
-│   ├── App.jsx            # Main app component with routing
+│   │   ├── dashboard.jsx  # Teacher project oversight dashboard with email integration
+│   │   └── stepApproval.jsx # PDF review and approval interface with comments
+│   ├── admin/             # Admin-specific components
+│   │   └── dashboard.jsx  # Admin control panel for system management
+│   ├── App.jsx            # Main app component with multi-role routing
 │   ├── App.css            # Global styles
-│   ├── Login.jsx          # User authentication
-│   ├── Signup.jsx         # User registration
-│   ├── createProject.jsx  # New project creation
+│   ├── LandingPage.jsx    # Public landing page with branding
+│   ├── Login.jsx          # Multi-role user authentication
+│   ├── Signup.jsx         # User registration with admin code validation
+│   ├── ResetPassword.jsx  # Password reset functionality
+│   ├── createProject.jsx  # New project creation with auto due dates
 │   ├── supabaseClient.js  # Supabase configuration
 │   └── main.jsx           # React app entry point
-├── sql/                   # Database setup scripts
+├── sql/                   # Database setup scripts and RLS policies
 ├── package.json           # Dependencies and scripts
 ├── vite.config.js         # Vite configuration
 └── README.md              # This file
@@ -317,6 +411,19 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 - **Node Version**: Ensure Node.js 16+ is installed
 - **Environment Variables**: Verify `.env` file is created and populated
 - **Dependencies**: Run `npm install` if modules are missing
+- **Supabase Setup**: Ensure all tables, RLS policies, and storage buckets are configured
+- **Resource Files**: Upload step resource PDFs to the `resources` bucket
+
+### Admin Setup
+- **Initial Admin User**: Create admin user manually in Supabase Auth dashboard
+- **Admin Code**: Insert initial admin code in `admin_code` table
+- **RLS Policies**: Ensure admin users have proper access to admin_code table
+- **Storage Buckets**: Verify both `student-submissions` and `resources` buckets exist
+
+### Teacher Registration
+- **Admin Code Required**: Teachers need current admin code to register
+- **Teacher ID**: Each teacher gets unique ID for student enrollment
+- **Student Assignment**: Students use teacher ID during registration for automatic assignment
 
 ## Contributing
 
