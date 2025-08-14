@@ -21,7 +21,19 @@ export default function Step3Overview() {
         <div style={styles.linksContainer}>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Get Started!!!</strong>
-            <button style={styles.button}>Download Step 2: Planning Docs</button>
+            <button 
+              style={styles.button}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = 'https://oihpotdgrykjallvpwpu.supabase.co/storage/v1/object/public/resources/step3/OPM%20Step%203%20Work%20Breakdown%20Structure.pdf';
+                link.download = 'OPM Step 3 Work Breakdown Structure.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              Download Step 3: Planning Docs
+            </button>
           </div>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Help!!!</strong>

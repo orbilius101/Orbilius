@@ -42,7 +42,19 @@ export default function Step2Overview() {
           </div>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Help!!!</strong>
-            <button style={styles.button}>How Do I Create A Design Brief?</button>
+            <button 
+              style={styles.button}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = 'https://oihpotdgrykjallvpwpu.supabase.co/storage/v1/object/public/resources/step2/Design%20Brief%20Instructions.pdf';
+                link.download = 'Design Brief Instructions.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              How Do I Create A Design Brief?
+            </button>
           </div>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Ready to Submit Step 2?</strong>
