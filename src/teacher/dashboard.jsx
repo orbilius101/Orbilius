@@ -36,10 +36,13 @@ export default function TeacherDashboard() {
         setUserProfile(profile);
       }
 
-      // Fetch all projects assigned to this teacher
+      // Fetch all projects assigned to this teacher with student email
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
-        .select('*')
+        .select(`
+          *,
+          users!projects_student_id_fkey(email, first_name, last_name)
+        `)
         .eq('teacher_id', user.id)
         .order('last_name', { ascending: true });
 
@@ -136,12 +139,51 @@ export default function TeacherDashboard() {
     }
     
     // For all other cases (including submitted), handle "Email Student" action
-    const studentEmail = project.email || 'student@example.com';
-    const subject = `Regarding your ${project.project_title} project`;
-    const body = `Hello ${project.first_name},\n\nI wanted to follow up on your project progress.\n\nBest regards,\n${userProfile?.first_name || 'Your Teacher'}`;
+    const studentEmail = project.users?.email || project.email;
+    const studentFirstName = project.users?.first_name || project.first_name;
+    const currentStepStatus = project[`step${project.current_step}_status`];
+    const currentStepName = getCurrentStepName(project.current_step);
+    
+    if (!studentEmail) {
+      alert('Student email not found. Please check the project data.');
+      return;
+    }
+    
+    let subject, body;
+    
+    if (currentStepStatus === 'Submitted') {
+      // Email for when student has submitted and needs feedback
+      subject = `Feedback on ${project.project_title} - Step ${project.current_step}`;
+      body = `Hello ${studentFirstName},
+
+I have reviewed your submission for Step ${project.current_step}: ${currentStepName} of your project "${project.project_title}".
+
+Please log into the Orbilius platform to view my feedback and next steps.
+
+If you have any questions, please don't hesitate to reach out.
+
+Best regards,
+${userProfile?.first_name || 'Your Teacher'}`;
+    } else {
+      // General follow-up email
+      subject = `Follow-up on ${project.project_title} - Step ${project.current_step}`;
+      body = `Hello ${studentFirstName},
+
+I wanted to follow up on your project "${project.project_title}".
+
+You are currently on Step ${project.current_step}: ${currentStepName}.
+Current status: ${currentStepStatus}
+
+Please log into the Orbilius platform to continue your work or view any feedback.
+
+If you need any assistance, please let me know.
+
+Best regards,
+${userProfile?.first_name || 'Your Teacher'}`;
+    }
     
     const mailtoLink = `mailto:${studentEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink, '_blank');
+    window.open(mailtoLink);
   };
 
   return (
@@ -172,7 +214,7 @@ export default function TeacherDashboard() {
                 {projects.map((project) => (
                   <tr key={project.project_id} style={styles.tableRow}>
                     <td style={styles.tableCell}>
-                      {project.last_name}, {project.first_name}
+                      {project.users?.last_name || project.last_name}, {project.users?.first_name || project.first_name}
                     </td>
                     <td style={styles.tableCell}>{project.grade}</td>
                     <td style={styles.tableCell}>

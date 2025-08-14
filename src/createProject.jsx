@@ -6,13 +6,6 @@ export default function CreateProject() {
   const [projectTitle, setProjectTitle] = useState('');
   const [grade, setGrade] = useState('');
   const [teacherId, setTeacherId] = useState('');
-  const [dueDates, setDueDates] = useState({
-    step1: '',
-    step2: '',
-    step3: '',
-    step4: '',
-    step5: '',
-  });
 
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
@@ -52,13 +45,25 @@ export default function CreateProject() {
     fetchUserAndInfo();
   }, [navigate]);
 
-  const handleDateChange = (step, value) => {
-    setDueDates((prev) => ({ ...prev, [step]: value }));
+  // Function to generate due dates with 1 month intervals
+  const generateDueDates = () => {
+    const today = new Date();
+    const dueDates = {};
+    
+    for (let i = 1; i <= 5; i++) {
+      const dueDate = new Date(today);
+      dueDate.setMonth(today.getMonth() + i); // Add i months from today
+      dueDates[`step${i}`] = dueDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    }
+    
+    return dueDates;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!userData) return;
+
+    const dueDates = generateDueDates();
 
     const { error } = await supabase.from('projects').insert([
       {
@@ -131,18 +136,20 @@ export default function CreateProject() {
             style={inputStyle}
           />
 
-          {[1, 2, 3, 4, 5].map((step) => (
-            <div key={step} style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontSize: '0.9rem', color: '#555' }}>Step {step} Due Date:</label>
-              <input
-                type="date"
-                value={dueDates[`step${step}`]}
-                onChange={(e) => handleDateChange(`step${step}`, e.target.value)}
-                required
-                style={inputStyle}
-              />
-            </div>
-          ))}
+          //This section displays the due dates for each step and will be changed
+          <div style={{ padding: '1rem', backgroundColor: '#f0f8ff', borderRadius: '5px', border: '1px solid #d0d7de' }}>
+            <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>Project Timeline</h4>
+            <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>
+              Each step will have a 1-month deadline starting from today:
+            </p>
+            <ul style={{ margin: '0.5rem 0 0 1rem', fontSize: '0.85rem', color: '#555' }}>
+              <li>Step 1: Initial Research - Due in 1 month</li>
+              <li>Step 2: Design Brief - Due in 2 months</li>
+              <li>Step 3: Planning - Due in 3 months</li>
+              <li>Step 4: Implementation - Due in 4 months</li>
+              <li>Step 5: Archival Records - Due in 5 months</li>
+            </ul>
+          </div>
 
           <button
             type="submit"

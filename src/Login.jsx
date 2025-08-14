@@ -6,6 +6,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
 
   const signIn = async () => {
@@ -31,6 +32,7 @@ export default function Login() {
     }
 
     const role = userData.role;
+    console.log('User role:', role); // Debug log
 
     if (role === 'student') {
       // Check if student has any projects
@@ -54,11 +56,34 @@ export default function Login() {
       }
     } else if (role === 'teacher') {
       navigate('/teacher/dashboard');
+    } else if (role === 'admin') {
+      navigate('/admin/dashboard');
     } else {
       alert('Unknown role');
     }
 
     setLoading(false);
+  };
+
+  const resetPassword = async () => {
+    if (!email) {
+      alert('Please enter your email address first.');
+      return;
+    }
+
+    setResetLoading(true);
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      alert('Error sending reset email: ' + error.message);
+    } else {
+      alert('Password reset email sent! Check your inbox for instructions.');
+    }
+
+    setResetLoading(false);
   };
 
   return (
@@ -86,6 +111,15 @@ export default function Login() {
         >
           {loading ? 'Logging in...' : 'Log In'}
         </button>
+        
+        <button 
+          onClick={resetPassword} 
+          disabled={resetLoading || !email}
+          style={{...styles.resetButton, ...(resetLoading || !email ? styles.resetButtonDisabled : {})}}
+        >
+          {resetLoading ? 'Sending...' : 'Forgot Password?'}
+        </button>
+        
         <p style={styles.text}>
           Don't have an account? <a href="/signup" style={styles.link}>Sign Up</a>
         </p>
@@ -138,6 +172,24 @@ const styles = {
   },
   buttonDisabled: {
     backgroundColor: '#ccc',
+    cursor: 'not-allowed'
+  },
+  resetButton: {
+    width: '100%',
+    padding: '0.75rem',
+    backgroundColor: 'transparent',
+    color: '#007bff',
+    border: '1px solid #007bff',
+    borderRadius: '4px',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    marginBottom: '1rem',
+    transition: 'all 0.2s'
+  },
+  resetButtonDisabled: {
+    backgroundColor: '#f8f9fa',
+    color: '#ccc',
+    borderColor: '#ccc',
     cursor: 'not-allowed'
   },
   text: {

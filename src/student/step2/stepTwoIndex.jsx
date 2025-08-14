@@ -26,7 +26,19 @@ export default function Step2Overview() {
         <div style={styles.linksContainer}>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Get Started!!!</strong>
-            <button style={styles.button}>Download Step 2: Design Brief</button>
+            <button 
+              style={styles.button}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = 'https://oihpotdgrykjallvpwpu.supabase.co/storage/v1/object/public/resources/step2/OPM%20Project%20Design%20Brief.pdf';
+                link.download = 'OPM Project Design Brief.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              Download Step 2: Design Brief
+            </button>
           </div>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Help!!!</strong>

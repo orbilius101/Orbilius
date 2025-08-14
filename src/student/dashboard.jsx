@@ -6,6 +6,10 @@ export default function StudentDashboard() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [project, setProject] = useState(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editingDueDate, setEditingDueDate] = useState(null);
+  const [editedDueDate, setEditedDueDate] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,6 +52,7 @@ export default function StudentDashboard() {
         console.error('Error fetching project:', projectError.message);
       } else {
         setProject(projectData);
+        setEditedTitle(projectData?.project_title || '');
       }
     };
 
@@ -61,6 +66,96 @@ export default function StudentDashboard() {
     } else {
       navigate('/login');
     }
+  };
+
+  const handleTitleEdit = () => {
+    setIsEditingTitle(true);
+    setEditedTitle(project?.project_title || '');
+  };
+
+  const handleTitleSave = async () => {
+    if (!editedTitle.trim()) {
+      alert('Project title cannot be empty.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ project_title: editedTitle.trim() })
+        .eq('project_id', project.project_id);
+
+      if (error) {
+        console.error('Error updating project title:', error.message);
+        alert('Error updating project title. Please try again.');
+      } else {
+        setProject({ ...project, project_title: editedTitle.trim() });
+        setIsEditingTitle(false);
+      }
+    } catch (error) {
+      console.error('Error updating project title:', error);
+      alert('Error updating project title. Please try again.');
+    }
+  };
+
+  const handleTitleCancel = () => {
+    setIsEditingTitle(false);
+    setEditedTitle(project?.project_title || '');
+  };
+
+  const handleDueDateEdit = (stepNum) => {
+    const currentDueDate = project?.[`step${stepNum}_due_date`];
+    setEditingDueDate(stepNum);
+    // Format date for input field (YYYY-MM-DD)
+    if (currentDueDate) {
+      const date = new Date(currentDueDate);
+      const formattedDate = date.toISOString().split('T')[0];
+      setEditedDueDate(formattedDate);
+    } else {
+      setEditedDueDate('');
+    }
+  };
+
+  const handleDueDateSave = async (stepNum) => {
+    if (!editedDueDate) {
+      alert('Please select a due date.');
+      return;
+    }
+
+    // Validate that the date is not in the past
+    const selectedDate = new Date(editedDueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+
+    if (selectedDate < today) {
+      alert('Due date cannot be in the past. Please select a current or future date.');
+      return;
+    }
+
+    try {
+      const dueDateField = `step${stepNum}_due_date`;
+      const { error } = await supabase
+        .from('projects')
+        .update({ [dueDateField]: editedDueDate })
+        .eq('project_id', project.project_id);
+
+      if (error) {
+        console.error('Error updating due date:', error.message);
+        alert('Error updating due date. Please try again.');
+      } else {
+        setProject({ ...project, [dueDateField]: editedDueDate });
+        setEditingDueDate(null);
+        setEditedDueDate('');
+      }
+    } catch (error) {
+      console.error('Error updating due date:', error);
+      alert('Error updating due date. Please try again.');
+    }
+  };
+
+  const handleDueDateCancel = () => {
+    setEditingDueDate(null);
+    setEditedDueDate('');
   };
 
   const renderRow = (stepNum, title) => {
@@ -95,6 +190,8 @@ export default function StudentDashboard() {
 
     const stepLink = getStepLink();
     const accessible = isAccessible();
+    const isApproved = status === 'Approved';
+    const isEditingThisDate = editingDueDate === stepNum;
 
     const stepText = `Step ${stepNum}: ${title}`;
     const stepStyle = {
@@ -118,7 +215,47 @@ export default function StudentDashboard() {
         </td>
         <td style={{ padding: '0 3rem' }}></td>
         <td style={{ paddingBottom: '1rem', textAlign: 'left' }}>{status}</td>
-        <td style={{ paddingBottom: '1rem', textAlign: 'left' }}>{due}</td>
+        <td style={{ paddingBottom: '1rem', textAlign: 'left' }}>
+          <div style={dueDateCellStyle}>
+            {!isEditingThisDate ? (
+              <>
+                <span>{due}</span>
+                {!isApproved && (
+                  <button 
+                    onClick={() => handleDueDateEdit(stepNum)}
+                    style={dueDateEditButtonStyle}
+                  >
+                    ✎
+                  </button>
+                )}
+              </>
+            ) : (
+              <div style={dueDateEditContainerStyle}>
+                <input
+                  type="date"
+                  value={editedDueDate}
+                  onChange={(e) => setEditedDueDate(e.target.value)}
+                  style={dueDateInputStyle}
+                  autoFocus
+                />
+                <div style={dueDateButtonGroupStyle}>
+                  <button 
+                    onClick={() => handleDueDateSave(stepNum)}
+                    style={dueDateSaveButtonStyle}
+                  >
+                    ✓
+                  </button>
+                  <button 
+                    onClick={handleDueDateCancel}
+                    style={dueDateCancelButtonStyle}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </td>
       </tr>
     );
   };
@@ -139,7 +276,7 @@ export default function StudentDashboard() {
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center', 
-              marginBottom: '3rem' 
+              marginBottom: '2rem' 
             }}>
               <h1 style={{ fontSize: '42px', margin: 0, textAlign: 'left' }}>
                 {userProfile.first_name} {userProfile.last_name}'s Student Dashboard
@@ -151,6 +288,59 @@ export default function StudentDashboard() {
                 Sign Out
               </button>
             </div>
+
+            {/* Project Title Section */}
+            {project && (
+              <div style={projectTitleSectionStyle}>
+                <div style={projectTitleContainerStyle}>
+                  {!isEditingTitle ? (
+                    <>
+                      <h2 style={projectTitleStyle}>
+                        {project.project_title || 'Untitled Project'}
+                      </h2>
+                      <button 
+                        onClick={handleTitleEdit}
+                        style={editButtonStyle}
+                      >
+                        ✎ Edit
+                      </button>
+                    </>
+                  ) : (
+                    <div style={editContainerStyle}>
+                      <input
+                        type="text"
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        style={titleInputStyle}
+                        placeholder="Enter project title"
+                        autoFocus
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handleTitleSave();
+                          } else if (e.key === 'Escape') {
+                            handleTitleCancel();
+                          }
+                        }}
+                      />
+                      <div style={buttonGroupStyle}>
+                        <button 
+                          onClick={handleTitleSave}
+                          style={saveButtonStyle}
+                        >
+                          Save
+                        </button>
+                        <button 
+                          onClick={handleTitleCancel}
+                          style={cancelButtonStyle}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {project ? (
               <table style={{ width: '100%', fontSize: '20px', borderCollapse: 'collapse' }}>
@@ -208,4 +398,142 @@ const signOutButtonStyle = {
   cursor: 'pointer',
   fontWeight: '500',
   transition: 'background-color 0.2s',
+};
+
+const projectTitleSectionStyle = {
+  marginBottom: '3rem',
+  borderBottom: '1px solid #e0e0e0',
+  paddingBottom: '1.5rem',
+};
+
+const projectTitleContainerStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '1rem',
+};
+
+const projectTitleStyle = {
+  fontSize: '28px',
+  margin: 0,
+  color: '#333',
+  fontWeight: '500',
+};
+
+const editButtonStyle = {
+  padding: '0.4rem 0.8rem',
+  backgroundColor: 'transparent',
+  border: '1px solid #ccc',
+  borderRadius: '4px',
+  color: '#666',
+  fontSize: '12px',
+  cursor: 'pointer',
+  fontWeight: '400',
+  transition: 'all 0.2s',
+};
+
+const editContainerStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '1rem',
+  flex: 1,
+};
+
+const titleInputStyle = {
+  fontSize: '28px',
+  padding: '0.5rem',
+  border: '2px solid #007bff',
+  borderRadius: '6px',
+  fontWeight: '500',
+  color: '#333',
+  backgroundColor: '#ffffff',
+  maxWidth: '600px',
+  outline: 'none',
+};
+
+const buttonGroupStyle = {
+  display: 'flex',
+  gap: '0.5rem',
+};
+
+const saveButtonStyle = {
+  padding: '0.5rem 1rem',
+  backgroundColor: '#28a745',
+  color: 'white',
+  border: 'none',
+  borderRadius: '6px',
+  fontSize: '14px',
+  cursor: 'pointer',
+  fontWeight: '500',
+};
+
+const cancelButtonStyle = {
+  padding: '0.5rem 1rem',
+  backgroundColor: '#6c757d',
+  color: 'white',
+  border: 'none',
+  borderRadius: '6px',
+  fontSize: '14px',
+  cursor: 'pointer',
+  fontWeight: '500',
+};
+
+const dueDateCellStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+};
+
+const dueDateEditButtonStyle = {
+  padding: '0.2rem 0.4rem',
+  backgroundColor: 'transparent',
+  border: '1px solid #ccc',
+  borderRadius: '3px',
+  color: '#666',
+  fontSize: '10px',
+  cursor: 'pointer',
+  fontWeight: '400',
+  transition: 'all 0.2s',
+};
+
+const dueDateEditContainerStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+};
+
+const dueDateInputStyle = {
+  padding: '0.3rem',
+  border: '1px solid #007bff',
+  borderRadius: '4px',
+  fontSize: '14px',
+  backgroundColor: '#ffffff',
+  color: '#333',
+  outline: 'none',
+};
+
+const dueDateButtonGroupStyle = {
+  display: 'flex',
+  gap: '0.3rem',
+};
+
+const dueDateSaveButtonStyle = {
+  padding: '0.3rem 0.5rem',
+  backgroundColor: '#28a745',
+  color: 'white',
+  border: 'none',
+  borderRadius: '3px',
+  fontSize: '12px',
+  cursor: 'pointer',
+  fontWeight: '500',
+};
+
+const dueDateCancelButtonStyle = {
+  padding: '0.3rem 0.5rem',
+  backgroundColor: '#6c757d',
+  color: 'white',
+  border: 'none',
+  borderRadius: '3px',
+  fontSize: '12px',
+  cursor: 'pointer',
+  fontWeight: '500',
 };
