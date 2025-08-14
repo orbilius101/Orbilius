@@ -2,9 +2,11 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import Login from './Login';
 import Signup from './Signup';
+import ResetPassword from './ResetPassword';
 import CreateProject from './createProject';
 import StudentDashboard from './student/dashboard';
 import TeacherDashboard from './teacher/dashboard';
+import AdminDashboard from './admin/dashboard';
 import SubmitStep from './student/submitStep';
 import StepOneIndex from './student/step1/stepOneIndex';
 import StepOneUpload from './student/step1/stepOneUpload';
@@ -25,6 +27,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/createProject" element={<CreateProject />} />
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
@@ -40,6 +43,7 @@ function App() {
         <Route path="/student/step5/stepFiveIndex" element={<StepFiveIndex />} />
         <Route path="/student/step5/stepFiveUpload" element={<StepFiveUpload />} />
         <Route path="/teacher/step-approval/:projectId/:stepNumber" element={<StepApproval />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   );

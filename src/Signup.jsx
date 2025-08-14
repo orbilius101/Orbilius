@@ -7,6 +7,7 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
   const [teacherId, setTeacherId] = useState('');
+  const [adminCode, setAdminCode] = useState('');
   const [first_name, setFirstName] = useState('');
   const [last_name, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,6 +15,33 @@ export default function Signup() {
 
   const signUp = async () => {
     setLoading(true);
+
+    // Validate admin code for teachers by fetching from database
+    if (role === 'teacher') {
+      try {
+        const { data: adminCodeData, error: adminCodeError } = await supabase
+          .from('admin_code')
+          .select('code')
+          .eq('id', 1)
+          .single();
+
+        if (adminCodeError) {
+          alert('Error validating admin code. Please try again.');
+          setLoading(false);
+          return;
+        }
+
+        if (!adminCodeData || adminCode !== adminCodeData.code) {
+          alert('Invalid Orbilius Admin Code. Please contact your administrator for the correct code.');
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        alert('Error validating admin code. Please try again.');
+        setLoading(false);
+        return;
+      }
+    }
 
     // Sign up with Supabase Auth
     const { data, error } = await supabase.auth.signUp({
@@ -109,6 +137,17 @@ export default function Signup() {
           />
         )}
 
+        {role === 'teacher' && (
+          <input
+            type="text"
+            placeholder="Orbilius Admin Code *"
+            value={adminCode}
+            onChange={(e) => setAdminCode(e.target.value)}
+            style={styles.input}
+            required
+          />
+        )}
+
         <button 
           onClick={signUp} 
           disabled={loading}
@@ -117,7 +156,7 @@ export default function Signup() {
           {loading ? 'Signing up...' : 'Sign Up'}
         </button>
         <p style={styles.text}>
-          Already have an account? <a href="/" style={styles.link}>Log In</a>
+          Already have an account? <a href="/login" style={styles.link}>Log In</a>
         </p>
       </div>
     </div>

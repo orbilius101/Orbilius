@@ -268,6 +268,11 @@ export default function StepApproval() {
         [currentStepStatusField]: 'Approved',
       };
 
+      // If this is step 5, mark as submitted to Orbilius
+      if (parseInt(stepNumber) === 5) {
+        updateData.submitted_to_orbilius = true;
+      }
+
       // If this is not step 5, advance to the next step
       if (parseInt(stepNumber) < 5) {
         const nextStep = parseInt(stepNumber) + 1;

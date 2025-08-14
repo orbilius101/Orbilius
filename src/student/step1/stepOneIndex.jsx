@@ -1,7 +1,58 @@
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../supabaseClient';
 
 export default function Step1Overview() {
   const navigate = useNavigate();
+
+  const handleDownloadBibliography = async () => {
+    try {
+      // Get the public URL for the bibliography template
+      const { data } = supabase.storage
+        .from('resources')
+        .getPublicUrl('step1/Orbilius PM The Discovery Log.pdf');
+
+      if (data?.publicUrl) {
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = data.publicUrl;
+        link.download = 'Orbilius-PM-The-Discovery-Log.pdf';
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert('Discovery Log template not found. Please contact your teacher.');
+      }
+    } catch (error) {
+      console.error('Error downloading discovery log:', error);
+      alert('Error downloading file. Please try again.');
+    }
+  };
+
+  const handleDownloadHelpGuide = async () => {
+    try {
+      // Get the public URL for the help guide
+      const { data } = supabase.storage
+        .from('resources')
+        .getPublicUrl('step1/Orbilius PM Discovery Log Instructions.pdf');
+
+      if (data?.publicUrl) {
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = data.publicUrl;
+        link.download = 'Orbilius-PM-Discovery-Log-Instructions.pdf';
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert('Discovery Log instructions not found. Please contact your teacher.');
+      }
+    } catch (error) {
+      console.error('Error downloading instructions:', error);
+      alert('Error downloading file. Please try again.');
+    }
+  };
 
   return (
     <div style={styles.container}>
@@ -26,16 +77,20 @@ export default function Step1Overview() {
         <div style={styles.linksContainer}>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Get Started!!!</strong>
-            <button style={styles.button}>Download Step 1: Initial Research Bibliography</button>
+            <button onClick={handleDownloadBibliography} style={styles.button}>
+              Download Step 1: The Discovery Log
+            </button>
           </div>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Help!!!</strong>
-            <button style={styles.button}>How Do I Create A Bibliography?</button>
+            <button onClick={handleDownloadHelpGuide} style={styles.button}>
+              Discovery Log Instructions
+            </button>
           </div>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Ready to Submit Step 1?</strong>
             <a href="/student/step1/stepOneUpload">
-              <button style={styles.button}>Upload Your Initial Research Bibliography Here.</button>
+              <button style={styles.button}>Upload Your Discovery Log Here.</button>
             </a>
           </div>
         </div>
