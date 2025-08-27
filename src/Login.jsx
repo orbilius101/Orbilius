@@ -10,6 +10,8 @@ export default function Login() {
   const navigate = useNavigate();
 
   const signIn = async () => {
+    // eslint-disable-next-line no-debugger
+    debugger;
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
@@ -18,20 +20,17 @@ export default function Login() {
       return;
     }
 
-    // Get role from users table
-    const { data: userData, error: roleError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', data.user.id)
-      .single();
+    // Get role from user_metadata (set during sign-up)
+    const role = data.user?.user_metadata?.role;
 
-    if (roleError) {
-      alert('Login succeeded, but no role found.');
+    if (!role) {
+      alert(
+        'Login succeeded, but role was not found on the account. Please contact your teacher/admin to set your role.'
+      );
       setLoading(false);
       return;
     }
 
-    const role = userData.role;
     console.log('User role:', role); // Debug log
 
     if (role === 'student') {
@@ -72,7 +71,7 @@ export default function Login() {
     }
 
     setResetLoading(true);
-    
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
@@ -104,24 +103,30 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           style={styles.input}
         />
-        <button 
-          onClick={signIn} 
+        <button
+          onClick={signIn}
           disabled={loading}
-          style={{...styles.button, ...(loading ? styles.buttonDisabled : {})}}
+          style={{ ...styles.button, ...(loading ? styles.buttonDisabled : {}) }}
         >
           {loading ? 'Logging in...' : 'Log In'}
         </button>
-        
-        <button 
-          onClick={resetPassword} 
+
+        <button
+          onClick={resetPassword}
           disabled={resetLoading || !email}
-          style={{...styles.resetButton, ...(resetLoading || !email ? styles.resetButtonDisabled : {})}}
+          style={{
+            ...styles.resetButton,
+            ...(resetLoading || !email ? styles.resetButtonDisabled : {}),
+          }}
         >
           {resetLoading ? 'Sending...' : 'Forgot Password?'}
         </button>
-        
+
         <p style={styles.text}>
-          Don't have an account? <a href="/signup" style={styles.link}>Sign Up</a>
+          Don't have an account?{' '}
+          <a href="/signup" style={styles.link}>
+            Sign Up
+          </a>
         </p>
       </div>
     </div>
@@ -135,7 +140,7 @@ const styles = {
     alignItems: 'center',
     minHeight: '100vh',
     width: '100%',
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#f5f5f5',
   },
   card: {
     backgroundColor: 'white',
@@ -144,11 +149,11 @@ const styles = {
     boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
     width: '100%',
     maxWidth: '400px',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   title: {
     marginBottom: '1.5rem',
-    color: '#333'
+    color: '#333',
   },
   input: {
     width: '100%',
@@ -157,7 +162,7 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '4px',
     fontSize: '1rem',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
   },
   button: {
     width: '100%',
@@ -168,11 +173,11 @@ const styles = {
     borderRadius: '4px',
     fontSize: '1rem',
     cursor: 'pointer',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
   },
   buttonDisabled: {
     backgroundColor: '#ccc',
-    cursor: 'not-allowed'
+    cursor: 'not-allowed',
   },
   resetButton: {
     width: '100%',
@@ -184,20 +189,20 @@ const styles = {
     fontSize: '1rem',
     cursor: 'pointer',
     marginBottom: '1rem',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
   },
   resetButtonDisabled: {
     backgroundColor: '#f8f9fa',
     color: '#ccc',
     borderColor: '#ccc',
-    cursor: 'not-allowed'
+    cursor: 'not-allowed',
   },
   text: {
     margin: 0,
-    color: '#666'
+    color: '#666',
   },
   link: {
     color: '#007bff',
-    textDecoration: 'none'
-  }
+    textDecoration: 'none',
+  },
 };

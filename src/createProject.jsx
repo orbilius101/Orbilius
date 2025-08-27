@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 export default function CreateProject() {
   const [projectTitle, setProjectTitle] = useState('');
   const [grade, setGrade] = useState('');
-  const [teacherId, setTeacherId] = useState('');
 
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
@@ -21,24 +20,13 @@ export default function CreateProject() {
         return;
       }
 
-      const userId = session.user.id;
-
-      const { data: userProfile, error } = await supabase
-        .from('users')
-        .select('first_name, last_name, teacher_id')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user:', error.message);
-        return;
-      }
+      const user = session.user;
 
       setUserData({
-        id: userId,
-        first_name: userProfile.first_name,
-        last_name: userProfile.last_name,
-        teacher_id: userProfile.teacher_id,
+        id: user.id,
+        first_name: user.user_metadata.first_name,
+        last_name: user.user_metadata.last_name,
+        teacher_id: user.user_metadata.teacher_id,
       });
     };
 
@@ -49,13 +37,13 @@ export default function CreateProject() {
   const generateDueDates = () => {
     const today = new Date();
     const dueDates = {};
-    
+
     for (let i = 1; i <= 5; i++) {
       const dueDate = new Date(today);
       dueDate.setMonth(today.getMonth() + i); // Add i months from today
       dueDates[`step${i}`] = dueDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
     }
-    
+
     return dueDates;
   };
 
@@ -101,23 +89,32 @@ export default function CreateProject() {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      backgroundColor: '#f8f8f8',
-    }}>
-      <div style={{
-        padding: '2rem',
-        background: 'white',
-        borderRadius: '10px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '500px',
-      }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '1rem', color: '#333' }}>Create New Project</h2>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f8f8f8',
+      }}
+    >
+      <div
+        style={{
+          padding: '2rem',
+          background: 'white',
+          borderRadius: '10px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+          width: '100%',
+          maxWidth: '500px',
+        }}
+      >
+        <h2 style={{ textAlign: 'center', marginBottom: '1rem', color: '#333' }}>
+          Create New Project
+        </h2>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+        >
           <input
             type="text"
             placeholder="Project Title"
@@ -126,7 +123,6 @@ export default function CreateProject() {
             required
             style={inputStyle}
           />
-
           <input
             type="number"
             placeholder="Grade"
@@ -135,9 +131,15 @@ export default function CreateProject() {
             required
             style={inputStyle}
           />
-
           //This section displays the due dates for each step and will be changed
-          <div style={{ padding: '1rem', backgroundColor: '#f0f8ff', borderRadius: '5px', border: '1px solid #d0d7de' }}>
+          <div
+            style={{
+              padding: '1rem',
+              backgroundColor: '#f0f8ff',
+              borderRadius: '5px',
+              border: '1px solid #d0d7de',
+            }}
+          >
             <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>Project Timeline</h4>
             <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>
               Each step will have a 1-month deadline starting from today:
@@ -150,7 +152,6 @@ export default function CreateProject() {
               <li>Step 5: Archival Records - Due in 5 months</li>
             </ul>
           </div>
-
           <button
             type="submit"
             style={{

@@ -10,7 +10,7 @@ export default function StepApproval() {
   const { projectId, stepNumber } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
-  const [user, setUser] = useState(null);
+  const [, setUser] = useState(null);
   const [comment, setComment] = useState('');
   const [submissionFile, setSubmissionFile] = useState(null);
   const [youtubeLink, setYoutubeLink] = useState(null);
@@ -62,29 +62,31 @@ export default function StepApproval() {
         console.error('Error fetching submission file:', fileError.message);
       } else if (fileData && fileData.length > 0) {
         const latestSubmission = fileData[0];
-        
+
         // Check if this is step 5 and if there's a YouTube link
         if (parseInt(stepNumber) === 5 && latestSubmission.youtube_link) {
           setYoutubeLink(latestSubmission.youtube_link);
         }
-        
+
         // Handle regular file upload (for any step that has a file_url)
         if (latestSubmission.file_url) {
           console.log('Original PDF file URL:', latestSubmission.file_url); // Debug log
-          
+
           // Try to get a signed URL for better access
           try {
             // Extract the file path from the public URL
-            const urlParts = latestSubmission.file_url.split('/storage/v1/object/public/student-submissions/');
+            const urlParts = latestSubmission.file_url.split(
+              '/storage/v1/object/public/student-submissions/'
+            );
             if (urlParts.length > 1) {
               const filePath = urlParts[1];
               console.log('File path:', filePath); // Debug log
-              
+
               // Get a signed URL for authenticated access
               const { data: signedUrlData, error: signedUrlError } = await supabase.storage
                 .from('student-submissions')
                 .createSignedUrl(filePath, 3600); // 1 hour expiry
-              
+
               if (signedUrlError) {
                 console.error('Error creating signed URL:', signedUrlError);
                 setSubmissionFile(latestSubmission.file_url); // Fall back to public URL
@@ -100,7 +102,7 @@ export default function StepApproval() {
             setSubmissionFile(latestSubmission.file_url);
           }
         }
-        
+
         if (latestSubmission.teacher_comments) {
           setComment(latestSubmission.teacher_comments);
         }
@@ -129,9 +131,9 @@ export default function StepApproval() {
         <div style={styles.youtubeContainer}>
           <h3 style={styles.youtubeTitle}>Student Submission (YouTube Video)</h3>
           <div style={styles.youtubeLink}>
-            <a 
-              href={youtubeLink} 
-              target="_blank" 
+            <a
+              href={youtubeLink}
+              target="_blank"
               rel="noopener noreferrer"
               style={styles.linkButton}
             >
@@ -173,14 +175,18 @@ export default function StepApproval() {
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={onDocumentLoadError}
           loading={<div style={styles.pdfLoading}>Loading PDF...</div>}
-          error={<div style={styles.pdfError}>Error loading PDF. Please check if the file exists and is accessible.</div>}
+          error={
+            <div style={styles.pdfError}>
+              Error loading PDF. Please check if the file exists and is accessible.
+            </div>
+          }
           options={{
             cMapUrl: 'https://unpkg.com/pdfjs-dist@5.3.31/cmaps/',
             cMapPacked: true,
           }}
         >
-          <Page 
-            pageNumber={pageNumber} 
+          <Page
+            pageNumber={pageNumber}
             width={600}
             renderTextLayer={false}
             renderAnnotationLayer={false}
@@ -199,8 +205,8 @@ export default function StepApproval() {
       // Save comment to the submissions table
       const { error: commentError } = await supabase
         .from('submissions')
-        .update({ 
-          teacher_comments: comment.trim()
+        .update({
+          teacher_comments: comment.trim(),
         })
         .eq('project_id', projectId)
         .eq('step_number', parseInt(stepNumber));
@@ -209,7 +215,9 @@ export default function StepApproval() {
         console.error('Error saving comment:', commentError.message);
         // If the column doesn't exist, show a helpful message
         if (commentError.message.includes('teacher_comments')) {
-          alert('Database needs to be updated to support teacher comments. Please contact the administrator.');
+          alert(
+            'Database needs to be updated to support teacher comments. Please contact the administrator.'
+          );
         } else {
           alert('Error saving comment. Please try again.');
         }
@@ -233,7 +241,9 @@ export default function StepApproval() {
         console.error('Error updating project status:', statusError.message);
         alert('Comment saved, but error updating status. Please try again.');
       } else {
-        alert('Comment saved and step set back to In Progress. Student can now see feedback and resubmit.');
+        alert(
+          'Comment saved and step set back to In Progress. Student can now see feedback and resubmit.'
+        );
       }
     } catch (error) {
       console.error('Error saving comment:', error);
@@ -251,8 +261,8 @@ export default function StepApproval() {
       if (comment.trim()) {
         const { error: commentError } = await supabase
           .from('submissions')
-          .update({ 
-            teacher_comments: comment.trim()
+          .update({
+            teacher_comments: comment.trim(),
           })
           .eq('project_id', projectId)
           .eq('step_number', parseInt(stepNumber));
@@ -307,7 +317,7 @@ export default function StepApproval() {
       2: 'Design Brief',
       3: 'Planning',
       4: 'Implementation',
-      5: 'Archival Records'
+      5: 'Archival Records',
     };
     return stepNames[stepNum] || 'Unknown';
   };
@@ -332,28 +342,22 @@ export default function StepApproval() {
     <div style={styles.container}>
       <div style={styles.header}>
         <h1 style={styles.title}>Step Approval Page</h1>
-        <button 
-          onClick={() => navigate('/teacher/dashboard')} 
-          style={styles.backButton}
-        >
+        <button onClick={() => navigate('/teacher/dashboard')} style={styles.backButton}>
           Return to Teacher Dashboard
         </button>
       </div>
 
       <div style={styles.projectInfo}>
         <h2 style={styles.projectTitle}>
-          {project.first_name} {project.last_name} - Step {stepNumber}: {getStepName(parseInt(stepNumber))}
+          {project.first_name} {project.last_name} - Step {stepNumber}:{' '}
+          {getStepName(parseInt(stepNumber))}
         </h2>
-        <p style={styles.projectSubtitle}>
-          Project: {project.project_title}
-        </p>
+        <p style={styles.projectSubtitle}>Project: {project.project_title}</p>
       </div>
 
       <div style={styles.content}>
         <div style={styles.leftPanel}>
-          <div style={styles.pdfContainer}>
-            {pdfViewer}
-          </div>
+          <div style={styles.pdfContainer}>{pdfViewer}</div>
         </div>
 
         <div style={styles.rightPanel}>
@@ -374,11 +378,7 @@ export default function StepApproval() {
               >
                 {isSavingComment ? 'Saving...' : 'Enter'}
               </button>
-              <button
-                onClick={handleApprove}
-                disabled={isApproving}
-                style={styles.approveButton}
-              >
+              <button onClick={handleApprove} disabled={isApproving} style={styles.approveButton}>
                 {isApproving ? 'Approving...' : 'Approve'}
               </button>
             </div>

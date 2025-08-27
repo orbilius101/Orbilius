@@ -16,6 +16,12 @@ export default function Signup() {
   const signUp = async () => {
     setLoading(true);
 
+    if (!role) {
+      alert('Please choose a role before creating your account.');
+      setLoading(false);
+      return;
+    }
+
     // Validate admin code for teachers by fetching from database
     if (role === 'teacher') {
       try {
@@ -32,21 +38,31 @@ export default function Signup() {
         }
 
         if (!adminCodeData || adminCode !== adminCodeData.code) {
-          alert('Invalid Orbilius Admin Code. Please contact your administrator for the correct code.');
+          alert(
+            'Invalid Orbilius Admin Code. Please contact your administrator for the correct code.'
+          );
           setLoading(false);
           return;
         }
-      } catch (error) {
+      } catch {
         alert('Error validating admin code. Please try again.');
         setLoading(false);
         return;
       }
     }
 
-    // Sign up with Supabase Auth
+    // Sign up with Supabase Auth, storing profile fields in user_metadata
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          role,
+          teacher_id: role === 'student' && teacherId ? teacherId : null,
+          first_name,
+          last_name,
+        },
+      },
     });
 
     if (error) {
@@ -55,30 +71,47 @@ export default function Signup() {
       return;
     }
 
-    const userId = data.user.id;
+    // Verify metadata exists on the created account (v2.53.0)
+    try {
+      const { data: getUserRes, error: getUserErr } = await supabase.auth.getUser();
+      if (!getUserErr && getUserRes?.user) {
+        const existingMeta = getUserRes.user.user_metadata || {};
+        const desiredMeta = {
+          role,
+          teacher_id: role === 'student' && teacherId ? teacherId : null,
+          first_name,
+          last_name,
+        };
 
-    // Add user to users table
-    const { error: insertError } = await supabase.from('users').insert([
-      {
-        id: userId,
-        role,
-        teacher_id: role === 'student' && teacherId ? teacherId : null,
-        email: email,
-        first_name: first_name,
-        last_name: last_name,
-      },
-    ]);
+        const needsUpdate =
+          existingMeta.role !== desiredMeta.role ||
+          existingMeta.teacher_id !== desiredMeta.teacher_id ||
+          existingMeta.first_name !== desiredMeta.first_name ||
+          existingMeta.last_name !== desiredMeta.last_name;
 
-    if (insertError) {
-      alert('Auth succeeded, but DB insert failed: ' + insertError.message);
+        if (needsUpdate) {
+          const { error: updateErr } = await supabase.auth.updateUser({ data: desiredMeta });
+          if (updateErr) {
+            console.warn('Failed to backfill user_metadata:', updateErr);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Metadata verification failed:', e);
+    }
+
+    // Guard if user is null (e.g. email confirmation required)
+    if (!data.user) {
+      alert('Sign-up successful. Check your email to confirm your account.');
       setLoading(false);
+      navigate('/login');
       return;
     }
 
     alert('Sign-up successful. Check your email to confirm.');
 
     // Optional: navigate to login page or auto-login
-      navigate('/login');
+    navigate('/login');
     setLoading(false);
   };
 
@@ -117,11 +150,7 @@ export default function Signup() {
 
         <div style={styles.roleContainer}>
           <label style={styles.label}>Role: </label>
-          <select 
-            value={role} 
-            onChange={(e) => setRole(e.target.value)}
-            style={styles.select}
-          >
+          <select value={role} onChange={(e) => setRole(e.target.value)} style={styles.select}>
             <option value="student">Student</option>
             <option value="teacher">Teacher</option>
           </select>
@@ -148,15 +177,18 @@ export default function Signup() {
           />
         )}
 
-        <button 
-          onClick={signUp} 
+        <button
+          onClick={signUp}
           disabled={loading}
-          style={{...styles.button, ...(loading ? styles.buttonDisabled : {})}}
+          style={{ ...styles.button, ...(loading ? styles.buttonDisabled : {}) }}
         >
           {loading ? 'Signing up...' : 'Sign Up'}
         </button>
         <p style={styles.text}>
-          Already have an account? <a href="/login" style={styles.link}>Log In</a>
+          Already have an account?{' '}
+          <a href="/login" style={styles.link}>
+            Log In
+          </a>
         </p>
       </div>
     </div>
@@ -170,7 +202,7 @@ const styles = {
     alignItems: 'center',
     minHeight: '100vh',
     width: '100%',
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#f5f5f5',
   },
   card: {
     backgroundColor: 'white',
@@ -179,11 +211,11 @@ const styles = {
     boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
     width: '100%',
     maxWidth: '400px',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   title: {
     marginBottom: '1.5rem',
-    color: '#333'
+    color: '#333',
   },
   input: {
     width: '100%',
@@ -192,17 +224,17 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '4px',
     fontSize: '1rem',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
   },
   roleContainer: {
     marginBottom: '1rem',
-    textAlign: 'left'
+    textAlign: 'left',
   },
   label: {
     display: 'inline-block',
     marginBottom: '0.5rem',
     color: '#333',
-    fontSize: '1rem'
+    fontSize: '1rem',
   },
   select: {
     width: '100%',
@@ -212,7 +244,7 @@ const styles = {
     fontSize: '1rem',
     boxSizing: 'border-box',
     backgroundColor: 'white',
-    color: '#333'
+    color: '#333',
   },
   button: {
     width: '100%',
@@ -223,18 +255,18 @@ const styles = {
     borderRadius: '4px',
     fontSize: '1rem',
     cursor: 'pointer',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
   },
   buttonDisabled: {
     backgroundColor: '#ccc',
-    cursor: 'not-allowed'
+    cursor: 'not-allowed',
   },
   text: {
     margin: 0,
-    color: '#666'
+    color: '#666',
   },
   link: {
     color: '#007bff',
-    textDecoration: 'none'
-  }
+    textDecoration: 'none',
+  },
 };
