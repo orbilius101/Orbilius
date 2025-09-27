@@ -1,0 +1,40 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:import/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "plugins": ["react", "react-hooks", "import"],
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "react/prop-types": "off", // turn off since you're not using PropTypes
+    "react/react-in-jsx-scope": "off", // not needed for React 17+
+    "import/order": [
+      "warn",
+      {
+        "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+        "alphabetize": { "order": "asc", "caseInsensitive": true }
+      }
+    ],
+    "no-console": "off" // you can change to "warn" if you want fewer console.logs
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}

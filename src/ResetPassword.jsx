@@ -11,7 +11,9 @@ export default function ResetPassword() {
 
   useEffect(() => {
     // Listen for auth state changes to handle the password reset
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         // User has clicked the reset link and is authenticated
         console.log('Password recovery mode activated');
@@ -23,7 +25,7 @@ export default function ResetPassword() {
 
   const updatePassword = async () => {
     setError('');
-    
+
     if (!password || !confirmPassword) {
       setError('Please fill in both password fields.');
       return;
@@ -42,7 +44,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     const { error } = await supabase.auth.updateUser({
-      password: password
+      password: password,
     });
 
     if (error) {
@@ -59,7 +61,7 @@ export default function ResetPassword() {
       <div style={styles.card}>
         <h2 style={styles.title}>Reset Password</h2>
         <p style={styles.subtitle}>Enter your new password below</p>
-        
+
         <input
           type="password"
           placeholder="New Password"
@@ -67,7 +69,7 @@ export default function ResetPassword() {
           onChange={(e) => setPassword(e.target.value)}
           style={styles.input}
         />
-        
+
         <input
           type="password"
           placeholder="Confirm New Password"
@@ -78,16 +80,19 @@ export default function ResetPassword() {
 
         {error && <p style={styles.error}>{error}</p>}
 
-        <button 
-          onClick={updatePassword} 
+        <button
+          onClick={updatePassword}
           disabled={loading}
-          style={{...styles.button, ...(loading ? styles.buttonDisabled : {})}}
+          style={{ ...styles.button, ...(loading ? styles.buttonDisabled : {}) }}
         >
           {loading ? 'Updating...' : 'Update Password'}
         </button>
-        
+
         <p style={styles.text}>
-          Remember your password? <a href="/login" style={styles.link}>Log In</a>
+          Remember your password?{' '}
+          <a href="/login" style={styles.link}>
+            Log In
+          </a>
         </p>
       </div>
     </div>
@@ -101,7 +106,7 @@ const styles = {
     alignItems: 'center',
     minHeight: '100vh',
     width: '100%',
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#f5f5f5',
   },
   card: {
     backgroundColor: 'white',
@@ -110,16 +115,16 @@ const styles = {
     boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
     width: '100%',
     maxWidth: '400px',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   title: {
     marginBottom: '0.5rem',
-    color: '#333'
+    color: '#333',
   },
   subtitle: {
     marginBottom: '1.5rem',
     color: '#666',
-    fontSize: '0.9rem'
+    fontSize: '0.9rem',
   },
   input: {
     width: '100%',
@@ -128,7 +133,7 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '4px',
     fontSize: '1rem',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
   },
   button: {
     width: '100%',
@@ -139,23 +144,23 @@ const styles = {
     borderRadius: '4px',
     fontSize: '1rem',
     cursor: 'pointer',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
   },
   buttonDisabled: {
     backgroundColor: '#ccc',
-    cursor: 'not-allowed'
+    cursor: 'not-allowed',
   },
   error: {
     color: '#dc3545',
     marginBottom: '1rem',
-    fontSize: '0.9rem'
+    fontSize: '0.9rem',
   },
   text: {
     margin: 0,
-    color: '#666'
+    color: '#666',
   },
   link: {
     color: '#007bff',
-    textDecoration: 'none'
-  }
+    textDecoration: 'none',
+  },
 };
