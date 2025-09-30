@@ -71,7 +71,11 @@ export default function Step1UploadPage() {
 
         if (submissionError) {
           console.error('Error fetching submission:', submissionError.message);
-        } else if (submissionData && submissionData.length > 0 && submissionData[0].teacher_comments) {
+        } else if (
+          submissionData &&
+          submissionData.length > 0 &&
+          submissionData[0].teacher_comments
+        ) {
           setTeacherComments(submissionData[0].teacher_comments);
         }
       } catch (err) {
@@ -110,11 +114,12 @@ export default function Step1UploadPage() {
       if (!file) throw new Error('Please select a file.');
 
       const fileExt = file.name.split('.').pop().toLowerCase();
-      const filePath = `submissions/${projectId}/${userId}_${Date.now()}.${fileExt}`;
+      // Key must start with userId to satisfy storage.objects RLS (name LIKE auth.uid()::text || '/%')
+      const filePath = `${userId}/projects/${projectId}/step1/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('student-submissions')
-        .upload(filePath, file);
+        .upload(filePath, file, { upsert: true, contentType: file.type });
 
       if (uploadError) throw uploadError;
 
@@ -157,17 +162,19 @@ export default function Step1UploadPage() {
   return (
     <div style={styles.page}>
       <div style={styles.content}>
-        <button 
-          onClick={() => navigate('/student/dashboard')} 
-          style={styles.backButton}
-        >
+        <button onClick={() => navigate('/student/dashboard')} style={styles.backButton}>
           ← Back to Dashboard
         </button>
-        
-        <h2 style={styles.title}>Project Cycle Phases<br />Step 1: Initial Research Upload</h2>
+
+        <h2 style={styles.title}>
+          Project Cycle Phases
+          <br />
+          Step 1: Initial Research Upload
+        </h2>
         <p style={styles.paragraph}>
-          Congrats on completing your initial research! Please make sure that your file is in PDF format and upload the
-          document by clicking the button. After your teacher approves this step, you will be able to access Step 2.
+          Congrats on completing your initial research! Please make sure that your file is in PDF
+          format and upload the document by clicking the button. After your teacher approves this
+          step, you will be able to access Step 2.
         </p>
 
         {status !== 'Submitted' && status !== 'Approved' ? (
@@ -184,7 +191,7 @@ export default function Step1UploadPage() {
               disabled={uploading || !file}
               style={{
                 ...styles.uploadButton,
-                ...(uploading || !file ? styles.uploadButtonDisabled : {})
+                ...(uploading || !file ? styles.uploadButtonDisabled : {}),
               }}
             >
               {uploading ? 'Uploading...' : 'Upload Initial Research Bibliography Here'}
@@ -193,7 +200,8 @@ export default function Step1UploadPage() {
         ) : (
           <div style={styles.submittedMessage}>
             <p style={styles.submittedText}>
-              ✅ Your submission has been uploaded and is {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
+              ✅ Your submission has been uploaded and is{' '}
+              {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
             </p>
           </div>
         )}
@@ -202,10 +210,14 @@ export default function Step1UploadPage() {
         {errorMsg && <p style={styles.errorMessage}>{errorMsg}</p>}
 
         <div style={styles.statusSection}>
-          <p style={styles.sectionLabel}><strong>Step 1: Initial Research Status</strong></p>
+          <p style={styles.sectionLabel}>
+            <strong>Step 1: Initial Research Status</strong>
+          </p>
           <input type="text" style={styles.input} disabled value={status} />
 
-          <p style={styles.sectionLabel}><strong>Teacher Comments:</strong></p>
+          <p style={styles.sectionLabel}>
+            <strong>Teacher Comments:</strong>
+          </p>
           <textarea style={styles.textarea} disabled value={teacherComments} />
         </div>
       </div>
