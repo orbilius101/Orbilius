@@ -1,36 +1,46 @@
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../supabaseClient';
 
 export default function Step2Overview() {
   const navigate = useNavigate();
 
+  const { data: designBriefUrl } = supabase.storage
+    .from('resources')
+    .getPublicUrl('step2/OPM Project Design Brief.pdf');
+
+  const { data: designBriefInstructionsUrl } = supabase.storage
+    .from('resources')
+    .getPublicUrl('step2/OPM Project Design Brief.pdf');
+
   return (
     <div style={styles.container}>
       <div style={styles.content}>
-        <button 
-          onClick={() => navigate('/student/dashboard')} 
-          style={styles.backButton}
-        >
+        <button onClick={() => navigate('/student/dashboard')} style={styles.backButton}>
           ← Back to Dashboard
         </button>
-        
-        <h2 style={styles.title}>Project Cycle Phases<br />Step 2: Design Brief</h2>
+
+        <h2 style={styles.title}>
+          Project Cycle Phases
+          <br />
+          Step 2: Design Brief
+        </h2>
         <p style={styles.paragraph}>
-          You've done your initial research and are now ready to commit to a project! 
-          This is where the Design Brief comes in! A design brief allows you to 
-          sketch out a shared understanding of the project. <strong>Don't worry about 
-          getting this perfect.</strong> Give us what you've got. It's natural for projects 
-          to change course as the work evolves. If that happens, talk to your teacher 
-          and simply readjust the design brief and your planning documents!
+          You've done your initial research and are now ready to commit to a project! This is where
+          the Design Brief comes in! A design brief allows you to sketch out a shared understanding
+          of the project. <strong>Don't worry about getting this perfect.</strong> Give us what
+          you've got. It's natural for projects to change course as the work evolves. If that
+          happens, talk to your teacher and simply readjust the design brief and your planning
+          documents!
         </p>
 
         <div style={styles.linksContainer}>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Get Started!!!</strong>
-            <button 
+            <button
               style={styles.button}
               onClick={() => {
                 const link = document.createElement('a');
-                link.href = 'https://oihpotdgrykjallvpwpu.supabase.co/storage/v1/object/public/resources/step2/OPM%20Project%20Design%20Brief.pdf';
+                link.href = designBriefUrl.publicUrl;
                 link.download = 'OPM Project Design Brief.pdf';
                 document.body.appendChild(link);
                 link.click();
@@ -42,11 +52,11 @@ export default function Step2Overview() {
           </div>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Help!!!</strong>
-            <button 
+            <button
               style={styles.button}
               onClick={() => {
                 const link = document.createElement('a');
-                link.href = 'https://oihpotdgrykjallvpwpu.supabase.co/storage/v1/object/public/resources/step2/Design%20Brief%20Instructions.pdf';
+                link.href = designBriefInstructionsUrl.publicUrl;
                 link.download = 'Design Brief Instructions.pdf';
                 document.body.appendChild(link);
                 link.click();
