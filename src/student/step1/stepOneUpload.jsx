@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { generateSubmissionFilePath, getFileExtension } from '../../utils/filePathHelpers';
 
 export default function Step1UploadPage() {
   const navigate = useNavigate();
@@ -113,9 +114,8 @@ export default function Step1UploadPage() {
 
       if (!file) throw new Error('Please select a file.');
 
-      const fileExt = file.name.split('.').pop().toLowerCase();
-      // Key must start with userId to satisfy storage.objects RLS (name LIKE auth.uid()::text || '/%')
-      const filePath = `${userId}/projects/${projectId}/step1/${Date.now()}.${fileExt}`;
+      const fileExt = getFileExtension(file.name);
+      const filePath = generateSubmissionFilePath(userId, projectId, 1, fileExt);
 
       const { error: uploadError } = await supabase.storage
         .from('student-submissions')
