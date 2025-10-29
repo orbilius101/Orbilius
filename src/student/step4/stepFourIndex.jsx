@@ -1,24 +1,36 @@
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../supabaseClient';
 
 export default function Step4Overview() {
   const navigate = useNavigate();
 
+  const { data: annotatedBibliographyUrl } = supabase.storage
+    .from('resources')
+    .getPublicUrl('step4/OPM Step 4 Annotated Bibliography.pdf');
+
   return (
     <div style={styles.container}>
       <div style={styles.content}>
-        <button 
-          onClick={() => navigate('/student/dashboard')} 
-          style={styles.backButton}
-        >
+        <button onClick={() => navigate('/student/dashboard')} style={styles.backButton}>
           ← Back to Dashboard
         </button>
-        
-        <h2 style={styles.title}>Project Cycle Phases<br />Step 4: Implementation!!!</h2>
+
+        <h2 style={styles.title}>
+          Project Cycle Phases
+          <br />
+          Step 4: Implementation!!!
+        </h2>
         <p style={styles.paragraph}>
-          It's time to get to work! As you move into this phase of the project, you are inevitably going to hit deeper into the research of your project. So we're going to ask you to maintain an annotated bibliography to capture your learning. See the help button below for detail.
+          It's time to get to work! As you move into this phase of the project, you are inevitably
+          going to hit deeper into the research of your project. So we're going to ask you to
+          maintain an annotated bibliography to capture your learning. See the help button below for
+          detail.
         </p>
         <p style={styles.paragraph}>
-          During this step, you'll also want to make sure you are documenting the work you're doing. Be sure to take good photos and video of the work in progress. These documents will be so important for the final video that you are going to create in the last step of the project.
+          During this step, you'll also want to make sure you are documenting the work you're doing.
+          Be sure to take good photos and video of the work in progress. These documents will be so
+          important for the final video that you are going to create in the last step of the
+          project.
         </p>
         <p style={styles.paragraph}>
           Create a folder and store your documentation. Trust us, you won't regret it.
@@ -27,7 +39,19 @@ export default function Step4Overview() {
         <div style={styles.linksContainer}>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Get Started!!!</strong>
-            <button style={styles.button}>Download Step 4: Implementation - Annotated Bibliography</button>
+            <button
+              style={styles.button}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = annotatedBibliographyUrl.publicUrl;
+                link.download = 'OPM Step 4 Annotated Bibliography.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              Download Step 4: Implementation - Annotated Bibliography
+            </button>
           </div>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Help!!!</strong>

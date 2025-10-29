@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { generateSubmissionFilePath, getFileExtension } from '../../utils/filePathHelpers';
 
 export default function Step5UploadPage() {
   const navigate = useNavigate();
@@ -107,8 +108,8 @@ export default function Step5UploadPage() {
       if (!file) throw new Error('Please select a file.');
       if (!youtubeLink.trim()) throw new Error('Please provide a YouTube link.');
 
-      const fileExt = file.name.split('.').pop().toLowerCase();
-      const filePath = `submissions/${projectId}/${userId}_${Date.now()}.${fileExt}`;
+      const fileExt = getFileExtension(file.name);
+      const filePath = generateSubmissionFilePath(userId, projectId, 5, fileExt);
 
       const { error: uploadError } = await supabase.storage
         .from('student-submissions')
@@ -137,7 +138,6 @@ export default function Step5UploadPage() {
         .update({
           current_step_status: 'Submitted',
           step5_status: 'Submitted',
-
         })
         .eq('project_id', projectId);
 
@@ -157,16 +157,19 @@ export default function Step5UploadPage() {
   return (
     <div style={styles.page}>
       <div style={styles.content}>
-        <button 
-          onClick={() => navigate('/student/dashboard')} 
-          style={styles.backButton}
-        >
+        <button onClick={() => navigate('/student/dashboard')} style={styles.backButton}>
           ← Back to Dashboard
         </button>
-        
-        <h2 style={styles.title}>Project Cycle Phases<br />Step 5: Closeout the Project!</h2>
+
+        <h2 style={styles.title}>
+          Project Cycle Phases
+          <br />
+          Step 5: Closeout the Project!
+        </h2>
         <p style={styles.paragraph}>
-          This is it. You're almost done! Please make sure that your file is in PDF format and upload the document by clicking the button. After your teacher approves this step, you will be able to access Step 5.
+          This is it. You're almost done! Please make sure that your file is in PDF format and
+          upload the document by clicking the button. After your teacher approves this step, you
+          will be able to access Step 5.
         </p>
 
         {status !== 'Submitted' && status !== 'Approved' ? (
@@ -179,7 +182,9 @@ export default function Step5UploadPage() {
             />
 
             <div style={styles.youtubeLinkSection}>
-              <p style={styles.sectionLabel}><strong>Insert Project YouTube Video Link:</strong></p>
+              <p style={styles.sectionLabel}>
+                <strong>Insert Project YouTube Video Link:</strong>
+              </p>
               <input
                 type="url"
                 value={youtubeLink}
@@ -194,7 +199,7 @@ export default function Step5UploadPage() {
               disabled={uploading || !file || !youtubeLink.trim()}
               style={{
                 ...styles.submitButton,
-                ...(uploading || !file || !youtubeLink.trim() ? styles.submitButtonDisabled : {})
+                ...(uploading || !file || !youtubeLink.trim() ? styles.submitButtonDisabled : {}),
               }}
             >
               {uploading ? 'Uploading...' : 'Submit!!!'}
@@ -203,11 +208,15 @@ export default function Step5UploadPage() {
         ) : (
           <div style={styles.submittedMessage}>
             <p style={styles.submittedText}>
-              ✅ Your submission has been uploaded and is {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
+              ✅ Your submission has been uploaded and is{' '}
+              {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
             </p>
             {youtubeLink && (
               <p style={styles.submittedText}>
-                <strong>YouTube Link:</strong> <a href={youtubeLink} target="_blank" rel="noopener noreferrer" style={styles.link}>{youtubeLink}</a>
+                <strong>YouTube Link:</strong>{' '}
+                <a href={youtubeLink} target="_blank" rel="noopener noreferrer" style={styles.link}>
+                  {youtubeLink}
+                </a>
               </p>
             )}
           </div>
@@ -217,10 +226,14 @@ export default function Step5UploadPage() {
         {errorMsg && <p style={styles.errorMessage}>{errorMsg}</p>}
 
         <div style={styles.statusSection}>
-          <p style={styles.sectionLabel}><strong>Step 5: Closeout Status</strong></p>
+          <p style={styles.sectionLabel}>
+            <strong>Step 5: Closeout Status</strong>
+          </p>
           <input type="text" style={styles.input} disabled value={status} />
 
-          <p style={styles.sectionLabel}><strong>Teacher Comments:</strong></p>
+          <p style={styles.sectionLabel}>
+            <strong>Teacher Comments:</strong>
+          </p>
           <textarea style={styles.textarea} disabled value={teacherComments} />
         </div>
       </div>

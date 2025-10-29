@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { generateSubmissionFilePath, getFileExtension } from '../../utils/filePathHelpers';
 
 export default function Step2UploadPage() {
   const navigate = useNavigate();
@@ -96,8 +97,8 @@ export default function Step2UploadPage() {
 
       if (!file) throw new Error('Please select a file.');
 
-      const fileExt = file.name.split('.').pop().toLowerCase();
-      const filePath = `submissions/${projectId}/${userId}_${Date.now()}.${fileExt}`;
+      const fileExt = getFileExtension(file.name);
+      const filePath = generateSubmissionFilePath(userId, projectId, 2, fileExt);
 
       const { error: uploadError } = await supabase.storage
         .from('student-submissions')
@@ -144,17 +145,19 @@ export default function Step2UploadPage() {
   return (
     <div style={styles.page}>
       <div style={styles.content}>
-        <button 
-          onClick={() => navigate('/student/dashboard')} 
-          style={styles.backButton}
-        >
+        <button onClick={() => navigate('/student/dashboard')} style={styles.backButton}>
           ← Back to Dashboard
         </button>
-        
-        <h2 style={styles.title}>Project Cycle Phases<br />Step 2: Design Brief</h2>
+
+        <h2 style={styles.title}>
+          Project Cycle Phases
+          <br />
+          Step 2: Design Brief
+        </h2>
         <p style={styles.paragraph}>
-          Congrats on completing your design brief! Please make sure that your file is in PDF format and upload the
-          document by clicking the button. After your teacher approves this step, you will be able to access Step 3.
+          Congrats on completing your design brief! Please make sure that your file is in PDF format
+          and upload the document by clicking the button. After your teacher approves this step, you
+          will be able to access Step 3.
         </p>
 
         {status !== 'Submitted' && status !== 'Approved' ? (
@@ -171,7 +174,7 @@ export default function Step2UploadPage() {
               disabled={uploading || !file}
               style={{
                 ...styles.uploadButton,
-                ...(uploading || !file ? styles.uploadButtonDisabled : {})
+                ...(uploading || !file ? styles.uploadButtonDisabled : {}),
               }}
             >
               {uploading ? 'Uploading...' : 'Upload Design Brief Here'}
@@ -180,7 +183,8 @@ export default function Step2UploadPage() {
         ) : (
           <div style={styles.submittedMessage}>
             <p style={styles.submittedText}>
-              ✅ Your submission has been uploaded and is {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
+              ✅ Your submission has been uploaded and is{' '}
+              {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
             </p>
           </div>
         )}
@@ -189,10 +193,14 @@ export default function Step2UploadPage() {
         {errorMsg && <p style={styles.errorMessage}>{errorMsg}</p>}
 
         <div style={styles.statusSection}>
-          <p style={styles.sectionLabel}><strong>Step 2: Design Brief Status</strong></p>
+          <p style={styles.sectionLabel}>
+            <strong>Step 2: Design Brief Status</strong>
+          </p>
           <input type="text" style={styles.input} disabled value={status} />
 
-          <p style={styles.sectionLabel}><strong>Teacher Comments:</strong></p>
+          <p style={styles.sectionLabel}>
+            <strong>Teacher Comments:</strong>
+          </p>
           <textarea style={styles.textarea} disabled value={teacherComments} />
         </div>
       </div>

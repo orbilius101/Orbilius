@@ -1,31 +1,40 @@
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../supabaseClient';
 
 export default function Step3Overview() {
   const navigate = useNavigate();
 
+  const { data: planningDocsUrl } = supabase.storage
+    .from('resources')
+    .getPublicUrl('step3/OPM Step 3 Work Breakdown Structure.pdf');
+
   return (
     <div style={styles.container}>
       <div style={styles.content}>
-        <button 
-          onClick={() => navigate('/student/dashboard')} 
-          style={styles.backButton}
-        >
+        <button onClick={() => navigate('/student/dashboard')} style={styles.backButton}>
           ← Back to Dashboard
         </button>
-        
-        <h2 style={styles.title}>Project Cycle Phases<br />Step 3: Planning Documents</h2>
+
+        <h2 style={styles.title}>
+          Project Cycle Phases
+          <br />
+          Step 3: Planning Documents
+        </h2>
         <p style={styles.paragraph}>
-          You have your project idea, now it's time to plan! There are two steps in planning: Breaking down the work, and setting a timeline. This is always tough to do first-time around, but careful work here will help you hit your goals in a timely manner. Again, this will not be perfect. Give us the best work and thinking you can.
+          You have your project idea, now it's time to plan! There are two steps in planning:
+          Breaking down the work, and setting a timeline. This is always tough to do first-time
+          around, but careful work here will help you hit your goals in a timely manner. Again, this
+          will not be perfect. Give us the best work and thinking you can.
         </p>
 
         <div style={styles.linksContainer}>
           <div style={styles.linkBox}>
             <strong style={styles.strong}>Get Started!!!</strong>
-            <button 
+            <button
               style={styles.button}
               onClick={() => {
                 const link = document.createElement('a');
-                link.href = 'https://oihpotdgrykjallvpwpu.supabase.co/storage/v1/object/public/resources/step3/OPM%20Step%203%20Work%20Breakdown%20Structure.pdf';
+                link.href = planningDocsUrl.publicUrl;
                 link.download = 'OPM Step 3 Work Breakdown Structure.pdf';
                 document.body.appendChild(link);
                 link.click();

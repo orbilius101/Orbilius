@@ -24,6 +24,7 @@ export default function CreateProject() {
 
       setUserData({
         id: user.id,
+        email: user.email,
         first_name: user.user_metadata.first_name,
         last_name: user.user_metadata.last_name,
         teacher_id: user.user_metadata.teacher_id,
@@ -56,6 +57,7 @@ export default function CreateProject() {
     const { error } = await supabase.from('projects').insert([
       {
         student_id: userData.id,
+        email: userData.email,
         //Check if teacher_id actually works had an error before where
         //the student ID was assigned to teacher_id
         teacher_id: userData.teacher_id || null,
