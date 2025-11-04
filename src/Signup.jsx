@@ -51,11 +51,15 @@ export default function Signup() {
       }
     }
 
+    // Determine redirect URL based on environment
+    const redirectTo = window.location.origin;
+
     // Sign up with Supabase Auth, storing profile fields in user_metadata
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: redirectTo,
         data: {
           role,
           teacher_id: role === 'student' && teacherId ? teacherId : null,

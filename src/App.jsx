@@ -3,6 +3,7 @@ import LandingPage from './LandingPage';
 import Login from './Login';
 import Signup from './Signup';
 import ResetPassword from './ResetPassword';
+import ConfirmEmail from './ConfirmEmail';
 import CreateProject from './createProject';
 import StudentDashboard from './student/dashboard';
 import TeacherDashboard from './teacher/dashboard';
@@ -28,6 +29,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/confirm-email" element={<ConfirmEmail />} />
         <Route path="/createProject" element={<CreateProject />} />
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
