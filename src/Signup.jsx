@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 
 export default function Signup() {
@@ -190,9 +190,9 @@ export default function Signup() {
         </button>
         <p style={styles.text}>
           Already have an account?{' '}
-          <a href="/login" style={styles.link}>
+          <Link to="/login" style={styles.link}>
             Log In
-          </a>
+          </Link>
         </p>
       </div>
     </div>
