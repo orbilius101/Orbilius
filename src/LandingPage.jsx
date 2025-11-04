@@ -1,10 +1,71 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from './supabaseClient';
 import orbiliusLogo from './assets/merle-386x386.svg';
 
 export default function LandingPage() {
   const [showAbout, setShowAbout] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleEmailConfirmation = async () => {
+      // Check if this is an email confirmation callback
+      const token = searchParams.get('token');
+      const type = searchParams.get('type');
+
+      if (token && type === 'signup') {
+        try {
+          // Handle the email confirmation
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'signup',
+          });
+
+          if (error) {
+            console.error('Email confirmation error:', error);
+            alert('Email confirmation failed. Please try again or contact support.');
+            return;
+          }
+
+          if (data.user) {
+            // User successfully confirmed, redirect to appropriate dashboard
+            const role = data.user.user_metadata?.role;
+
+            if (role === 'teacher') {
+              navigate('/teacher/dashboard');
+            } else if (role === 'student') {
+              navigate('/student/dashboard');
+            } else {
+              navigate('/login');
+            }
+            return;
+          }
+        } catch (err) {
+          console.error('Confirmation error:', err);
+          alert('An error occurred during email confirmation.');
+        }
+      }
+
+      // If not a confirmation, check current session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        // User is already authenticated
+        const role = session.user.user_metadata?.role;
+
+        if (role === 'teacher') {
+          navigate('/teacher/dashboard');
+        } else if (role === 'student') {
+          navigate('/student/dashboard');
+        }
+      }
+    };
+
+    handleEmailConfirmation();
+  }, [searchParams, navigate]);
 
   return (
     <div style={styles.container}>

@@ -14,45 +14,56 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-      if (error || !session?.user) {
-        navigate('/login');
-        return;
-      }
+        if (error || !session?.user) {
+          navigate('/login');
+          return;
+        }
 
-      const user = session.user;
-      setUser(user);
+        const user = session.user;
+        setUser(user);
 
-      // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .single();
+        // Get user profile from metadata instead of separate table
+        const profile = {
+          first_name: user.user_metadata?.first_name || 'Unknown',
+          last_name: user.user_metadata?.last_name || 'User',
+        };
 
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError.message);
-        return;
-      }
+        setUserProfile(profile);
+        console.log('User loaded:', user.email, profile); // Debug log
 
-      setUserProfile(profile);
+        // Fetch project for the student
+        const { data: projectData, error: projectError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('student_id', user.id)
+          .single();
 
-      // Fetch project for the student
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('student_id', user.id)
-        .single();
+        if (projectError) {
+          console.error('Error fetching project:', projectError.message);
+        } else {
+          setProject(projectData);
+          setEditedTitle(projectData?.project_title || '');
+        }
+      } catch (err) {
+        console.error('Error in fetchUserAndProfile:', err);
+        // Still set basic user data even if there's an error
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (projectError) {
-        console.error('Error fetching project:', projectError.message);
-      } else {
-        setProject(projectData);
-        setEditedTitle(projectData?.project_title || '');
+        if (session?.user) {
+          setUser(session.user);
+          setUserProfile({
+            first_name: session.user.user_metadata?.first_name || 'Unknown',
+            last_name: session.user.user_metadata?.last_name || 'User',
+          });
+        }
       }
     };
 
@@ -167,7 +178,7 @@ export default function StudentDashboard() {
     // Determine if this step is accessible based on previous step approval
     const isAccessible = () => {
       if (stepNum === 1) return true; // Step 1 is always accessible
-      
+
       // For other steps, check if previous step is approved
       const previousStepStatus = project?.[`step${stepNum - 1}_status`];
       return previousStepStatus === 'Approved';
@@ -176,10 +187,10 @@ export default function StudentDashboard() {
     // Determine the link destination based on status
     const getStepLink = () => {
       if (!isAccessible()) return null;
-      
+
       const stepNames = ['', 'One', 'Two', 'Three', 'Four', 'Five'];
       const stepName = stepNames[stepNum];
-      
+
       if (status === 'In Progress' || status === 'Not Started') {
         return `/student/step${stepNum}/step${stepName}Index`;
       } else if (status === 'Submitted' || status === 'Approved') {
@@ -221,10 +232,7 @@ export default function StudentDashboard() {
               <>
                 <span>{due}</span>
                 {!isApproved && (
-                  <button 
-                    onClick={() => handleDueDateEdit(stepNum)}
-                    style={dueDateEditButtonStyle}
-                  >
+                  <button onClick={() => handleDueDateEdit(stepNum)} style={dueDateEditButtonStyle}>
                     ✎
                   </button>
                 )}
@@ -239,16 +247,10 @@ export default function StudentDashboard() {
                   autoFocus
                 />
                 <div style={dueDateButtonGroupStyle}>
-                  <button 
-                    onClick={() => handleDueDateSave(stepNum)}
-                    style={dueDateSaveButtonStyle}
-                  >
+                  <button onClick={() => handleDueDateSave(stepNum)} style={dueDateSaveButtonStyle}>
                     ✓
                   </button>
-                  <button 
-                    onClick={handleDueDateCancel}
-                    style={dueDateCancelButtonStyle}
-                  >
+                  <button onClick={handleDueDateCancel} style={dueDateCancelButtonStyle}>
                     ✕
                   </button>
                 </div>
@@ -272,19 +274,18 @@ export default function StudentDashboard() {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {user && userProfile ? (
           <>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              marginBottom: '2rem' 
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem',
+              }}
+            >
               <h1 style={{ fontSize: '42px', margin: 0, textAlign: 'left' }}>
                 {userProfile.first_name} {userProfile.last_name}'s Student Dashboard
               </h1>
-              <button 
-                onClick={handleSignOut}
-                style={signOutButtonStyle}
-              >
+              <button onClick={handleSignOut} style={signOutButtonStyle}>
                 Sign Out
               </button>
             </div>
@@ -298,10 +299,7 @@ export default function StudentDashboard() {
                       <h2 style={projectTitleStyle}>
                         {project.project_title || 'Untitled Project'}
                       </h2>
-                      <button 
-                        onClick={handleTitleEdit}
-                        style={editButtonStyle}
-                      >
+                      <button onClick={handleTitleEdit} style={editButtonStyle}>
                         ✎ Edit
                       </button>
                     </>
@@ -323,16 +321,10 @@ export default function StudentDashboard() {
                         }}
                       />
                       <div style={buttonGroupStyle}>
-                        <button 
-                          onClick={handleTitleSave}
-                          style={saveButtonStyle}
-                        >
+                        <button onClick={handleTitleSave} style={saveButtonStyle}>
                           Save
                         </button>
-                        <button 
-                          onClick={handleTitleCancel}
-                          style={cancelButtonStyle}
-                        >
+                        <button onClick={handleTitleCancel} style={cancelButtonStyle}>
                           Cancel
                         </button>
                       </div>
@@ -346,9 +338,25 @@ export default function StudentDashboard() {
               <table style={{ width: '100%', fontSize: '20px', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    <th style={{ textDecoration: 'underline', textAlign: 'left', paddingBottom: '1rem' }}>Project Cycle Phases</th>
+                    <th
+                      style={{
+                        textDecoration: 'underline',
+                        textAlign: 'left',
+                        paddingBottom: '1rem',
+                      }}
+                    >
+                      Project Cycle Phases
+                    </th>
                     <th></th>
-                    <th style={{ textDecoration: 'underline', textAlign: 'left', paddingBottom: '1rem' }}>Status</th>
+                    <th
+                      style={{
+                        textDecoration: 'underline',
+                        textAlign: 'left',
+                        paddingBottom: '1rem',
+                      }}
+                    >
+                      Status
+                    </th>
                     <th style={{ textAlign: 'left', paddingBottom: '1rem' }}>Date</th>
                   </tr>
                 </thead>
@@ -364,7 +372,15 @@ export default function StudentDashboard() {
               <p style={{ fontSize: '18px' }}>No project found.</p>
             )}
 
-            <div style={{ marginTop: '4rem', display: 'flex', justifyContent: 'space-evenly', gap: '1rem', flexWrap: 'wrap' }}>
+            <div
+              style={{
+                marginTop: '4rem',
+                display: 'flex',
+                justifyContent: 'space-evenly',
+                gap: '1rem',
+                flexWrap: 'wrap',
+              }}
+            >
               <button style={buttonStyle}>Bi-weekly Reflections</button>
               <button style={buttonStyle}>One-on-one Meeting Log</button>
               <button style={buttonStyle}>Help Docs & Videos</button>
