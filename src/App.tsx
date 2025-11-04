@@ -8,6 +8,7 @@ import CreateProject from './components/CreateProject/CreateProject';
 import StudentDashboard from './student/components/Dashboard/Dashboard';
 import TeacherDashboard from './teacher/components/Dashboard/Dashboard';
 import AdminDashboard from './admin/dashboard';
+import SubmitStep from './student/components/SubmitStep/SubmitStep';
 import StepOneIndex from './student/components/Step1Index/Step1Index';
 import StepOneUpload from './student/components/Step1Upload/Step1Upload';
 import StepTwoIndex from './student/components/Step2Index/Step2Index';
@@ -19,10 +20,12 @@ import StepFourUpload from './student/components/Step4Upload/Step4Upload';
 import StepFiveIndex from './student/components/Step5Index/Step5Index';
 import StepFiveUpload from './student/components/Step5Upload/Step5Upload';
 import StepApproval from './teacher/components/StepApproval/StepApproval';
+import SiteHeader from './components/SiteHeader/SiteHeader';
 
 function App() {
   return (
     <BrowserRouter>
+      <SiteHeader />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
@@ -32,6 +35,7 @@ function App() {
         <Route path="/createProject" element={<CreateProject />} />
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+        <Route path="/student/submitStep" element={<SubmitStep />} />
         <Route path="/student/step1/stepOneIndex" element={<StepOneIndex />} />
         <Route path="/student/step1/stepOneUpload" element={<StepOneUpload />} />
         <Route path="/student/step2/stepTwoIndex" element={<StepTwoIndex />} />
