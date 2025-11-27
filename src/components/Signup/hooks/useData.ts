@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SignupData } from '../../../types';
 import { useAlert } from '../../../hooks/useAlert';
+import { supabase } from '../../../supabaseClient';
 
 export function useSignupData(): SignupData & { alertState: any; closeAlert: () => void } {
   const [email, setEmail] = useState('');
@@ -14,6 +15,15 @@ export function useSignupData(): SignupData & { alertState: any; closeAlert: () 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { alertState, showAlert, closeAlert } = useAlert();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const teacherIdParam = params.get('teacherId');
+    if (teacherIdParam) {
+      setTeacherId(teacherIdParam);
+      setRole('student');
+    }
+  }, []);
 
   return {
     email,

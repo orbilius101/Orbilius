@@ -15,8 +15,17 @@ import {
   AppBar,
   Toolbar,
   Chip,
+  LinearProgress,
+  Tooltip,
 } from '@mui/material';
-import { ContentCopy as CopyIcon, Logout as LogoutIcon } from '@mui/icons-material';
+import {
+  ContentCopy as CopyIcon,
+  Logout as LogoutIcon,
+  HourglassEmpty as InProgressIcon,
+  Send as SubmittedIcon,
+  CheckCircle as ApprovedIcon,
+  RadioButtonUnchecked as NotStartedIcon,
+} from '@mui/icons-material';
 import { useDashboardData } from './hooks/useData';
 import { useDashboardHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
@@ -28,6 +37,42 @@ export default function TeacherDashboard() {
   const handlers = useDashboardHandlers(data);
 
   const { user, userProfile, projects, navigate, alertState, showAlert, closeAlert } = data;
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Not Started':
+        return <NotStartedIcon fontSize="small" sx={{ color: 'text.disabled', mr: 0.5 }} />;
+      case 'In Progress':
+        return <InProgressIcon fontSize="small" sx={{ color: 'warning.main', mr: 0.5 }} />;
+      case 'Submitted':
+        return <SubmittedIcon fontSize="small" sx={{ color: 'info.main', mr: 0.5 }} />;
+      case 'Approved':
+        return <ApprovedIcon fontSize="small" sx={{ color: 'success.main', mr: 0.5 }} />;
+      default:
+        return null;
+    }
+  };
+
+  const getProgressBarSegments = (project: any) => {
+    const segments = [];
+    const stepNames = [
+      'Initial Research',
+      'Proposal',
+      'Data Collection',
+      'Analysis',
+      'Final Report',
+    ];
+    for (let i = 1; i <= 5; i++) {
+      const stepStatus = project[`step${i}_status`];
+      segments.push({
+        isApproved: stepStatus === 'Approved',
+        isInProgress: i === project.current_step && stepStatus !== 'Approved',
+        stepName: stepNames[i - 1],
+        status: stepStatus || 'Not Started',
+      });
+    }
+    return segments;
+  };
 
   // Debug logging
   console.log('Teacher Dashboard - User ID:', user?.id);
@@ -45,6 +90,12 @@ export default function TeacherDashboard() {
   const handleCopyTeacherId = () => {
     navigator.clipboard.writeText(user?.id);
     showAlert('Teacher ID copied to clipboard!', 'Success');
+  };
+
+  const handleCopySignupLink = () => {
+    const signupLink = `${window.location.origin}/signup?teacherId=${user?.id}`;
+    navigator.clipboard.writeText(signupLink);
+    showAlert('Signup link copied to clipboard!', 'Success');
   };
 
   const handleLogout = async () => {
@@ -137,10 +188,42 @@ export default function TeacherDashboard() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {project.current_step}/5 - {getCurrentStepName(project.current_step)}
+                        <Box>
+                          <Typography variant="body2">
+                            {project.current_step}/5 - {getCurrentStepName(project.current_step)}
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 0.5, mt: 1 }}>
+                            {getProgressBarSegments(project).map((segment, index) => (
+                              <Tooltip
+                                key={index}
+                                title={`${segment.stepName}: ${segment.status}`}
+                                arrow
+                              >
+                                <Box
+                                  sx={{
+                                    flex: 1,
+                                    height: 6,
+                                    bgcolor: segment.isApproved
+                                      ? 'success.main'
+                                      : segment.isInProgress
+                                        ? 'warning.main'
+                                        : 'grey.300',
+                                    borderRadius: 1,
+                                    cursor: 'pointer',
+                                  }}
+                                />
+                              </Tooltip>
+                            ))}
+                          </Box>
+                        </Box>
                       </TableCell>
                       <TableCell>{getCurrentStepDueDate(project)}</TableCell>
-                      <TableCell>{getCurrentStepSubmissionStatus(project)}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {getStatusIcon(getCurrentStepSubmissionStatus(project))}
+                          {getCurrentStepSubmissionStatus(project)}
+                        </Box>
+                      </TableCell>
                       <TableCell>
                         <Button
                           variant="contained"
@@ -182,6 +265,29 @@ export default function TeacherDashboard() {
                   {user?.id}
                 </Typography>
                 <IconButton onClick={handleCopyTeacherId} color="primary">
+                  <CopyIcon />
+                </IconButton>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Signup Link:
+                </Typography>
+                <Typography
+                  component="code"
+                  sx={{
+                    bgcolor: 'grey.100',
+                    p: 1,
+                    borderRadius: 1,
+                    fontFamily: 'monospace',
+                    flex: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {window.location.origin}/signup?teacherId={user?.id}
+                </Typography>
+                <IconButton onClick={handleCopySignupLink} color="primary">
                   <CopyIcon />
                 </IconButton>
               </Box>
