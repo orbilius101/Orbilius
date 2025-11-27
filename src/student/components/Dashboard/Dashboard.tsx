@@ -32,6 +32,10 @@ import SharedModal from '../SharedModal/SharedModal';
 import { supabase } from '../../../supabaseClient';
 import orbiliusLogo from '../../../assets/merle-386x386.svg';
 import { useState } from 'react';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 export default function StudentDashboard() {
   const [modalState, setModalState] = useState<{
@@ -52,7 +56,7 @@ export default function StudentDashboard() {
     setEditedTitle,
     editingDueDate,
     _editedDueDate,
-    _setEditedDueDate,
+    setEditedDueDate,
     navigate,
     alertState,
     closeAlert,
@@ -157,6 +161,28 @@ export default function StudentDashboard() {
             InputLabelProps={{ shrink: true }}
           />
         </TableCell>
+        <TableCell>
+          {project?.[`step${stepNum}_due_date`] && status !== 'Approved' ? (
+            <Typography
+              variant="body2"
+              sx={{
+                color: dayjs(project[`step${stepNum}_due_date`]).isBefore(dayjs())
+                  ? 'error.main'
+                  : 'text.primary',
+              }}
+            >
+              {dayjs(project[`step${stepNum}_due_date`]).toNow(true)}
+            </Typography>
+          ) : status === 'Approved' ? (
+            <Typography variant="body2" color="text.disabled">
+              Completed
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.disabled">
+              N/A
+            </Typography>
+          )}
+        </TableCell>
       </TableRow>
     );
   };
@@ -260,6 +286,11 @@ export default function StudentDashboard() {
                       <TableCell>
                         <Typography variant="subtitle1" fontWeight="bold">
                           Date
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          Time Remaining
                         </Typography>
                       </TableCell>
                     </TableRow>

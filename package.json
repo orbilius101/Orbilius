@@ -17,6 +17,7 @@
     "@mui/icons-material": "^7.3.5",
     "@mui/material": "^7.3.5",
     "@supabase/supabase-js": "^2.53.0",
+    "dayjs": "^1.11.19",
     "pdfjs-dist": "^5.4.54",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
