@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Check if package.json is staged
+if git diff --cached --name-only | grep -q "package.json"; then
+  # Check if pnpm-lock.yaml is also staged
+  if ! git diff --cached --name-only | grep -q "pnpm-lock.yaml"; then
+    echo "❌ Error: package.json was modified but pnpm-lock.yaml was not updated"
+    echo "Run 'pnpm install' to update the lockfile"
+    exit 1
+  fi
+fi

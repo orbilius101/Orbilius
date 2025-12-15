@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 
 export default function Signup() {
+  console.log('Signup component mounted');
+  console.log('URL:', window.location.href);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
@@ -12,6 +14,37 @@ export default function Signup() {
   const [last_name, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    alert('useEffect is running!');
+    const params = new URLSearchParams(window.location.search);
+    const teacherIdParam = params.get('teacherId');
+    console.log('teacherId from URL:', teacherIdParam);
+    if (teacherIdParam) {
+      // Set the teacherId immediately
+      console.log('Setting teacherId to:', teacherIdParam);
+      setTeacherId(teacherIdParam);
+      setRole('student');
+
+      // Optionally validate in the background
+      const validateTeacherId = async () => {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('id', teacherIdParam)
+          .eq('role', 'teacher')
+          .single();
+
+        console.log('Validation result:', { data, error });
+        // If invalid, clear the field
+        if (error || !data) {
+          console.log('Invalid teacher ID, clearing field');
+          setTeacherId('');
+        }
+      };
+      validateTeacherId();
+    }
+  }, []);
 
   const signUp = async () => {
     setLoading(true);
@@ -122,7 +155,7 @@ export default function Signup() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h2 style={styles.title}>Sign Up</h2>
+        <h2 style={styles.title}>Sign Up - TEST VERSION</h2>
         <input
           type="text"
           placeholder="First Name"

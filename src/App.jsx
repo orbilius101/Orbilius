@@ -1,25 +1,24 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LandingPage from './LandingPage';
-import Login from './Login';
-import Signup from './Signup';
-import ResetPassword from './ResetPassword';
-import ConfirmEmail from './ConfirmEmail';
-import CreateProject from './createProject';
-import StudentDashboard from './student/dashboard';
-import TeacherDashboard from './teacher/dashboard';
+import LandingPage from './components/LandingPage/LandingPage';
+import Login from './components/Login/Login';
+import Signup from './components/Signup/Signup';
+import ResetPassword from './components/ResetPassword/ResetPassword';
+import ConfirmEmail from './components/ConfirmEmail/ConfirmEmail';
+import CreateProject from './components/CreateProject/CreateProject';
+import StudentDashboard from './student/components/Dashboard/Dashboard';
+import TeacherDashboard from './teacher/components/Dashboard/Dashboard';
 import AdminDashboard from './admin/dashboard';
-import SubmitStep from './student/submitStep';
-import StepOneIndex from './student/step1/stepOneIndex';
-import StepOneUpload from './student/step1/stepOneUpload';
-import StepTwoIndex from './student/step2/stepTwoIndex';
-import StepTwoUpload from './student/step2/stepTwoUpload';
-import StepThreeIndex from './student/step3/stepThreeIndex';
-import StepThreeUpload from './student/step3/stepThreeUpload';
-import StepFourIndex from './student/step4/stepFourIndex';
-import StepFourUpload from './student/step4/stepFourUpload';
-import StepFiveIndex from './student/step5/stepFiveIndex';
-import StepFiveUpload from './student/step5/stepFiveUpload';
-import StepApproval from './teacher/stepApproval';
+import StepOneIndex from './student/components/Step1Index/Step1Index';
+import StepOneUpload from './student/components/Step1Upload/Step1Upload';
+import StepTwoIndex from './student/components/Step2Index/Step2Index';
+import StepTwoUpload from './student/components/Step2Upload/Step2Upload';
+import StepThreeIndex from './student/components/Step3Index/Step3Index';
+import StepThreeUpload from './student/components/Step3Upload/Step3Upload';
+import StepFourIndex from './student/components/Step4Index/Step4Index';
+import StepFourUpload from './student/components/Step4Upload/Step4Upload';
+import StepFiveIndex from './student/components/Step5Index/Step5Index';
+import StepFiveUpload from './student/components/Step5Upload/Step5Upload';
+import StepApproval from './teacher/components/StepApproval/StepApproval';
 
 function App() {
   return (
@@ -33,7 +32,6 @@ function App() {
         <Route path="/createProject" element={<CreateProject />} />
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-        <Route path="/student/submitStep" element={<SubmitStep />} />
         <Route path="/student/step1/stepOneIndex" element={<StepOneIndex />} />
         <Route path="/student/step1/stepOneUpload" element={<StepOneUpload />} />
         <Route path="/student/step2/stepTwoIndex" element={<StepTwoIndex />} />
