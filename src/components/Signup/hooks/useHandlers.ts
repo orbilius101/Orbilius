@@ -1,7 +1,9 @@
 import { supabase } from '../../../supabaseClient';
 import { SignupData, SignupHandlers } from '../../../types';
 
-export function useSignupHandlers(data: SignupData): SignupHandlers {
+export function useSignupHandlers(
+  data: SignupData & { setShowEmailModal?: (show: boolean) => void }
+): SignupHandlers {
   const {
     email,
     password,
@@ -13,6 +15,7 @@ export function useSignupHandlers(data: SignupData): SignupHandlers {
     setLoading,
     navigate,
     showAlert,
+    setShowEmailModal,
   } = data;
 
   async function handleSignUp() {
@@ -108,17 +111,24 @@ export function useSignupHandlers(data: SignupData): SignupHandlers {
 
     // Guard if user is null (e.g. email confirmation required)
     if (!signUpData.user) {
-      showAlert('Sign-up successful. Check your email to confirm your account.', 'Success');
       setLoading(false);
-      navigate('/login');
+      if (setShowEmailModal) {
+        setShowEmailModal(true);
+      } else {
+        showAlert('Sign-up successful. Check your email to confirm your account.', 'Success');
+        navigate('/login');
+      }
       return;
     }
 
-    showAlert('Sign-up successful. Check your email to confirm.', 'Success');
-
-    // Optional: navigate to login page or auto-login
-    navigate('/login');
+    // Show confirmation modal or alert
     setLoading(false);
+    if (setShowEmailModal) {
+      setShowEmailModal(true);
+    } else {
+      showAlert('Sign-up successful. Check your email to confirm.', 'Success');
+      navigate('/login');
+    }
   }
 
   return {

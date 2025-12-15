@@ -18,6 +18,29 @@ export function useStepApprovalHandlers(data: any) {
 
   const onDocumentLoadError = (error) => {
     console.error('PDF load error:', error);
+
+    // Parse error message to show user-friendly information
+    let errorMessage = 'Unable to load the PDF file.';
+    let errorTitle = 'File Not Found';
+
+    if (error && typeof error === 'object') {
+      // Check for 404 or not found errors
+      if (
+        error.statusCode === '404' ||
+        error.error === 'not_found' ||
+        error.message === 'Object not found'
+      ) {
+        errorMessage = 'The submitted file could not be found. It may have been deleted or moved.';
+        errorTitle = 'File Not Found';
+      } else if (error.message) {
+        errorMessage = `Error loading PDF: ${error.message}`;
+        errorTitle = 'Error Loading File';
+      }
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+
+    showAlert(errorMessage, errorTitle);
   };
 
   const handleSaveComment = async () => {

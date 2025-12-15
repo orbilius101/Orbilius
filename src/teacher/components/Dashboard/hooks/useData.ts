@@ -32,6 +32,10 @@ export function useDashboardData() {
         .eq('id', user.id)
         .single();
 
+      console.log('Teacher Dashboard - Fetching profile for user ID:', user.id);
+      console.log('Teacher Dashboard - Profile data:', profile);
+      console.log('Teacher Dashboard - Profile error:', profileError);
+
       if (profileError) {
         console.error('Error fetching user profile:', profileError.message);
       } else {

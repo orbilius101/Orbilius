@@ -8,7 +8,15 @@ export function useLoginHandlers(data: LoginData): LoginHandlers {
     setLoading(true);
     const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      showAlert(error.message, 'Login Error');
+      // Custom handling for unconfirmed email
+      if (error.message && error.message.toLowerCase().includes('email not confirmed')) {
+        showAlert(
+          "Your email address has to be confirmed before using Orbilius. Check your inbox for a 'Confirm Your Signup' email from Supabase Auth and click 'confirm your mail' before logging in to Orbilius",
+          'Email Not Confirmed'
+        );
+      } else {
+        showAlert(error.message, 'Login Error');
+      }
       setLoading(false);
       return;
     }

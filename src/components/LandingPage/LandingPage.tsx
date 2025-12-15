@@ -14,12 +14,13 @@ export default function LandingPage() {
       sx={{
         minHeight: '100vh',
         backgroundColor: 'background.default',
-        py: 4,
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <Container maxWidth="lg">
-        {/* Navigation Header */}
-        <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mb: 4 }}>
+      {/* Navigation Header - Fixed at top */}
+      <Box sx={{ py: 4, px: 4 }}>
+        <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button
             onClick={() => setShowAbout(!showAbout)}
             variant={showAbout ? 'contained' : 'outlined'}
@@ -33,13 +34,24 @@ export default function LandingPage() {
             Login
           </Button>
         </Stack>
+      </Box>
 
-        {/* Main Content */}
+      {/* Main Content - Centered */}
+      <Container
+        maxWidth="lg"
+        sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           spacing={4}
           alignItems="center"
-          justifyContent="space-between"
+          justifyContent="center"
+          sx={{ width: '100%' }}
         >
           {/* Left Section - Title or About Content */}
           <Box sx={{ flex: 1, width: '100%' }}>

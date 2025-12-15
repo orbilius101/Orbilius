@@ -2,6 +2,34 @@
 
 A comprehensive React-based web application designed to streamline the management of student projects through a structured 5-step workflow with teacher oversight, admin certification, and approval processes. Built with modern web technologies and powered by Supabase for real-time data management and secure file storage.
 
+---
+
+## 🚀 Quick Start - New Supabase Setup
+
+**Setting up a new Supabase project?** We've automated the process!
+
+### Fast Track (10 minutes)
+
+1. **Read**: [QUICK_SETUP.md](./QUICK_SETUP.md) - Streamlined 5-step guide
+2. **Run**: `npm run verify:setup` - Check your setup
+3. **Start**: `npm run dev` - Launch the app
+
+### Choose Your Guide
+
+- 📖 **[QUICK_SETUP.md](./QUICK_SETUP.md)** - Fast 5-step setup (recommended)
+- 📚 **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** - Detailed walkthrough with explanations
+- ☑️ **[SETUP_CHECKLIST.md](./SETUP_CHECKLIST.md)** - Interactive checklist
+- 📋 **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Overview of all setup resources
+
+### Automated Setup Tools
+
+```bash
+npm run setup          # Interactive setup wizard
+npm run verify:setup   # Verify configuration
+```
+
+---
+
 ## Project Overview
 
 Orbilius PM is an educational project management platform that facilitates collaboration between students, teachers, and administrators in a structured learning environment. The system guides students through a comprehensive project development process while providing teachers with tools to monitor progress, provide feedback, and approve work at each stage. Administrators can manage system settings and certify completed projects for final submission to the Orbilius archive.
@@ -9,6 +37,7 @@ Orbilius PM is an educational project management platform that facilitates colla
 ### The Problem It Solves
 
 Traditional project management in educational settings often lacks:
+
 - Clear structure and progression tracking
 - Efficient feedback mechanisms between teachers and students
 - Centralized file storage and submission systems
@@ -22,6 +51,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 ## Core Features
 
 ### Student Features
+
 - **Secure Authentication**: Sign up with teacher-provided ID for class enrollment
 - **Password Reset**: Self-service password reset functionality via email
 - **Project Creation**: Initialize new projects with automatic due date generation (1 month per step)
@@ -39,6 +69,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 - **Resource Downloads**: Access step-specific resource PDFs from Supabase Storage
 
 ### Teacher Features
+
 - **Comprehensive Dashboard**: Monitor all assigned students and projects with student details
 - **Student Information Display**: View student names and email addresses via database relationships
 - **Project Oversight**: Track student progress across all project phases with status indicators
@@ -51,6 +82,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 - **Project Certification**: Automatic submission to Orbilius archive when all 5 steps are approved
 
 ### Admin Features
+
 - **Admin Dashboard**: Comprehensive administrative control panel
 - **Admin Code Management**: View and update teacher registration codes with improved security
 - **Project Certification**: Review and certify completed student projects for final archive submission
@@ -58,6 +90,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 - **System Oversight**: Monitor all projects across the platform with certification status tracking
 
 ### Technical Features
+
 - **Real-time Updates**: Instant synchronization of project status changes
 - **Secure File Storage**: Supabase Storage with Row Level Security (RLS) and public URL access for resources
 - **Responsive Design**: Optimized for desktop and mobile devices with accessible UI elements
@@ -70,10 +103,11 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 ## User Workflow
 
 ### For Students:
+
 1. **Registration**: Sign up using teacher-provided Teacher ID with validation
 2. **Project Setup**: Create new project with automatic due date generation (1 month intervals)
 3. **Project Management**: Edit project title and due dates until steps are approved
-4. **Step-by-Step Progress**: 
+4. **Step-by-Step Progress**:
    - Navigate to current step (sequential access enforced)
    - Download step-specific resource PDFs when available
    - Review step requirements and guidelines
@@ -84,6 +118,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 5. **Completion**: Complete all 5 steps for automatic submission to Orbilius archive
 
 ### For Teachers:
+
 1. **Registration**: Sign up with admin-provided access code for verification
 2. **Dashboard Access**: View all assigned student projects with comprehensive details
 3. **Student Management**: View student names, emails, and contact information
@@ -99,8 +134,9 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 8. **Project Completion**: Automatically submit completed projects (all 5 steps approved) to Orbilius
 
 ### For Administrators:
+
 1. **System Access**: Access admin dashboard with elevated privileges
-2. **Teacher Management**: 
+2. **Teacher Management**:
    - View and update admin codes for teacher registration
    - Manage teacher access to the system
 3. **Project Oversight**:
@@ -112,6 +148,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 ## System Architecture
 
 ### Frontend (React + Vite)
+
 - **Component Structure**: Modular React components for different user interfaces
 - **Routing**: React Router for seamless navigation between pages
 - **State Management**: React hooks for local state and Supabase for global state
@@ -119,6 +156,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 - **PDF Handling**: react-pdf with PDF.js for document rendering
 
 ### Backend (Supabase)
+
 - **Database**: PostgreSQL with the following key tables:
   - `users`: User profiles and authentication data with role-based access (student/teacher/admin)
   - `projects`: Project information and step tracking with foreign key relationships
@@ -130,6 +168,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 - **Row Level Security**: Comprehensive RLS policies for multi-tenant data isolation
 
 ### Security Features
+
 - **Row Level Security (RLS)**: Database-level access controls with admin override capabilities
 - **Authenticated File Access**: Secure file storage with user-specific permissions
 - **Session Management**: Automatic login state persistence and secure logout
@@ -140,6 +179,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 ## Features
 
 ### Core Functionality
+
 - Multi-role authentication (Student/Teacher/Admin) with secure registration
 - Password reset functionality via email
 - 5-step project workflow with sequential progression
@@ -150,6 +190,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 - Project certification and archive submission
 
 ### User Experience
+
 - Professional, accessible UI/UX design
 - Responsive layout for all device types
 - Intuitive navigation with clear status indicators
@@ -157,12 +198,14 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 - Resource downloads with user-friendly file management
 
 ### Communication & Collaboration
+
 - Direct teacher-student email integration with pre-filled content
 - Teacher ID sharing system for easy student enrollment
 - Admin code management for teacher registration
 - Comment system for detailed feedback on submissions
 
 ### Security & Data Management
+
 - Row Level Security (RLS) with graceful error handling
 - Secure file storage with appropriate access controls
 - Foreign key relationships for data integrity
@@ -171,6 +214,7 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 ## Setup for Development
 
 ### Prerequisites
+
 - Node.js (version 16 or higher)
 - npm or yarn
 - Supabase account
@@ -178,32 +222,37 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone your-repo-url
    cd orbilius
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    ```
-   
+
    Then edit `.env` and add your Supabase credentials:
+
    ```
    VITE_SUPABASE_URL=your-supabase-project-url
    VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
    ```
 
 4. **Set up Supabase Database**
-   
+
    Create the following tables in your Supabase dashboard:
-   
+
    **users table:**
+
    ```sql
    CREATE TABLE users (
      id UUID PRIMARY KEY DEFAULT auth.uid(),
@@ -214,8 +263,9 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
      created_at TIMESTAMP DEFAULT NOW()
    );
    ```
-   
+
    **projects table:**
+
    ```sql
    CREATE TABLE projects (
      project_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -241,8 +291,9 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
      created_at TIMESTAMP DEFAULT NOW()
    );
    ```
-   
+
    **submissions table:**
+
    ```sql
    CREATE TABLE submissions (
      submission_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -255,60 +306,62 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
    ```
 
    **admin_code table:**
+
    ```sql
    CREATE TABLE admin_code (
      id SERIAL PRIMARY KEY,
      code TEXT NOT NULL,
      updated_at TIMESTAMP DEFAULT NOW()
    );
-   
+
    -- Insert initial admin code
    INSERT INTO admin_code (code) VALUES ('ADMIN2024');
    ```
-   
+
    **Set up Storage:**
    - Create a storage bucket named `student-submissions`
    - Create a storage bucket named `resources` for downloadable materials
    - Configure RLS policies for secure file access
-   
+
    **Upload Resource Files:**
    - Upload `step1_resource.pdf` to the `resources` bucket
    - Upload `step2_resource.pdf` to the `resources` bucket
    - Set appropriate access policies for public resource access
-   
+
    **Row Level Security Policies:**
+
    ```sql
    -- Enable RLS on all tables
    ALTER TABLE users ENABLE ROW LEVEL SECURITY;
    ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
    ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
    ALTER TABLE admin_code ENABLE ROW LEVEL SECURITY;
-   
+
    -- Users can only see their own profile
    CREATE POLICY "Users can view own profile" ON users
      FOR SELECT USING (auth.uid() = id);
-   
+
    -- Students can only see their own projects, teachers can see assigned projects
    CREATE POLICY "Project access" ON projects
      FOR SELECT USING (
        auth.uid() = student_id OR auth.uid() = teacher_id
      );
-   
+
    -- Admin users can update admin_code table
    CREATE POLICY "Admin can update admin code" ON admin_code
      FOR ALL USING (
        EXISTS (
-         SELECT 1 FROM users 
-         WHERE users.id = auth.uid() 
+         SELECT 1 FROM users
+         WHERE users.id = auth.uid()
          AND users.user_type = 'admin'
        )
      );
-   
+
    -- Similar policies for submissions table
    CREATE POLICY "Submission access" ON submissions
      FOR SELECT USING (
        project_id IN (
-         SELECT project_id FROM projects 
+         SELECT project_id FROM projects
          WHERE auth.uid() = student_id OR auth.uid() = teacher_id
        )
      );
@@ -330,6 +383,7 @@ The built files will be in the `dist` directory.
 ## Deployment
 
 This project is optimized for deployment on:
+
 - Vercel (recommended)
 - Netlify
 - Any static hosting service
@@ -337,6 +391,7 @@ This project is optimized for deployment on:
 Remember to add your environment variables in your hosting platform's settings.
 
 ## Tech Stack
+
 - React 19
 - Vite
 - Supabase
@@ -393,21 +448,25 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 ## Common Issues & Troubleshooting
 
 ### PDF Viewing Issues
+
 - **CORS Errors**: Ensure PDF.js worker is properly configured
 - **File Not Loading**: Check Supabase Storage policies and file URLs
 - **Version Mismatch**: Verify react-pdf and pdfjs-dist versions are compatible
 
 ### Database Connection Issues
+
 - **Auth Errors**: Verify Supabase URL and anon key are correct
 - **RLS Policies**: Ensure Row Level Security policies are properly configured
 - **Table Permissions**: Check that authenticated users have proper access
 
 ### File Upload Problems
+
 - **Storage Bucket**: Ensure `student-submissions` bucket exists
 - **File Size Limits**: Check Supabase storage limits (default 50MB)
 - **File Type Restrictions**: Currently optimized for PDF files
 
 ### Development Setup
+
 - **Node Version**: Ensure Node.js 16+ is installed
 - **Environment Variables**: Verify `.env` file is created and populated
 - **Dependencies**: Run `npm install` if modules are missing
@@ -415,12 +474,14 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 - **Resource Files**: Upload step resource PDFs to the `resources` bucket
 
 ### Admin Setup
+
 - **Initial Admin User**: Create admin user manually in Supabase Auth dashboard
 - **Admin Code**: Insert initial admin code in `admin_code` table
 - **RLS Policies**: Ensure admin users have proper access to admin_code table
 - **Storage Buckets**: Verify both `student-submissions` and `resources` buckets exist
 
 ### Teacher Registration
+
 - **Admin Code Required**: Teachers need current admin code to register
 - **Teacher ID**: Each teacher gets unique ID for student enrollment
 - **Student Assignment**: Students use teacher ID during registration for automatic assignment

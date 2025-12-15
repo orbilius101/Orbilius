@@ -10,15 +10,20 @@
     "verify": "npm run lint && npm run build",
     "format": "prettier --write .",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
-    "prepare": "husky"
+    "setup": "node scripts/setup-supabase.js",
+    "setup:verify": "node scripts/verify-setup.js",
+    "verify:setup": "node scripts/verify-setup.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.5",
     "@mui/material": "^7.3.5",
-    "@supabase/supabase-js": "^2.53.0",
+    "@supabase/supabase-js": "^2.87.3",
+    "cors": "^2.8.5",
     "dayjs": "^1.11.19",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
     "pdfjs-dist": "^5.4.54",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

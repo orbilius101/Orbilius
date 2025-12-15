@@ -1,14 +1,11 @@
+import React, { useState } from 'react';
+import EmailIcon from '@mui/icons-material/Email';
+import InviteModal from '../../../admin/components/InviteModal';
 import {
   Box,
   Container,
   Typography,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   Stack,
   IconButton,
@@ -17,6 +14,12 @@ import {
   Chip,
   LinearProgress,
   Tooltip,
+  TableContainer,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import {
   ContentCopy as CopyIcon,
@@ -30,11 +33,12 @@ import { useDashboardData } from './hooks/useData';
 import { useDashboardHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 import { supabase } from '../../../supabaseClient';
-import orbiliusLogo from '../../../assets/merle-386x386.svg';
+import orbiliusLogo from '../../../assets/merle-386x386-yellow.svg';
 
 export default function TeacherDashboard() {
   const data = useDashboardData();
   const handlers = useDashboardHandlers(data);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const { user, userProfile, projects, navigate, alertState, showAlert, closeAlert } = data;
 
@@ -107,22 +111,28 @@ export default function TeacherDashboard() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}
+            onClick={() => navigate('/')}
+          >
             <img src={orbiliusLogo} alt="Orbilius" style={{ height: '40px' }} />
-            <Typography variant="h6" component="div">
+            <Typography variant="h6" component="div" sx={{ fontWeight: 500 }}>
               Orbilius
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {userProfile && (
-              <>
-                <Typography variant="body1">
-                  {userProfile.first_name} {userProfile.last_name}
-                </Typography>
-                <Chip label="Teacher" color="secondary" size="small" sx={{ px: 0.5 }} />
-              </>
+              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                {userProfile.first_name} {userProfile.last_name}
+              </Typography>
             )}
-            <Button variant="outlined" startIcon={<LogoutIcon />} onClick={handleLogout}>
+            <Chip label="Teacher" color="secondary" sx={{ fontWeight: 600 }} />
+            <Button
+              variant="outlined"
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{ textTransform: 'none' }}
+            >
               Logout
             </Button>
           </Box>
@@ -134,7 +144,6 @@ export default function TeacherDashboard() {
           <Typography variant="h4" component="h1">
             Teacher Dashboard
           </Typography>
-
           {projects.length > 0 ? (
             <TableContainer component={Paper}>
               <Table>
@@ -241,10 +250,19 @@ export default function TeacherDashboard() {
           ) : (
             <Typography>No projects assigned yet.</Typography>
           )}
-
           <Paper sx={{ p: 3 }}>
             <Stack spacing={2}>
-              <Typography variant="h5">Student Signup Information</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h5">Student Signup Information</Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<EmailIcon />}
+                  onClick={() => setShowInviteModal(true)}
+                >
+                  Send Invitation
+                </Button>
+              </Box>
               <Typography variant="body1">
                 Students need your Teacher ID to sign up. Share this ID with your students:
               </Typography>
@@ -255,7 +273,9 @@ export default function TeacherDashboard() {
                 <Typography
                   component="code"
                   sx={{
-                    bgcolor: 'grey.100',
+                    bgcolor: '#061b42',
+                    color: '#F1F5F9',
+                    border: '1px solid #1a3a6b',
                     p: 1,
                     borderRadius: 1,
                     fontFamily: 'monospace',
@@ -275,7 +295,9 @@ export default function TeacherDashboard() {
                 <Typography
                   component="code"
                   sx={{
-                    bgcolor: 'grey.100',
+                    bgcolor: '#061b42',
+                    color: '#F1F5F9',
+                    border: '1px solid #1a3a6b',
                     p: 1,
                     borderRadius: 1,
                     fontFamily: 'monospace',
@@ -292,6 +314,16 @@ export default function TeacherDashboard() {
                 </IconButton>
               </Box>
             </Stack>
+            {/* Invitation Modal placeholder */}
+            {showInviteModal && (
+              <InviteModal
+                open={showInviteModal}
+                onClose={() => setShowInviteModal(false)}
+                role="student"
+                teacherId={user?.id}
+                showAlert={showAlert}
+              />
+            )}
           </Paper>
         </Stack>
       </Container>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Box, Typography, Button, Avatar } from '@mui/material';
 import { supabase } from '../../supabaseClient';
-import logo from '../../assets/merle-386x386.svg';
+import logo from '../../assets/merle-386x386-yellow.svg';
 
 interface UserProfile {
   first_name: string;

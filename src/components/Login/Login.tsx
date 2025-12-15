@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Box, Card, CardContent, TextField, Button, Typography, Stack } from '@mui/material';
 import { useLoginData } from './hooks/useData';
 import { useLoginHandlers } from './hooks/useHandlers';
-import merleLogo from '../../assets/merle-386x386.svg';
+import merleLogo from '../../assets/merle-386x386-yellow.svg';
 import AlertDialog from '../AlertDialog/AlertDialog';
 
 export default function Login() {

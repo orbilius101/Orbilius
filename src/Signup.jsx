@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from './supabaseClient';
+import merleLogo from './assets/merle-386x386-yellow.svg';
 
 export default function Signup() {
   console.log('Signup component mounted');
@@ -13,7 +14,14 @@ export default function Signup() {
   const [first_name, setFirstName] = useState('');
   const [last_name, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const navigate = useNavigate();
+
+  // Test function to verify modal works
+  const testModal = () => {
+    console.log('Test button clicked!');
+    setShowEmailModal(true);
+  };
 
   useEffect(() => {
     alert('useEffect is running!');
@@ -47,6 +55,7 @@ export default function Signup() {
   }, []);
 
   const signUp = async () => {
+    console.log('signUp function called');
     setLoading(true);
 
     if (!role) {
@@ -54,6 +63,9 @@ export default function Signup() {
       setLoading(false);
       return;
     }
+
+    console.log('Role:', role);
+    console.log('Email:', email);
 
     // Validate admin code for teachers by fetching from database
     if (role === 'teacher') {
@@ -108,6 +120,10 @@ export default function Signup() {
       return;
     }
 
+    console.log('Signup response:', { data, error });
+    console.log('User data:', data.user);
+    console.log('Session data:', data.session);
+
     // Verify metadata exists on the created account (v2.53.0)
     try {
       const { data: getUserRes, error: getUserErr } = await supabase.auth.getUser();
@@ -139,23 +155,25 @@ export default function Signup() {
 
     // Guard if user is null (e.g. email confirmation required)
     if (!data.user) {
-      alert('Sign-up successful. Check your email to confirm your account.');
+      console.log('No user data - showing modal');
       setLoading(false);
-      navigate('/login');
+      setShowEmailModal(true);
       return;
     }
 
-    alert('Sign-up successful. Check your email to confirm.');
-
-    // Optional: navigate to login page or auto-login
-    navigate('/login');
+    // Show confirmation modal
+    console.log('User data exists - showing modal');
     setLoading(false);
+    setShowEmailModal(true);
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h2 style={styles.title}>Sign Up - TEST VERSION</h2>
+        <div style={styles.headerContainer}>
+          <img src={merleLogo} alt="Orbilius Logo" style={styles.logo} />
+          <h2 style={styles.title}>Sign Up</h2>
+        </div>
         <input
           type="text"
           placeholder="First Name"
@@ -221,6 +239,14 @@ export default function Signup() {
         >
           {loading ? 'Signing up...' : 'Sign Up'}
         </button>
+
+        <button
+          onClick={testModal}
+          style={{ ...styles.button, backgroundColor: '#28a745', marginBottom: '1rem' }}
+        >
+          Test Modal
+        </button>
+
         <p style={styles.text}>
           Already have an account?{' '}
           <Link to="/login" style={styles.link}>
@@ -228,6 +254,32 @@ export default function Signup() {
           </Link>
         </p>
       </div>
+
+      {/* Email Confirmation Modal */}
+      {showEmailModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modal}>
+            <div style={styles.modalIcon}>📧</div>
+            <h2 style={styles.modalTitle}>Check Your Email!</h2>
+            <p style={styles.modalText}>
+              We've sent a confirmation email to <strong>{email}</strong>
+            </p>
+            <p style={styles.modalText}>
+              Please check your inbox and click the confirmation link to activate your account.
+            </p>
+            <p style={styles.modalSubtext}>Don't see it? Check your spam folder.</p>
+            <button
+              onClick={() => {
+                setShowEmailModal(false);
+                navigate('/login');
+              }}
+              style={styles.modalButton}
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -250,9 +302,21 @@ const styles = {
     maxWidth: '400px',
     textAlign: 'center',
   },
-  title: {
+  headerContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: '1.5rem',
+  },
+  logo: {
+    width: '40px',
+    height: '40px',
+  },
+  title: {
+    margin: 0,
     color: '#333',
+    flex: 1,
+    textAlign: 'center',
   },
   input: {
     width: '100%',
@@ -305,5 +369,58 @@ const styles = {
   link: {
     color: '#007bff',
     textDecoration: 'none',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modal: {
+    backgroundColor: 'white',
+    padding: '2.5rem',
+    borderRadius: '12px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+    width: '90%',
+    maxWidth: '500px',
+    textAlign: 'center',
+    animation: 'slideIn 0.3s ease-out',
+  },
+  modalIcon: {
+    fontSize: '4rem',
+    marginBottom: '1rem',
+  },
+  modalTitle: {
+    color: '#333',
+    marginBottom: '1rem',
+    fontSize: '1.75rem',
+  },
+  modalText: {
+    color: '#555',
+    fontSize: '1.1rem',
+    marginBottom: '1rem',
+    lineHeight: '1.5',
+  },
+  modalSubtext: {
+    color: '#888',
+    fontSize: '0.9rem',
+    marginBottom: '2rem',
+    fontStyle: 'italic',
+  },
+  modalButton: {
+    padding: '0.875rem 2rem',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '1.1rem',
+    cursor: 'pointer',
+    fontWeight: '500',
   },
 };

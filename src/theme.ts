@@ -1,47 +1,67 @@
 import { createTheme } from '@mui/material/styles';
 
-// Create a custom theme that can be easily customized
+// Dark theme based on #061b42 (deep navy blue from logo)
+// Primary: Navy/Dark Blue (from logo)
+// Accent: Golden Yellow (used sparingly)
 export const theme = createTheme({
   palette: {
+    mode: 'dark',
     primary: {
-      main: '#1a5bb8', // Lighter dark blue (50% lighter than logo)
-      light: '#3d7acc',
-      dark: '#0d3a7a',
-      contrastText: '#fff',
+      main: '#4A90E2', // Medium blue from owl logo (less saturated)
+      light: '#6BA3E8', // Lighter blue
+      dark: '#2E6BB8', // Darker blue
+      contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#9c27b0', // Purple
-      light: '#ba68c8',
-      dark: '#7b1fa2',
-      contrastText: '#fff',
+      main: '#FFC107', // Golden yellow from logo (sparingly used)
+      light: '#FFD54F',
+      dark: '#FFA000',
+      contrastText: '#000000', // Dark text on yellow
     },
     success: {
-      main: '#2e7d32',
-      light: '#4caf50',
-      dark: '#1b5e20',
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
     },
     warning: {
-      main: '#ed6c02',
-      light: '#ff9800',
-      dark: '#e65100',
+      main: '#FFC107', // Use yellow for warnings
+      light: '#FFD54F',
+      dark: '#FFA000',
+      contrastText: '#000000', // Dark text on yellow
     },
     error: {
-      main: '#d32f2f',
-      light: '#ef5350',
-      dark: '#c62828',
+      main: '#EF4444',
+      light: '#F87171',
+      dark: '#DC2626',
     },
     info: {
-      main: '#0288d1',
-      light: '#03a9f4',
-      dark: '#01579b',
+      main: '#4A90E2',
+      light: '#6BA3E8',
+      dark: '#2E6BB8',
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
+      default: '#061b42', // Deep navy blue base color
+      paper: '#0a2550', // Slightly lighter navy for cards
     },
     text: {
-      primary: '#212121',
-      secondary: '#757575',
+      primary: '#F1F5F9', // Light text
+      secondary: '#94A3B8', // Muted text
+      disabled: '#64748B',
+    },
+    divider: '#334155', // Subtle divider
+  },
+  components: {
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          color: '#FFC107', // Yellow for links
+          textDecoration: 'none',
+          '&:hover': {
+            color: '#FFD54F',
+            textDecoration: 'underline',
+          },
+        },
+      },
     },
   },
   typography: {
@@ -58,35 +78,42 @@ export const theme = createTheme({
     h1: {
       fontSize: '2.5rem',
       fontWeight: 600,
+      color: '#F1F5F9',
     },
     h2: {
       fontSize: '2rem',
       fontWeight: 600,
+      color: '#F1F5F9',
     },
     h3: {
       fontSize: '1.75rem',
       fontWeight: 600,
+      color: '#F1F5F9',
     },
     h4: {
       fontSize: '1.5rem',
       fontWeight: 600,
+      color: '#F1F5F9',
     },
     h5: {
       fontSize: '1.25rem',
       fontWeight: 600,
+      color: '#F1F5F9',
     },
     h6: {
       fontSize: '1rem',
       fontWeight: 600,
+      color: '#F1F5F9',
     },
     button: {
-      textTransform: 'none', // Disable uppercase transformation
+      textTransform: 'none',
+      fontWeight: 500,
     },
   },
   shape: {
     borderRadius: 8,
   },
-  spacing: 8, // Base spacing unit (8px)
+  spacing: 8,
   components: {
     MuiButton: {
       styleOverrides: {
@@ -95,13 +122,35 @@ export const theme = createTheme({
           padding: '10px 20px',
           fontWeight: 500,
         },
+        containedPrimary: {
+          background: 'linear-gradient(135deg, #4A90E2 0%, #2E6BB8 100%)',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #6BA3E8 0%, #4A90E2 100%)',
+          },
+        },
+        outlined: {
+          borderColor: '#FFFFFF',
+          color: '#FFFFFF',
+          '&:hover': {
+            borderColor: '#FFFFFF',
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          },
+        },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+          backgroundImage: 'linear-gradient(135deg, #0a2550 0%, #061b42 100%)',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
         },
       },
     },
@@ -109,8 +158,104 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
+            backgroundColor: '#0a2550', // Match paper background
             borderRadius: 8,
+            '& fieldset': {
+              borderColor: '#1a3a6b',
+            },
+            '&:hover fieldset': {
+              borderColor: '#4A90E2',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#6BA3E8',
+            },
+            '& input': {
+              color: '#F1F5F9', // Light text for input
+              '&:-webkit-autofill': {
+                WebkitBoxShadow: '0 0 0 100px #0a2550 inset !important',
+                WebkitTextFillColor: '#F1F5F9 !important',
+                caretColor: '#F1F5F9',
+                borderRadius: 'inherit',
+              },
+              '&:-webkit-autofill:hover': {
+                WebkitBoxShadow: '0 0 0 100px #0a2550 inset !important',
+                WebkitTextFillColor: '#F1F5F9 !important',
+              },
+              '&:-webkit-autofill:focus': {
+                WebkitBoxShadow: '0 0 0 100px #0a2550 inset !important',
+                WebkitTextFillColor: '#F1F5F9 !important',
+              },
+              '&:-webkit-autofill:active': {
+                WebkitBoxShadow: '0 0 0 100px #0a2550 inset !important',
+                WebkitTextFillColor: '#F1F5F9 !important',
+              },
+            },
+            '& input[type="date"]::-webkit-calendar-picker-indicator': {
+              filter: 'invert(1)', // Invert the calendar icon to make it white
+              cursor: 'pointer',
+            },
           },
+          '& .MuiInputLabel-root': {
+            color: '#94A3B8', // Muted but readable label color
+            '&.Mui-focused': {
+              color: '#6BA3E8', // Brighter when focused
+            },
+          },
+          '& .MuiSvgIcon-root': {
+            color: '#FFFFFF !important', // White icons (including calendar)
+          },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'linear-gradient(135deg, #0a2550 0%, #061b42 100%)',
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+          '&.MuiChip-filled': {
+            backgroundColor: '#1a3a6b',
+            color: '#F1F5F9',
+          },
+        },
+        colorPrimary: {
+          backgroundColor: '#2E6BB8',
+          color: '#FFFFFF',
+        },
+        colorSecondary: {
+          backgroundColor: '#FDB813',
+          color: '#000000',
+        },
+      },
+    },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#0a2550',
+        },
+      },
+    },
+    MuiTable: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'transparent',
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderColor: '#1a3a6b',
+        },
+        head: {
+          backgroundColor: '#061b42',
+          color: '#F1F5F9',
+          fontWeight: 600,
         },
       },
     },

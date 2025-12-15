@@ -30,7 +30,7 @@ import { useDashboardHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 import SharedModal from '../SharedModal/SharedModal';
 import { supabase } from '../../../supabaseClient';
-import orbiliusLogo from '../../../assets/merle-386x386.svg';
+import orbiliusLogo from '../../../assets/merle-386x386-yellow.svg';
 import { useState } from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -128,8 +128,11 @@ export default function StudentDashboard() {
           onClick={handleStepClick}
           sx={{
             cursor: accessible && stepLink ? 'pointer' : 'default',
-            color: accessible ? (stepLink ? 'primary.main' : 'text.primary') : 'text.disabled',
+            color: accessible ? (stepLink ? '#FFC107' : 'text.primary') : 'text.disabled',
             textDecoration: accessible && stepLink ? 'underline' : 'none',
+            '&:hover': {
+              color: accessible && stepLink ? '#FFD54F' : undefined,
+            },
           }}
         >
           Step {stepNum}: {title}
@@ -151,14 +154,21 @@ export default function StudentDashboard() {
             onChange={(e) => {
               if (!isApproved && e.target.value) {
                 handleDueDateEdit(stepNum);
-                setEditedDueDate(e.target.value);
-                setTimeout(() => handleDueDateSave(stepNum), 0);
+                handleDueDateSave(stepNum, e.target.value);
               }
             }}
             size="small"
             disabled={isApproved}
-            sx={{ minWidth: 150 }}
+            sx={{
+              minWidth: 150,
+              '& .MuiSvgIcon-root': {
+                color: '#FFFFFF',
+              },
+            }}
             InputLabelProps={{ shrink: true }}
+            inputProps={{
+              style: { cursor: isApproved ? 'not-allowed' : 'pointer' },
+            }}
           />
         </TableCell>
         <TableCell>
