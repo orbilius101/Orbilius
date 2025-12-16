@@ -34,7 +34,12 @@ export function useStepApprovalData() {
 
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .select('*')
+        .select(
+          `
+          *,
+          student:users!student_id(first_name, last_name, email)
+        `
+        )
         .eq('project_id', projectId)
         .single();
 

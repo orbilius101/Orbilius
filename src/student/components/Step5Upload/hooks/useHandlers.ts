@@ -57,7 +57,6 @@ export function useStep5UploadHandlers({
 
       const { error: insertError } = await supabase.from('submissions').insert({
         project_id: projectId,
-        uploaded_by: userId,
         step_number: 5,
         file_url: fileUrl,
         youtube_link: youtubeLink.trim(),
