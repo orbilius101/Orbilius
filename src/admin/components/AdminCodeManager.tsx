@@ -59,7 +59,7 @@ export default function AdminCodeManager({
           <Typography
             component="code"
             sx={{
-              bgcolor: (theme) => theme.palette.mode === 'dark' ? '#061b42' : '#FFFFFF',
+              bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#061b42' : '#FFFFFF'),
               color: 'text.primary',
               p: 1.5,
               borderRadius: 1,
