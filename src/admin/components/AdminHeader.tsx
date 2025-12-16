@@ -1,14 +1,18 @@
 // src/admin/components/AdminHeader.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Paper, Box, Button, Chip } from '@mui/material';
+import { Typography, Paper, Box, Button, Chip, useTheme } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { supabase } from '../../supabaseClient';
-import orbiliusLogo from '../../assets/merle-386x386-yellow.svg';
+import orbiliusLogoYellow from '../../assets/merle-386x386-yellow.svg';
+import orbiliusLogoDark from '../../assets/merle-386x386.svg';
 
 export default function AdminHeader() {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [userName, setUserName] = useState('');
+
+  const orbiliusLogo = theme.palette.mode === 'dark' ? orbiliusLogoYellow : orbiliusLogoDark;
 
   useEffect(() => {
     const fetchUserName = async () => {

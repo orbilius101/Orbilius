@@ -126,26 +126,26 @@ export default function TeachersList({ teachers, onDelete }: TeachersListProps) 
                             pl: 8,
                             pr: 2,
                             py: 2,
-                            bgcolor: '#0a2550',
-                            borderTop: '1px solid #1a3a6b',
+                            bgcolor: 'background.paper',
+                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
                           }}
                         >
                           <Typography
                             variant="subtitle2"
-                            sx={{ mb: 1, fontWeight: 600, color: '#F1F5F9' }}
+                            sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}
                           >
                             Students ({studentCount})
                           </Typography>
                           <Table size="small">
                             <TableHead>
-                              <TableRow sx={{ bgcolor: '#061b42' }}>
-                                <TableCell sx={{ color: '#F1F5F9', fontWeight: 600 }}>
+                              <TableRow sx={{ bgcolor: 'background.default' }}>
+                                <TableCell sx={{ color: 'text.primary', fontWeight: 600 }}>
                                   Name
                                 </TableCell>
-                                <TableCell sx={{ color: '#F1F5F9', fontWeight: 600 }}>
+                                <TableCell sx={{ color: 'text.primary', fontWeight: 600 }}>
                                   Email
                                 </TableCell>
-                                <TableCell sx={{ color: '#F1F5F9', fontWeight: 600 }}>
+                                <TableCell sx={{ color: 'text.primary', fontWeight: 600 }}>
                                   Joined
                                 </TableCell>
                               </TableRow>
@@ -154,13 +154,18 @@ export default function TeachersList({ teachers, onDelete }: TeachersListProps) 
                               {teacher.students?.map((student) => (
                                 <TableRow
                                   key={student.id}
-                                  sx={{ '&:hover': { bgcolor: '#334155' } }}
+                                  sx={{ 
+                                    '&:hover': { 
+                                      bgcolor: (theme) => 
+                                        theme.palette.mode === 'dark' ? '#334155' : 'action.hover'
+                                    } 
+                                  }}
                                 >
-                                  <TableCell sx={{ color: '#F1F5F9' }}>
+                                  <TableCell sx={{ color: 'text.primary' }}>
                                     {student.first_name} {student.last_name}
                                   </TableCell>
-                                  <TableCell sx={{ color: '#F1F5F9' }}>{student.email}</TableCell>
-                                  <TableCell sx={{ color: '#F1F5F9' }}>
+                                  <TableCell sx={{ color: 'text.primary' }}>{student.email}</TableCell>
+                                  <TableCell sx={{ color: 'text.primary' }}>
                                     {new Date(student.created_at).toLocaleDateString()}
                                   </TableCell>
                                 </TableRow>
