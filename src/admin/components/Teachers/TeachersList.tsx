@@ -154,17 +154,19 @@ export default function TeachersList({ teachers, onDelete }: TeachersListProps) 
                               {teacher.students?.map((student) => (
                                 <TableRow
                                   key={student.id}
-                                  sx={{ 
-                                    '&:hover': { 
-                                      bgcolor: (theme) => 
-                                        theme.palette.mode === 'dark' ? '#334155' : 'action.hover'
-                                    } 
+                                  sx={{
+                                    '&:hover': {
+                                      bgcolor: (theme) =>
+                                        theme.palette.mode === 'dark' ? '#334155' : 'action.hover',
+                                    },
                                   }}
                                 >
                                   <TableCell sx={{ color: 'text.primary' }}>
                                     {student.first_name} {student.last_name}
                                   </TableCell>
-                                  <TableCell sx={{ color: 'text.primary' }}>{student.email}</TableCell>
+                                  <TableCell sx={{ color: 'text.primary' }}>
+                                    {student.email}
+                                  </TableCell>
                                   <TableCell sx={{ color: 'text.primary' }}>
                                     {new Date(student.created_at).toLocaleDateString()}
                                   </TableCell>
