@@ -1,0 +1,20 @@
+-- PASTE THE RESULTS FROM SECTION 3 (RLS POLICIES) HERE
+-- This file will help compare current policies with complete_schema.sql
+
+-- Run this query in Supabase SQL Editor:
+/*
+SELECT 
+    schemaname,
+    tablename,
+    policyname,
+    permissive,
+    roles,
+    cmd,
+    qual,
+    with_check
+FROM pg_policies
+WHERE schemaname NOT IN ('pg_catalog', 'information_schema', 'auth', 'storage', 'extensions')
+ORDER BY schemaname, tablename, policyname;
+*/
+
+-- PASTE RESULTS BELOW THIS LINE:

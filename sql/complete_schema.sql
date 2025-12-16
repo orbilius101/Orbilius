@@ -337,7 +337,14 @@ CREATE TRIGGER update_project_steps_updated_at
 -- Function to automatically create users in users table when they sign up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_teacher_id uuid;
+  v_user_type text;
 BEGIN
+  -- Extract teacher_id and user_type from metadata
+  v_teacher_id := (NEW.raw_user_meta_data->>'teacher_id')::uuid;
+  v_user_type := COALESCE(NEW.raw_user_meta_data->>'role', 'student');
+
   -- Insert into public.users table
   INSERT INTO public.users (
     id,
@@ -352,8 +359,8 @@ BEGIN
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
     COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'student'),
-    (NEW.raw_user_meta_data->>'teacher_id')::uuid
+    v_user_type,
+    v_teacher_id
   )
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
@@ -361,6 +368,23 @@ BEGIN
     last_name = COALESCE(EXCLUDED.last_name, public.users.last_name),
     user_type = COALESCE(EXCLUDED.user_type, public.users.user_type),
     teacher_id = COALESCE(EXCLUDED.teacher_id, public.users.teacher_id);
+  
+  -- If user is a student with a teacher_id, create a project
+  IF v_user_type = 'student' AND v_teacher_id IS NOT NULL THEN
+    INSERT INTO public.projects (
+      student_id,
+      teacher_id,
+      current_step,
+      project_title
+    )
+    VALUES (
+      NEW.id,
+      v_teacher_id,
+      1,
+      'Project for ' || COALESCE(NEW.raw_user_meta_data->>'first_name', '') || ' ' || COALESCE(NEW.raw_user_meta_data->>'last_name', '')
+    )
+    ON CONFLICT DO NOTHING;
+  END IF;
   
   RETURN NEW;
 END;
@@ -373,42 +397,124 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 
--- Function to delete a teacher (admin only)
-CREATE OR REPLACE FUNCTION delete_teacher(teacher_id uuid)
+-- Function to delete a teacher (admin only) - Enhanced version
+CREATE OR REPLACE FUNCTION delete_teacher(p_teacher_id uuid)
 RETURNS json AS $$
 DECLARE
   deleted_count integer := 0;
+  current_user_id uuid;
+  current_user_type text;
+  student_ids uuid[];
 BEGIN
-  -- Check if caller is admin
-  IF ((auth.jwt()->>'user_metadata')::jsonb->>'role') != 'admin' THEN
+  -- Get current user ID
+  current_user_id := auth.uid();
+  
+  -- Check if caller is admin by querying users table
+  SELECT user_type INTO current_user_type
+  FROM users
+  WHERE id = current_user_id;
+  
+  IF current_user_type != 'admin' THEN
     RAISE EXCEPTION 'Only admins can delete teachers';
   END IF;
 
   -- Check if the user exists and is a teacher
   IF NOT EXISTS (
     SELECT 1 FROM users 
-    WHERE id = teacher_id AND user_type = 'teacher'
+    WHERE id = p_teacher_id AND user_type = 'teacher'
   ) THEN
     RAISE EXCEPTION 'Teacher not found';
   END IF;
 
-  -- Delete from users table and auth.users
-  DELETE FROM users WHERE id = teacher_id;
-  DELETE FROM auth.users WHERE id = teacher_id;
+  -- Collect student IDs before deleting them
+  SELECT array_agg(id) INTO student_ids
+  FROM users
+  WHERE teacher_id = p_teacher_id AND user_type = 'student';
+
+  -- Delete projects (should cascade to project_steps, submissions, etc.)
+  DELETE FROM projects WHERE teacher_id = p_teacher_id;
   
-  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  IF student_ids IS NOT NULL THEN
+    DELETE FROM projects WHERE student_id = ANY(student_ids);
+  END IF;
+
+  -- Delete students associated with this teacher
+  DELETE FROM users WHERE teacher_id = p_teacher_id AND user_type = 'student';
+Function to update admin code (admin only)
+CREATE OR REPLACE FUNCTION update_admin_code(new_code text)
+RETURNS TABLE(id integer, code text, updated_at timestamp with time zone)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  -- Check if the caller is an admin
+  IF NOT EXISTS (
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND user_type = 'admin'
+  ) THEN
+    RAISE EXCEPTION 'Only admins can update the admin code';
+  END IF;
   
-  RETURN json_build_object(
-    'success', true,
-    'message', 'Teacher deleted successfully',
-    'deleted_count', deleted_count
-  );
+  -- Update the admin code
+  UPDATE admin_code 
+  SET code = new_code, updated_at = NOW()
+  WHERE admin_code.id = 1;
   
-EXCEPTION
-  WHEN OTHERS THEN
+  -- Return the updated row
+  RETURN QUERY SELECT * FROM admin_code WHERE admin_code.id = 1;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION update_admin_code(text) TO authenticated;
+
+-- =============================================
+-- 6. INSERT INITIAL DATA
+-- =============================================
+
+-- Insert default admin code (change this!)
+INSERT INTO admin_code (code) 
+VALUES ('ADMIN2024')
+ON CONFLICT DO NOTHING;
+
+-- =============================================
+-- 7. STORAGE SETUP
+-- =============================================
+-- Storage buckets must be created via Supabase Dashboard or SQL
+-- Run these commands in the Supabase SQL Editor:
+
+-- Create student-submissions bucket (private)
+INSERT INTO storage.buckets (id, name, public, file_size_limit)
+VALUES ('student-submissions', 'student-submissions', false, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Create resources bucket (public)
+INSERT INTO storage.buckets (id, name, public, file_size_limit)
+VALUES ('resources', 'resources', true, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies are managed separately
+-- See sql/fix_storage_policies.sql for storage RLS policies
+
+-- =============================================
+-- SETUP COMPLETE!
+-- =============================================
+-- Your database is now fully configured with:
+-- ✅ 6 core tables (users, projects, project_steps, submissions, step_comments, admin_code)
+-- ✅ 27 RLS policies
+-- ✅ 4 custom functions (handle_new_user, delete_teacher, update_admin_code, update_updated_at_column)
+-- ✅ 3 update triggers
+-- ✅ 2 storage buckets (student-submissions, resources)
+--
+-- Next steps:
+-- 1. Apply storage policies (see fix_storage_policies.sql)
+-- 2. Create your first admin user
+-- 3. Update the default admin code
     RETURN json_build_object(
       'success', false,
-      'message', SQLERRM
+      'message', SQLERRM,
+      'detail', SQLSTATE
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
