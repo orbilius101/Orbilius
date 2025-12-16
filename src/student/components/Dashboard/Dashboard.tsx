@@ -55,7 +55,6 @@ export default function StudentDashboard() {
     editedTitle,
     setEditedTitle,
     editingDueDate,
-    _editedDueDate,
     setEditedDueDate,
     navigate,
     alertState,
@@ -68,7 +67,6 @@ export default function StudentDashboard() {
     handleTitleCancel,
     handleDueDateEdit,
     handleDueDateSave,
-    _handleDueDateCancel,
   } = handlers;
 
   const renderRow = (stepNum: number, title: string) => {
