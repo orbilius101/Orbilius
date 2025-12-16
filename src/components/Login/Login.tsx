@@ -2,10 +2,14 @@ import { Link } from 'react-router-dom';
 import { Box, Card, CardContent, TextField, Button, Typography, Stack } from '@mui/material';
 import { useLoginData } from './hooks/useData';
 import { useLoginHandlers } from './hooks/useHandlers';
-import merleLogo from '../../assets/merle-386x386-yellow.svg';
+import { useTheme } from '../../contexts/ThemeContext';
+import yellowLogo from '../../assets/merle-386x386-yellow.svg';
+import regularLogo from '../../assets/merle-386x386.svg';
 import AlertDialog from '../AlertDialog/AlertDialog';
 
 export default function Login() {
+  const { currentTheme } = useTheme();
+  const merleLogo = currentTheme === 'light' ? regularLogo : yellowLogo;
   const data = useLoginData();
   const handlers = useLoginHandlers(data);
 
