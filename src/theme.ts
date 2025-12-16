@@ -50,20 +50,6 @@ export const theme = createTheme({
     },
     divider: '#334155', // Subtle divider
   },
-  components: {
-    MuiLink: {
-      styleOverrides: {
-        root: {
-          color: '#FFC107', // Yellow for links
-          textDecoration: 'none',
-          '&:hover': {
-            color: '#FFD54F',
-            textDecoration: 'underline',
-          },
-        },
-      },
-    },
-  },
   typography: {
     fontFamily: [
       '"Open Sans"',
@@ -115,6 +101,18 @@ export const theme = createTheme({
   },
   spacing: 8,
   components: {
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          color: '#FFC107', // Yellow for links
+          textDecoration: 'none',
+          '&:hover': {
+            color: '#FFD54F',
+            textDecoration: 'underline',
+          },
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
