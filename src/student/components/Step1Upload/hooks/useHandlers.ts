@@ -50,14 +50,35 @@ export function useStep1UploadHandlers({
 
       const fileUrl = publicUrlData.publicUrl;
 
-      const { error: insertError } = await supabase.from('submissions').insert({
+      // Verify project ownership before inserting
+      const { data: projectCheck, error: projectCheckError } = await supabase
+        .from('projects')
+        .select('project_id, student_id')
+        .eq('project_id', projectId)
+        .eq('student_id', userId)
+        .single();
+
+      if (projectCheckError || !projectCheck) {
+        console.error('Project ownership verification failed:', projectCheckError);
+        throw new Error('Unable to verify project ownership. Please try again.');
+      }
+
+      console.log('Attempting to insert submission:', {
         project_id: projectId,
-        uploaded_by: userId,
         step_number: 1,
         file_url: fileUrl,
       });
 
-      if (insertError) throw insertError;
+      const { error: insertError } = await supabase.from('submissions').insert({
+        project_id: projectId,
+        step_number: 1,
+        file_url: fileUrl,
+      });
+
+      if (insertError) {
+        console.error('Insert error details:', insertError);
+        throw insertError;
+      }
 
       const { error: updateError } = await supabase
         .from('projects')

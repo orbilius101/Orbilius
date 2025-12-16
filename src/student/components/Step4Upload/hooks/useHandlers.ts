@@ -52,7 +52,6 @@ export function useStep4UploadHandlers({
 
       const { error: insertError } = await supabase.from('submissions').insert({
         project_id: projectId,
-        uploaded_by: userId,
         step_number: 4,
         file_url: fileUrl,
       });

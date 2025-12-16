@@ -15,7 +15,8 @@ import { useStepApprovalData } from './hooks/useData';
 import { useStepApprovalHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Use CDN that matches installed pdfjs-dist version
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export default function StepApproval() {
   const data = useStepApprovalData();
@@ -75,8 +76,12 @@ export default function StepApproval() {
             <Typography variant="h4" gutterBottom>
               Review Step {stepNumber}: {getStepName(stepNumber)}
             </Typography>
-            <Typography variant="body1">Project: {project.project_name}</Typography>
-            <Typography variant="body1">Student ID: {project.student_id}</Typography>
+            <Typography variant="body1">
+              Project: {project.project_title || 'Untitled Project'}
+            </Typography>
+            <Typography variant="body1">
+              Student: {project.student?.first_name} {project.student?.last_name}
+            </Typography>
           </Box>
 
           <Stack spacing={3}>
@@ -110,7 +115,11 @@ export default function StepApproval() {
                       onLoadSuccess={onDocumentLoadSuccess}
                       onLoadError={onDocumentLoadError}
                     >
-                      <Page pageNumber={pageNumber} />
+                      <Page
+                        pageNumber={pageNumber}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                      />
                     </Document>
                   </Box>
                 </Stack>
