@@ -11,14 +11,21 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
+import { useState } from 'react';
 import { useSignupData } from './hooks/useData';
 import { useSignupHandlers } from './hooks/useHandlers';
 import AlertDialog from '../AlertDialog/AlertDialog';
+import merleLogo from '../../assets/merle-386x386-yellow.svg';
 
 export default function Signup() {
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const data = useSignupData();
-  const handlers = useSignupHandlers(data);
+  const handlers = useSignupHandlers({ ...data, setShowEmailModal });
 
   const {
     email,
@@ -55,9 +62,20 @@ export default function Signup() {
     >
       <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h4" component="h2" gutterBottom align="center" sx={{ mb: 3 }}>
-            Sign Up
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <img src={merleLogo} alt="Orbilius Logo" style={{ width: 40, height: 40 }} />
+            </Box>
+            <Typography
+              variant="h4"
+              component="h2"
+              gutterBottom
+              align="center"
+              sx={{ flex: 1, m: 0 }}
+            >
+              Sign Up
+            </Typography>
+          </Stack>
 
           <Stack spacing={2}>
             <TextField
@@ -155,6 +173,41 @@ export default function Signup() {
         message={alertState.message}
         onClose={closeAlert}
       />
+
+      {/* Email Confirmation Modal */}
+      <Dialog
+        open={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ textAlign: 'center', fontSize: '1.75rem', pt: 4 }}>
+          📧 Check Your Email!
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', pb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 2, fontSize: '1.1rem' }}>
+            We've sent a confirmation email to <strong>{email}</strong>
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2, fontSize: '1.1rem' }}>
+            Please check your inbox and click the confirmation link to activate your account.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+            Don't see it? Check your spam folder.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 4 }}>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => {
+              setShowEmailModal(false);
+              data.navigate('/login');
+            }}
+          >
+            Go to Login
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

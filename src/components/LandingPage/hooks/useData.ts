@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import orbiliusLogo from '../../../assets/merle-386x386.svg';
+import orbiliusLogo from '../../../assets/merle-386x386-yellow.svg';
 import { useAlert } from '../../../hooks/useAlert';
 
 export function useLandingPageData() {

@@ -28,17 +28,9 @@ export function useConfirmEmailHandlers(data: any) {
             setSuccess(true);
             setLoading(false);
 
-            // Redirect to appropriate dashboard based on user role
-            const role = authData.user.user_metadata?.role;
-
+            // Force reload to refresh session after confirmation
             setTimeout(() => {
-              if (role === 'teacher') {
-                navigate('/teacher/dashboard');
-              } else if (role === 'student') {
-                navigate('/student/dashboard');
-              } else {
-                navigate('/login');
-              }
+              window.location.reload();
             }, 2000);
           }
         } else {

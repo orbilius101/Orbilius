@@ -62,19 +62,25 @@ export function useDashboardHandlers(data: any) {
     }
   };
 
-  const handleDueDateSave = async (stepNum) => {
-    if (!editedDueDate) {
+  const handleDueDateSave = async (stepNum, dateValue?) => {
+    // Use the passed dateValue or fall back to editedDueDate state
+    const dueDateToSave = dateValue || data.editedDueDate;
+
+    if (!dueDateToSave) {
       showAlert('Please select a due date.', 'Error');
+      setEditingDueDate(null);
       return;
     }
 
     // Validate that the date is not in the past
-    const selectedDate = new Date(editedDueDate);
+    const selectedDate = new Date(dueDateToSave);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
 
     if (selectedDate < today) {
       showAlert('Due date cannot be in the past. Please select a current or future date.', 'Error');
+      setEditingDueDate(null);
+      setEditedDueDate('');
       return;
     }
 
@@ -82,14 +88,14 @@ export function useDashboardHandlers(data: any) {
       const dueDateField = `step${stepNum}_due_date`;
       const { error } = await supabase
         .from('projects')
-        .update({ [dueDateField]: editedDueDate })
+        .update({ [dueDateField]: dueDateToSave })
         .eq('project_id', project.project_id);
 
       if (error) {
         console.error('Error updating due date:', error.message);
         showAlert('Error updating due date. Please try again.', 'Error');
       } else {
-        setProject({ ...project, [dueDateField]: editedDueDate });
+        setProject({ ...project, [dueDateField]: dueDateToSave });
         setEditingDueDate(null);
         setEditedDueDate('');
       }

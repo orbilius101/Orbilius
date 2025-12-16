@@ -24,8 +24,8 @@ export function useAdminCode(showAlert: (message: string, title?: string) => voi
     }
     const row = data.find((r) => r.id === 1);
     if (row) {
-      setAdminCode(row.orbilius_admin_code);
-      setNewAdminCode(row.orbilius_admin_code);
+      setAdminCode(row.code);
+      setNewAdminCode(row.code);
     } else {
       showAlert('Admin code row id=1 not found in returned data.', 'Error');
       setAdminCode('NOT_FOUND');
