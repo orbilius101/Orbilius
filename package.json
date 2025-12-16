@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "api": "node server.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "verify": "npm run lint && npm run build",
@@ -28,7 +29,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-pdf": "^10.0.1",
-    "react-router-dom": "^7.7.1"
+    "react-router-dom": "^7.7.1",
+    "resend": "^6.6.0"
   },
   "devDependencies": {
     "@eslint/css": "^0.10.0",

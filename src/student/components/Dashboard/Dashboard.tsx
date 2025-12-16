@@ -30,7 +30,9 @@ import { useDashboardHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 import SharedModal from '../SharedModal/SharedModal';
 import { supabase } from '../../../supabaseClient';
-import orbiliusLogo from '../../../assets/merle-386x386-yellow.svg';
+import { useTheme } from '../../../contexts/ThemeContext';
+import yellowLogo from '../../../assets/merle-386x386-yellow.svg';
+import regularLogo from '../../../assets/merle-386x386.svg';
 import { useState } from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -38,6 +40,9 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
 export default function StudentDashboard() {
+  const { currentTheme } = useTheme();
+  const orbiliusLogo = currentTheme === 'light' ? regularLogo : yellowLogo;
+
   const [modalState, setModalState] = useState<{
     open: boolean;
     title: string;
@@ -126,10 +131,21 @@ export default function StudentDashboard() {
           onClick={handleStepClick}
           sx={{
             cursor: accessible && stepLink ? 'pointer' : 'default',
-            color: accessible ? (stepLink ? '#FFC107' : 'text.primary') : 'text.disabled',
+            color: accessible
+              ? stepLink
+                ? currentTheme === 'light'
+                  ? 'primary.main'
+                  : '#FFC107'
+                : 'text.primary'
+              : 'text.disabled',
             textDecoration: accessible && stepLink ? 'underline' : 'none',
             '&:hover': {
-              color: accessible && stepLink ? '#FFD54F' : undefined,
+              color:
+                accessible && stepLink
+                  ? currentTheme === 'light'
+                    ? 'primary.dark'
+                    : '#FFD54F'
+                  : undefined,
             },
           }}
         >

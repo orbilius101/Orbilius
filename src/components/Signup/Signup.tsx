@@ -19,10 +19,14 @@ import {
 import { useState } from 'react';
 import { useSignupData } from './hooks/useData';
 import { useSignupHandlers } from './hooks/useHandlers';
+import { useTheme } from '../../contexts/ThemeContext';
 import AlertDialog from '../AlertDialog/AlertDialog';
-import merleLogo from '../../assets/merle-386x386-yellow.svg';
+import yellowLogo from '../../assets/merle-386x386-yellow.svg';
+import regularLogo from '../../assets/merle-386x386.svg';
 
 export default function Signup() {
+  const { currentTheme } = useTheme();
+  const merleLogo = currentTheme === 'light' ? regularLogo : yellowLogo;
   const [showEmailModal, setShowEmailModal] = useState(false);
   const data = useSignupData();
   const handlers = useSignupHandlers({ ...data, setShowEmailModal });

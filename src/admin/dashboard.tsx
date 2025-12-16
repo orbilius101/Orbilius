@@ -10,14 +10,20 @@ import {
   Snackbar,
   Alert,
   Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
+import PaletteIcon from '@mui/icons-material/Palette';
 
 import { useAuthAdmin } from './hooks/useAuthAdmin';
 import { useAdminCode } from './hooks/useAdminCode';
 import { usePendingProjects } from './hooks/usePendingProjects';
 import { useTeachers } from './hooks/useTeachers';
 import { useAlert } from '../hooks/useAlert';
+import { useTheme } from '../contexts/ThemeContext';
 
 import AdminHeader from './components/AdminHeader';
 import AdminCodeManager from './components/AdminCodeManager';
@@ -32,6 +38,7 @@ export default function AdminDashboard() {
   const _navigate = useNavigate();
   const [showInviteModal, setShowInviteModal] = React.useState(false);
   const { alertState, showAlert, closeAlert } = useAlert();
+  const { currentTheme, setTheme, availableThemes } = useTheme();
   const { loadingAuth } = useAuthAdmin(showAlert);
   const { adminCode, newAdminCode, setNewAdminCode, isEditing, setIsEditing, save } =
     useAdminCode(showAlert);
@@ -71,6 +78,35 @@ export default function AdminDashboard() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
       <Container maxWidth="lg">
         <AdminHeader />
+
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <PaletteIcon />
+            <Typography variant="h6">Theme Settings</Typography>
+          </Box>
+          <FormControl fullWidth>
+            <InputLabel>Select Theme</InputLabel>
+            <Select
+              value={currentTheme}
+              label="Select Theme"
+              onChange={async (e) => {
+                try {
+                  await setTheme(e.target.value as any);
+                  showAlert('Theme updated successfully for all users!', 'Success');
+                } catch (err) {
+                  showAlert('Failed to update theme. Please try again.', 'Error');
+                }
+              }}
+            >
+              {availableThemes.map((theme) => (
+                <MenuItem key={theme.name} value={theme.name}>
+                  {theme.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Paper>
+
         <AdminCodeManager
           adminCode={adminCode}
           newAdminCode={newAdminCode}

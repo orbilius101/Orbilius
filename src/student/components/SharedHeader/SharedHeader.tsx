@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Box, Typography, Button, Chip } from '@mui/material';
 import { Logout as LogoutIcon } from '@mui/icons-material';
 import { supabase } from '../../../supabaseClient';
-import orbiliusLogo from '../../../assets/merle-386x386-yellow.svg';
+import { useTheme } from '../../../contexts/ThemeContext';
+import yellowLogo from '../../../assets/merle-386x386-yellow.svg';
+import regularLogo from '../../../assets/merle-386x386.svg';
 
 export default function SharedHeader() {
   const navigate = useNavigate();
+  const { currentTheme } = useTheme();
+  const orbiliusLogo = currentTheme === 'light' ? regularLogo : yellowLogo;
   const [userProfile, setUserProfile] = useState<{ first_name: string; last_name: string } | null>(
     null
   );
@@ -32,7 +36,13 @@ export default function SharedHeader() {
   };
 
   return (
-    <AppBar position="static" color="default" elevation={1}>
+    <AppBar
+      position="static"
+      elevation={1}
+      sx={{
+        bgcolor: currentTheme === 'light' ? '#FFFFFF' : 'background.paper',
+      }}
+    >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         <Box
           sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}

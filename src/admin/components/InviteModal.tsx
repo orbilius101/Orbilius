@@ -63,17 +63,44 @@ export default function InviteModal({
         setError('A user with this email already exists.');
         return;
       }
-      // TODO: Send invitation email (call API or Supabase function)
-      setTimeout(() => {
+
+      // Generate signup URL with role and metadata
+      const signupUrl = `${window.location.origin}/signup?role=${role}${role === 'student' && teacherId ? `&teacher=${teacherId}` : ''}${role === 'teacher' && adminCode ? `&code=${adminCode}` : ''}`;
+
+      // Send invitation email via API
+      const inviteApiUrl =
+        process.env.NODE_ENV === 'development'
+          ? 'http://localhost:4000/api/sendInvite'
+          : '/api/sendInvite';
+
+      const inviteResponse = await fetch(inviteApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          role,
+          signupUrl,
+        }),
+      });
+
+      const inviteResult = await inviteResponse.json();
+
+      if (!inviteResponse.ok) {
         setLoading(false);
-        setSuccess('Invitation sent!');
-        showAlert('Invitation sent!', 'Success');
-        setEmail('');
+        setError(inviteResult.error || 'Failed to send invitation. Please try again.');
+        return;
+      }
+
+      setLoading(false);
+      setSuccess('Invitation sent successfully!');
+      showAlert('Invitation sent successfully!', 'Success');
+      setEmail('');
+      setTimeout(() => {
         onClose();
-      }, 1200);
+      }, 1500);
     } catch (err) {
       setLoading(false);
-      setError('Error checking email. Please try again.');
+      setError('Error sending invitation. Please try again.');
     }
   };
 

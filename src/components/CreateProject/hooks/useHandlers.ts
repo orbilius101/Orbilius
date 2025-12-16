@@ -39,7 +39,7 @@ export function useCreateProjectHandlers(data: any) {
           teacher_id: userData.teacher_id || null,
           first_name: userData.first_name,
           last_name: userData.last_name,
-          grade: parseInt(grade),
+          grade: grade,
           project_title: projectTitle,
           current_step: 1,
           current_step_status: 'In Progress',
