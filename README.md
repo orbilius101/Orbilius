@@ -1,36 +1,492 @@
-# Orbilius PM - Student Project Management System
-
-A comprehensive React-based web application designed to streamline the management of student projects through a structured 5-step workflow with teacher oversight, admin certification, and approval processes. Built with modern web technologies and powered by Supabase for real-time data management and secure file storage.
+<div align="center">
+  <img src="src/assets/merle-yellow.svg" alt="Orbilius Logo" width="200"/>
+  
+  # Orbilius PM
+  ### Student Project Management System
+  
+  *A comprehensive React-based web application designed to streamline the management of student projects through a structured 5-step workflow with teacher oversight, admin certification, and approval processes.*
+  
+  [![Built with React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
+  [![Powered by Supabase](https://img.shields.io/badge/Supabase-Database-green.svg)](https://supabase.com/)
+  [![Vite](https://img.shields.io/badge/Vite-Build-purple.svg)](https://vitejs.dev/)
+</div>
 
 ---
 
-## 🚀 Quick Start - New Supabase Setup
+## 🚀 Quick Start
 
-**Setting up a new Supabase project?** We've automated the process!
+### New to Orbilius? Start Here!
 
-### Fast Track (10 minutes)
+Setting up a new Supabase project is fast and automated:
 
-1. **Read**: [QUICK_SETUP.md](./QUICK_SETUP.md) - Streamlined 5-step guide
-2. **Run**: `npm run verify:setup` - Check your setup
-3. **Start**: `npm run dev` - Launch the app
+1. **📖 Read**: [QUICK_SETUP.md](./QUICK_SETUP.md) - Streamlined 5-step guide (10 minutes)
+2. **⚙️ Run**: `pnpm run setup` - Interactive setup wizard
+3. **✅ Verify**: `pnpm run verify:setup` - Check your configuration
+4. **🚀 Launch**: `pnpm dev` - Start the application
 
-### Choose Your Guide
+### Setup Guides
 
-- 📖 **[QUICK_SETUP.md](./QUICK_SETUP.md)** - Fast 5-step setup (recommended)
+Choose the guide that fits your needs:
+
+- 📖 **[QUICK_SETUP.md](./QUICK_SETUP.md)** - Fast 5-step setup (recommended for new users)
 - 📚 **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** - Detailed walkthrough with explanations
-- ☑️ **[SETUP_CHECKLIST.md](./SETUP_CHECKLIST.md)** - Interactive checklist
+- ☑️ **[SETUP_CHECKLIST.md](./SETUP_CHECKLIST.md)** - Interactive checklist format
 - 📋 **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Overview of all setup resources
 
-### Automated Setup Tools
+### Automated Setup Commands
 
 ```bash
-npm run setup          # Interactive setup wizard
-npm run verify:setup   # Verify configuration
+pnpm setup              # Interactive setup wizard
+pnpm verify:setup       # Verify your configuration
+pnpm dev                # Start development server
+pnpm build              # Build for production
 ```
 
 ---
 
-## Project Overview
+## 📋 Table of Contents
+
+- [Project Overview](#project-overview)
+- [Core Features](#core-features)
+- [System Architecture](#system-architecture)
+- [Installation](#installation)
+- [Database Setup](#database-setup)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Tech Stack](#tech-stack)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+## 🎯 Project Overview
+
+Orbilius PM is an educational project management platform that facilitates collaboration between students, teachers, and administrators in a structured learning environment. The system guides students through a comprehensive project development process while providing teachers with tools to monitor progress, provide feedback, and approve work at each stage.
+
+### The Problem It Solves
+
+Traditional project management in educational settings often lacks:
+
+- ✅ Clear structure and progression tracking
+- ✅ Efficient feedback mechanisms between teachers and students
+- ✅ Centralized file storage and submission systems
+- ✅ Real-time progress monitoring
+- ✅ Standardized approval workflows
+- ✅ Administrative oversight and certification processes
+- ✅ Seamless communication tools
+
+Orbilius PM addresses these challenges by providing a digital platform that ensures accountability, transparency, and effective communication throughout the project lifecycle.
+
+---
+
+## ✨ Core Features
+
+### 👨‍🎓 Student Features
+
+- **Secure Authentication**: Sign up with teacher-provided ID for class enrollment
+- **Password Reset**: Self-service password reset functionality via email
+- **Project Creation**: Initialize new projects with automatic due date generation
+- **5-Step Workflow**: Navigate through structured project phases
+- **File Submission**: Upload PDF documents with duplicate prevention
+- **Progress Tracking**: View current step status, due dates, and timeline
+- **Teacher Feedback**: Receive detailed comments and revision requests
+- **Resource Downloads**: Access step-specific resource PDFs
+
+### 👩‍🏫 Teacher Features
+
+- **Comprehensive Dashboard**: Monitor all assigned students and projects
+- **Student Information**: View student names and email addresses
+- **Project Oversight**: Track student progress with status indicators
+- **PDF Review System**: In-browser PDF viewing with navigation controls
+- **Feedback System**: Leave detailed comments for improvement
+- **Approval Workflow**: Approve steps or request revisions
+- **Email Integration**: Direct mailto links with pre-filled content
+- **Teacher ID Management**: Easy sharing for student enrollment
+
+### 👨‍💼 Admin Features
+
+- **Admin Dashboard**: Comprehensive administrative control panel
+- **Admin Code Management**: View and update teacher registration codes
+- **Project Certification**: Review and certify completed projects
+- **Teacher Management**: Add, view, and remove teachers
+- **System Oversight**: Monitor all projects across the platform
+
+### 🔧 Technical Features
+
+- **Real-time Updates**: Instant synchronization of project status changes
+- **Secure File Storage**: Supabase Storage with Row Level Security (RLS)
+- **Responsive Design**: Optimized for desktop and mobile devices
+- **PDF Processing**: Advanced PDF viewing with react-pdf integration
+- **Multi-role Auth**: Student, teacher, and admin role management
+- **Database Management**: PostgreSQL backend with automatic scaling
+
+---
+
+## 🏗️ System Architecture
+
+### Frontend (React + Vite)
+
+- **Component Structure**: Modular React components with TypeScript support
+- **Routing**: React Router for seamless navigation
+- **State Management**: React hooks + Supabase for global state
+- **Styling**: Material-UI (MUI) for consistent design
+- **PDF Handling**: react-pdf with PDF.js for document rendering
+
+### Backend (Supabase)
+
+#### Database Tables
+
+- **`users`**: User profiles with role-based access (student/teacher/admin)
+- **`projects`**: Project information and step tracking
+- **`project_steps`**: Individual step data with teacher comments
+- **`submissions`**: Legacy file submissions and feedback
+- **`step_comments`**: Detailed teacher feedback system
+- **`admin_code`**: Secure admin codes for teacher registration
+
+#### Key Features
+
+- **Authentication**: Multi-role email/password authentication
+- **Storage**: Two buckets (`student-submissions`, `resources`)
+- **Real-time**: Automatic updates across all user interfaces
+- **Row Level Security**: Comprehensive RLS policies (27 policies)
+- **Functions**: Auto-create users, delete teachers, update admin codes
+- **Triggers**: Automatic timestamp updates on data changes
+
+---
+
+## 💻 Installation
+
+### Prerequisites
+
+- **Node.js**: Version 18 or higher
+- **pnpm**: Package manager (recommended) or npm
+- **Supabase Account**: Free tier available at [supabase.com](https://supabase.com)
+
+### Step 1: Clone Repository
+
+```bash
+git clone https://github.com/orbilius101/Orbilius.git
+cd Orbilius
+```
+
+### Step 2: Install Dependencies
+
+```bash
+pnpm install
+# or
+npm install
+```
+
+### Step 3: Environment Setup
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your Supabase credentials:
+
+```env
+VITE_SUPABASE_URL=your-supabase-project-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+### Step 4: Database Setup
+
+**Option 1: Automated Setup (Recommended)**
+
+```bash
+pnpm setup
+```
+
+**Option 2: Manual Setup**
+
+Run the complete schema script in your Supabase SQL Editor:
+
+```bash
+# Copy contents of sql/complete_schema.sql
+# Paste into Supabase Dashboard → SQL Editor → Run
+```
+
+This creates:
+
+- ✅ All 6 tables with correct structure
+- ✅ 27 RLS policies
+- ✅ 4 custom functions
+- ✅ 3 automatic triggers
+- ✅ All indexes for performance
+- ✅ Storage buckets
+
+### Step 5: Verify Setup
+
+```bash
+pnpm verify:setup
+```
+
+---
+
+## 🗄️ Database Setup
+
+Your database schema is fully defined in [sql/complete_schema.sql](sql/complete_schema.sql). This includes:
+
+### Tables
+
+1. **users** - User profiles with teacher-student relationships
+2. **projects** - Main project tracking with all step statuses
+3. **project_steps** - Individual step submissions and comments
+4. **submissions** - Legacy submission tracking
+5. **step_comments** - Detailed teacher feedback
+6. **admin_code** - Admin access code management
+
+### RLS Policies (27 total)
+
+- Students can view/update their own projects
+- Teachers can view/update assigned projects
+- Admins can view/update all projects
+- Secure storage access policies
+
+### Functions
+
+- `handle_new_user()` - Auto-creates user profile and initial project
+- `delete_teacher()` - Removes teacher and associated students
+- `update_admin_code()` - Securely updates admin codes
+- `update_updated_at_column()` - Automatic timestamp updates
+
+### Storage Buckets
+
+- `student-submissions` (private) - Student file uploads
+- `resources` (public) - Downloadable resources
+
+---
+
+## 🚀 Development
+
+### Start Development Server
+
+```bash
+pnpm dev
+```
+
+Access the app at `http://localhost:5173`
+
+### Build for Production
+
+```bash
+pnpm build
+```
+
+Output directory: `dist/`
+
+### Lint Code
+
+```bash
+pnpm lint
+```
+
+### Format Code
+
+```bash
+pnpm format
+```
+
+---
+
+## 🌐 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Import project in Vercel
+3. Add environment variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Deploy!
+
+### Environment Variables
+
+Ensure these are set in your deployment platform:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+**Note**: The `VITE_` prefix is required for Vite to expose variables to the client.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+- **React 19** - UI framework
+- **TypeScript** - Type safety
+- **Material-UI (MUI)** - Component library
+- **React Router** - Client-side routing
+- **react-pdf** - PDF viewing
+- **Vite** - Build tool
+
+### Backend
+
+- **Supabase** - Backend as a Service
+  - PostgreSQL database
+  - Authentication
+  - Storage
+  - Real-time subscriptions
+  - Row Level Security
+
+### Development Tools
+
+- **pnpm** - Fast package manager
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+
+---
+
+## 📁 Project Structure
+
+```
+Orbilius/
+├── public/
+│   ├── pdf.worker.min.js          # PDF.js worker
+│   └── favicons/                   # App icons
+├── src/
+│   ├── admin/                      # Admin components
+│   │   ├── dashboard.tsx
+│   │   ├── components/
+│   │   └── api/
+│   ├── student/                    # Student components
+│   │   └── components/
+│   │       ├── Dashboard/
+│   │       ├── Step1-5Upload/
+│   │       └── SharedComponents/
+│   ├── teacher/                    # Teacher components
+│   │   └── components/
+│   ├── components/                 # Shared components
+│   │   ├── Login/
+│   │   ├── Signup/
+│   │   ├── ResetPassword/
+│   │   └── LandingPage/
+│   ├── hooks/                      # Custom React hooks
+│   ├── types/                      # TypeScript types
+│   ├── utils/                      # Utility functions
+│   ├── assets/                     # Images and logos
+│   ├── App.tsx                     # Main app component
+│   ├── main.tsx                    # App entry point
+│   └── supabaseClient.ts           # Supabase config
+├── sql/                            # Database scripts
+│   ├── complete_schema.sql         # Full database setup
+│   ├── export_schema_sections.sql  # Schema inspection
+│   └── *.sql                       # Migration scripts
+├── scripts/                        # Setup automation
+│   ├── setup-supabase.js
+│   └── verify-setup.js
+├── package.json
+├── vite.config.js
+├── tsconfig.json
+└── README.md
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Database Issues
+
+**Problem**: RLS policy errors  
+**Solution**: Run [sql/complete_schema.sql](sql/complete_schema.sql) to reset all policies
+
+**Problem**: Missing tables  
+**Solution**: Use `pnpm setup` or manually run complete_schema.sql
+
+### Authentication Issues
+
+**Problem**: Users can't sign up  
+**Solution**: Check email confirmation settings in Supabase Dashboard → Authentication → Settings
+
+**Problem**: Admin code not working  
+**Solution**: Check `admin_code` table has a valid entry
+
+### Storage Issues
+
+**Problem**: File uploads failing  
+**Solution**:
+
+1. Verify buckets exist: `student-submissions`, `resources`
+2. Check RLS policies on storage buckets
+3. Run [sql/fix_storage_policies.sql](sql/fix_storage_policies.sql)
+
+### PDF Viewing Issues
+
+**Problem**: PDFs not loading  
+**Solution**:
+
+1. Ensure `pdf.worker.min.js` exists in `public/`
+2. Check file URLs are accessible
+3. Verify CORS settings
+
+### Development Setup
+
+**Problem**: Vite not starting  
+**Solution**:
+
+```bash
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
+pnpm dev
+```
+
+**Problem**: Environment variables not loading  
+**Solution**:
+
+1. Ensure `.env` file exists in root
+2. Variables must start with `VITE_`
+3. Restart dev server after changing `.env`
+
+### Common Errors
+
+| Error                       | Solution                              |
+| --------------------------- | ------------------------------------- |
+| `Missing VITE_SUPABASE_URL` | Add to `.env` file                    |
+| `RLS policy violation`      | Check user permissions in database    |
+| `Storage bucket not found`  | Create buckets in Supabase Dashboard  |
+| `PDF worker not found`      | Copy `pdf.worker.min.js` to `public/` |
+
+---
+
+## 📚 Additional Resources
+
+- [Supabase Documentation](https://supabase.com/docs)
+- [React Documentation](https://react.dev)
+- [Material-UI Documentation](https://mui.com)
+- [Vite Documentation](https://vitejs.dev)
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 💬 Support
+
+- **Issues**: [GitHub Issues](https://github.com/orbilius101/Orbilius/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/orbilius101/Orbilius/discussions)
+
+---
+
+<div align="center">
+  Made with ❤️ by the Orbilius Team
+</div>
 
 Orbilius PM is an educational project management platform that facilitates collaboration between students, teachers, and administrators in a structured learning environment. The system guides students through a comprehensive project development process while providing teachers with tools to monitor progress, provide feedback, and approve work at each stage. Administrators can manage system settings and certify completed projects for final submission to the Orbilius archive.
 
@@ -46,458 +502,40 @@ Traditional project management in educational settings often lacks:
 - Administrative oversight and certification processes
 - Seamless communication tools
 
-Orbilius PM addresses these challenges by providing a digital platform that ensures accountability, transparency, and effective communication throughout the project lifecycle.
+---
 
-## Core Features
+## 📚 Additional Resources
 
-### Student Features
+- [Supabase Documentation](https://supabase.com/docs)
+- [React Documentation](https://react.dev)
+- [Material-UI Documentation](https://mui.com)
+- [Vite Documentation](https://vitejs.dev)
 
-- **Secure Authentication**: Sign up with teacher-provided ID for class enrollment
-- **Password Reset**: Self-service password reset functionality via email
-- **Project Creation**: Initialize new projects with automatic due date generation (1 month per step)
-- **Editable Project Details**: Modify project title and due dates until steps are approved
-- **5-Step Workflow**: Navigate through structured project phases:
-  1. **Initial Research** - Foundation and background research with downloadable resource PDFs
-  2. **Design Brief** - Project planning and design documentation with downloadable resources
-  3. **Planning** - Detailed implementation planning
-  4. **Implementation** - Active project development
-  5. **Archival Records** - Final documentation and reflection
-- **File Submission**: Upload PDF documents for each step with duplicate upload prevention
-- **Progress Tracking**: View current step status, due dates, and timeline
-- **Teacher Feedback**: Receive detailed comments and revision requests
-- **Resubmission Capability**: Revise and resubmit work based on teacher feedback
-- **Resource Downloads**: Access step-specific resource PDFs from Supabase Storage
+---
 
-### Teacher Features
-
-- **Comprehensive Dashboard**: Monitor all assigned students and projects with student details
-- **Student Information Display**: View student names and email addresses via database relationships
-- **Project Oversight**: Track student progress across all project phases with status indicators
-- **PDF Review System**: In-browser PDF viewing with navigation controls
-- **Feedback System**: Leave detailed comments for student improvement
-- **Approval Workflow**: Approve completed steps or request revisions with status updates
-- **Email Integration**: Direct mailto links with pre-filled subject and body content for student communication
-- **Teacher ID Management**: Easy access to unique teacher ID for student enrollment with copy functionality
-- **Admin Code Validation**: Secure teacher registration with admin-controlled access codes
-- **Project Certification**: Automatic submission to Orbilius archive when all 5 steps are approved
-
-### Admin Features
-
-- **Admin Dashboard**: Comprehensive administrative control panel
-- **Admin Code Management**: View and update teacher registration codes with improved security
-- **Project Certification**: Review and certify completed student projects for final archive submission
-- **Database Management**: Handle Row Level Security (RLS) policies with graceful error handling
-- **System Oversight**: Monitor all projects across the platform with certification status tracking
-
-### Technical Features
-
-- **Real-time Updates**: Instant synchronization of project status changes
-- **Secure File Storage**: Supabase Storage with Row Level Security (RLS) and public URL access for resources
-- **Responsive Design**: Optimized for desktop and mobile devices with accessible UI elements
-- **PDF Processing**: Advanced PDF viewing with react-pdf integration and error handling
-- **Authentication & Authorization**: Multi-role user management (student/teacher/admin) with Supabase Auth
-- **Database Management**: PostgreSQL backend with automatic scaling and foreign key relationships
-- **Professional UI/UX**: Clean, modern interface with consistent styling and accessibility features
-- **Database Management**: PostgreSQL backend with automatic scaling
-
-## User Workflow
-
-### For Students:
-
-1. **Registration**: Sign up using teacher-provided Teacher ID with validation
-2. **Project Setup**: Create new project with automatic due date generation (1 month intervals)
-3. **Project Management**: Edit project title and due dates until steps are approved
-4. **Step-by-Step Progress**:
-   - Navigate to current step (sequential access enforced)
-   - Download step-specific resource PDFs when available
-   - Review step requirements and guidelines
-   - Upload required PDF documentation (with duplicate prevention)
-   - Submit for teacher review
-   - Receive feedback and make revisions if needed
-   - Proceed to next step upon approval
-5. **Completion**: Complete all 5 steps for automatic submission to Orbilius archive
-
-### For Teachers:
-
-1. **Registration**: Sign up with admin-provided access code for verification
-2. **Dashboard Access**: View all assigned student projects with comprehensive details
-3. **Student Management**: View student names, emails, and contact information
-4. **Progress Monitoring**: Track student progress with visual status indicators
-5. **Review Process**:
-   - Click on submitted project titles to access review interface
-   - View student-submitted PDF documents with full navigation
-   - Navigate through multi-page documents
-   - Leave detailed feedback comments
-   - Choose to approve step or request revisions with automatic status updates
-6. **Communication**: Send pre-filled emails to students directly from dashboard
-7. **ID Distribution**: Share unique Teacher ID with students for enrollment via copy function
-8. **Project Completion**: Automatically submit completed projects (all 5 steps approved) to Orbilius
-
-### For Administrators:
-
-1. **System Access**: Access admin dashboard with elevated privileges
-2. **Teacher Management**:
-   - View and update admin codes for teacher registration
-   - Manage teacher access to the system
-3. **Project Oversight**:
-   - View all projects across the platform
-   - Certify completed projects for final archive submission
-   - Monitor system-wide project completion rates
-4. **Database Management**: Handle RLS policies and system maintenance with error recovery
-
-## System Architecture
-
-### Frontend (React + Vite)
-
-- **Component Structure**: Modular React components for different user interfaces
-- **Routing**: React Router for seamless navigation between pages
-- **State Management**: React hooks for local state and Supabase for global state
-- **Styling**: Inline CSS objects for consistent, maintainable styling
-- **PDF Handling**: react-pdf with PDF.js for document rendering
-
-### Backend (Supabase)
-
-- **Database**: PostgreSQL with the following key tables:
-  - `users`: User profiles and authentication data with role-based access (student/teacher/admin)
-  - `projects`: Project information and step tracking with foreign key relationships
-  - `submissions`: File submissions and teacher feedback
-  - `admin_code`: Secure admin codes for teacher registration
-- **Authentication**: Multi-role email/password authentication with secure session management
-- **Storage**: File upload and retrieval with signed URLs for security and public URLs for resources
-- **Real-time**: Automatic updates when data changes across all user interfaces
-- **Row Level Security**: Comprehensive RLS policies for multi-tenant data isolation
-
-### Security Features
-
-- **Row Level Security (RLS)**: Database-level access controls with admin override capabilities
-- **Authenticated File Access**: Secure file storage with user-specific permissions
-- **Session Management**: Automatic login state persistence and secure logout
-- **Role-based Authorization**: Different access levels for students, teachers, and administrators
-- **Admin Code Protection**: Secure teacher registration with encrypted access codes
-- **Teacher-Student Isolation**: Students can only access their own projects
-
-## Features
-
-### Core Functionality
-
-- Multi-role authentication (Student/Teacher/Admin) with secure registration
-- Password reset functionality via email
-- 5-step project workflow with sequential progression
-- File upload/download with PDF viewing and navigation
-- Teacher approval system with detailed feedback
-- Real-time project status updates
-- Admin dashboard for system management
-- Project certification and archive submission
-
-### User Experience
-
-- Professional, accessible UI/UX design
-- Responsive layout for all device types
-- Intuitive navigation with clear status indicators
-- Comprehensive error handling and user feedback
-- Resource downloads with user-friendly file management
-
-### Communication & Collaboration
-
-- Direct teacher-student email integration with pre-filled content
-- Teacher ID sharing system for easy student enrollment
-- Admin code management for teacher registration
-- Comment system for detailed feedback on submissions
-
-### Security & Data Management
-
-- Row Level Security (RLS) with graceful error handling
-- Secure file storage with appropriate access controls
-- Foreign key relationships for data integrity
-- Automatic due date generation and timeline management
-
-## Setup for Development
-
-### Prerequisites
-
-- Node.js (version 16 or higher)
-- npm or yarn
-- Supabase account
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone your-repo-url
-   cd orbilius
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Then edit `.env` and add your Supabase credentials:
-
-   ```
-   VITE_SUPABASE_URL=your-supabase-project-url
-   VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
-
-4. **Set up Supabase Database**
-
-   Create the following tables in your Supabase dashboard:
-
-   **users table:**
-
-   ```sql
-   CREATE TABLE users (
-     id UUID PRIMARY KEY DEFAULT auth.uid(),
-     email TEXT NOT NULL,
-     first_name TEXT,
-     last_name TEXT,
-     user_type TEXT CHECK (user_type IN ('student', 'teacher')),
-     created_at TIMESTAMP DEFAULT NOW()
-   );
-   ```
-
-   **projects table:**
-
-   ```sql
-   CREATE TABLE projects (
-     project_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     student_id UUID REFERENCES users(id),
-     teacher_id UUID REFERENCES users(id),
-     first_name TEXT,
-     last_name TEXT,
-     email TEXT,
-     grade TEXT,
-     project_title TEXT,
-     current_step INTEGER DEFAULT 1,
-     step1_status TEXT DEFAULT 'In Progress',
-     step2_status TEXT DEFAULT 'Locked',
-     step3_status TEXT DEFAULT 'Locked',
-     step4_status TEXT DEFAULT 'Locked',
-     step5_status TEXT DEFAULT 'Locked',
-     step1_due_date DATE,
-     step2_due_date DATE,
-     step3_due_date DATE,
-     step4_due_date DATE,
-     step5_due_date DATE,
-     submitted_to_orbilius BOOLEAN DEFAULT FALSE,
-     created_at TIMESTAMP DEFAULT NOW()
-   );
-   ```
-
-   **submissions table:**
-
-   ```sql
-   CREATE TABLE submissions (
-     submission_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     project_id UUID REFERENCES projects(project_id),
-     step_number INTEGER,
-     file_url TEXT,
-     teacher_comments TEXT,
-     submitted_at TIMESTAMP DEFAULT NOW()
-   );
-   ```
-
-   **admin_code table:**
-
-   ```sql
-   CREATE TABLE admin_code (
-     id SERIAL PRIMARY KEY,
-     code TEXT NOT NULL,
-     updated_at TIMESTAMP DEFAULT NOW()
-   );
-
-   -- Insert initial admin code
-   INSERT INTO admin_code (code) VALUES ('ADMIN2024');
-   ```
-
-   **Set up Storage:**
-   - Create a storage bucket named `student-submissions`
-   - Create a storage bucket named `resources` for downloadable materials
-   - Configure RLS policies for secure file access
-
-   **Upload Resource Files:**
-   - Upload `step1_resource.pdf` to the `resources` bucket
-   - Upload `step2_resource.pdf` to the `resources` bucket
-   - Set appropriate access policies for public resource access
-
-   **Row Level Security Policies:**
-
-   ```sql
-   -- Enable RLS on all tables
-   ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-   ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-   ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
-   ALTER TABLE admin_code ENABLE ROW LEVEL SECURITY;
-
-   -- Users can only see their own profile
-   CREATE POLICY "Users can view own profile" ON users
-     FOR SELECT USING (auth.uid() = id);
-
-   -- Students can only see their own projects, teachers can see assigned projects
-   CREATE POLICY "Project access" ON projects
-     FOR SELECT USING (
-       auth.uid() = student_id OR auth.uid() = teacher_id
-     );
-
-   -- Admin users can update admin_code table
-   CREATE POLICY "Admin can update admin code" ON admin_code
-     FOR ALL USING (
-       EXISTS (
-         SELECT 1 FROM users
-         WHERE users.id = auth.uid()
-         AND users.user_type = 'admin'
-       )
-     );
-
-   -- Similar policies for submissions table
-   CREATE POLICY "Submission access" ON submissions
-     FOR SELECT USING (
-       project_id IN (
-         SELECT project_id FROM projects
-         WHERE auth.uid() = student_id OR auth.uid() = teacher_id
-       )
-     );
-   ```
-
-5. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-## Building for Production
-
-```bash
-npm run build
-```
-
-The built files will be in the `dist` directory.
-
-## Deployment
-
-This project is optimized for deployment on:
-
-- Vercel (recommended)
-- Netlify
-- Any static hosting service
-
-Remember to add your environment variables in your hosting platform's settings.
-
-## Tech Stack
-
-- React 19
-- Vite
-- Supabase
-- React Router
-- react-pdf
-- pdfjs-dist
-
-## Project Structure
-
-```
-orbilius/
-├── public/                 # Static assets
-│   ├── pdf.worker.min.js  # PDF.js worker for react-pdf
-│   └── vite.svg           # Vite logo
-├── src/
-│   ├── assets/            # React logo and other assets
-│   ├── student/           # Student-specific components
-│   │   ├── dashboard.jsx  # Student project dashboard with editable fields
-│   │   ├── submitStep.jsx # Generic step submission component
-│   │   └── step1-5/       # Individual step components
-│   │       ├── stepXIndex.jsx   # Step overview pages with resource downloads
-│   │       └── stepXUpload.jsx  # Step upload pages with duplicate prevention
-│   ├── teacher/           # Teacher-specific components
-│   │   ├── dashboard.jsx  # Teacher project oversight dashboard with email integration
-│   │   └── stepApproval.jsx # PDF review and approval interface with comments
-│   ├── admin/             # Admin-specific components
-│   │   └── dashboard.jsx  # Admin control panel for system management
-│   ├── App.jsx            # Main app component with multi-role routing
-│   ├── App.css            # Global styles
-│   ├── LandingPage.jsx    # Public landing page with branding
-│   ├── Login.jsx          # Multi-role user authentication
-│   ├── Signup.jsx         # User registration with admin code validation
-│   ├── ResetPassword.jsx  # Password reset functionality
-│   ├── createProject.jsx  # New project creation with auto due dates
-│   ├── supabaseClient.js  # Supabase configuration
-│   └── main.jsx           # React app entry point
-├── sql/                   # Database setup scripts and RLS policies
-├── package.json           # Dependencies and scripts
-├── vite.config.js         # Vite configuration
-└── README.md              # This file
-```
-
-## Environment Variables
-
-The application requires the following environment variables:
-
-```bash
-VITE_SUPABASE_URL=your-supabase-project-url
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
-
-**Note:** The `VITE_` prefix is required for Vite to expose these variables to the client-side code.
-
-## Common Issues & Troubleshooting
-
-### PDF Viewing Issues
-
-- **CORS Errors**: Ensure PDF.js worker is properly configured
-- **File Not Loading**: Check Supabase Storage policies and file URLs
-- **Version Mismatch**: Verify react-pdf and pdfjs-dist versions are compatible
-
-### Database Connection Issues
-
-- **Auth Errors**: Verify Supabase URL and anon key are correct
-- **RLS Policies**: Ensure Row Level Security policies are properly configured
-- **Table Permissions**: Check that authenticated users have proper access
-
-### File Upload Problems
-
-- **Storage Bucket**: Ensure `student-submissions` bucket exists
-- **File Size Limits**: Check Supabase storage limits (default 50MB)
-- **File Type Restrictions**: Currently optimized for PDF files
-
-### Development Setup
-
-- **Node Version**: Ensure Node.js 16+ is installed
-- **Environment Variables**: Verify `.env` file is created and populated
-- **Dependencies**: Run `npm install` if modules are missing
-- **Supabase Setup**: Ensure all tables, RLS policies, and storage buckets are configured
-- **Resource Files**: Upload step resource PDFs to the `resources` bucket
-
-### Admin Setup
-
-- **Initial Admin User**: Create admin user manually in Supabase Auth dashboard
-- **Admin Code**: Insert initial admin code in `admin_code` table
-- **RLS Policies**: Ensure admin users have proper access to admin_code table
-- **Storage Buckets**: Verify both `student-submissions` and `resources` buckets exist
-
-### Teacher Registration
-
-- **Admin Code Required**: Teachers need current admin code to register
-- **Teacher ID**: Each teacher gets unique ID for student enrollment
-- **Student Assignment**: Students use teacher ID during registration for automatic assignment
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+---
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📄 License
 
-## Support
+This project is licensed under the MIT License.
 
-For support, email your-email@example.com or create an issue in the GitHub repository.
+---
+
+## 💬 Support
+
+- **Issues**: [GitHub Issues](https://github.com/orbilius101/Orbilius/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/orbilius101/Orbilius/discussions)
+
+---
+
+<div align="center">
+  Made with ❤️ by the Orbilius Team
+</div>
