@@ -21,6 +21,10 @@ export function useStepApprovalData() {
 
   useEffect(() => {
     const fetchData = async () => {
+      // Reset state at start
+      setYoutubeLink(null);
+      setSubmissionFile(null);
+
       const {
         data: { session },
         error,
@@ -66,7 +70,10 @@ export function useStepApprovalData() {
         const latestSubmission = fileData[0];
 
         if (latestSubmission.youtube_link) {
+          console.log('Setting YouTube link:', latestSubmission.youtube_link);
           setYoutubeLink(latestSubmission.youtube_link);
+        } else {
+          console.log('No YouTube link found in submission');
         }
 
         if (latestSubmission.file_url) {

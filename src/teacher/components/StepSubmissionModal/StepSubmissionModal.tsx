@@ -81,10 +81,20 @@ export default function StepSubmissionModal({
   };
 
   useEffect(() => {
-    if (!open || !projectId || !stepNumber) return;
+    if (!open || !projectId || !stepNumber) {
+      // Reset state when modal closes
+      setYoutubeLink(null);
+      setSubmissionFile(null);
+      setTeacherComments('');
+      setSubmittedAt(null);
+      return;
+    }
 
     const fetchSubmissionData = async () => {
       setLoading(true);
+      // Reset state before fetching
+      setYoutubeLink(null);
+      setSubmissionFile(null);
 
       try {
         // Fetch submission data
@@ -103,7 +113,10 @@ export default function StepSubmissionModal({
 
           // Set YouTube link
           if (latestSubmission.youtube_link) {
+            console.log('Setting YouTube link:', latestSubmission.youtube_link);
             setYoutubeLink(latestSubmission.youtube_link);
+          } else {
+            console.log('No YouTube link found');
           }
 
           // Handle file URL
@@ -230,53 +243,86 @@ export default function StepSubmissionModal({
                     <Box
                       sx={{
                         display: 'flex',
-                        justifyContent: 'center',
                         alignItems: 'center',
                         gap: 2,
+                        position: 'relative',
                       }}
                     >
-                      <Button
-                        onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
-                        disabled={pageNumber <= 1}
-                        variant="outlined"
-                        size="small"
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: 0,
+                          right: 0,
+                          display: 'flex',
+                          justifyContent: 'center',
+                          pointerEvents: 'none',
+                        }}
                       >
-                        Previous
-                      </Button>
-                      <Typography variant="body2">
-                        Page {pageNumber} of {numPages || '--'}
-                      </Typography>
-                      <Button
-                        onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
-                        disabled={pageNumber >= numPages}
-                        variant="outlined"
-                        size="small"
-                      >
-                        Next
-                      </Button>
-                      <Box sx={{ ml: 2 }} />
-                      <ButtonGroup size="small" variant="outlined">
-                        <Button
-                          onClick={() => setScale((prev) => Math.min(prev + 0.25, 3))}
-                          disabled={scale >= 3}
-                          startIcon={<ZoomInIcon />}
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            pointerEvents: 'auto',
+                          }}
                         >
-                          Zoom In
-                        </Button>
+                          <Button
+                            onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+                            disabled={pageNumber <= 1}
+                            variant="outlined"
+                            size="small"
+                          >
+                            Previous
+                          </Button>
+                          <Typography variant="body2">
+                            Page {pageNumber} of {numPages || '--'}
+                          </Typography>
+                          <Button
+                            onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
+                            disabled={pageNumber >= numPages}
+                            variant="outlined"
+                            size="small"
+                          >
+                            Next
+                          </Button>
+                          <Box sx={{ ml: 2 }} />
+                          <ButtonGroup size="small" variant="outlined">
+                            <Button
+                              onClick={() => setScale((prev) => Math.min(prev + 0.25, 3))}
+                              disabled={scale >= 3}
+                              startIcon={<ZoomInIcon />}
+                            >
+                              Zoom In
+                            </Button>
+                            <Button
+                              onClick={() => setScale((prev) => Math.max(prev - 0.25, 0.5))}
+                              disabled={scale <= 0.5}
+                              startIcon={<ZoomOutIcon />}
+                            >
+                              Zoom Out
+                            </Button>
+                            <Button onClick={() => setScale(1)} startIcon={<FitIcon />}>
+                              Fit
+                            </Button>
+                          </ButtonGroup>
+                          <Typography variant="body2" sx={{ ml: 1 }}>
+                            {Math.round(scale * 100)}%
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ flex: 1 }} />
+                      {youtubeLink && (
                         <Button
-                          onClick={() => setScale((prev) => Math.max(prev - 0.25, 0.5))}
-                          disabled={scale <= 0.5}
-                          startIcon={<ZoomOutIcon />}
+                          variant="contained"
+                          color="primary"
+                          onClick={() => setShowYouTubeModal(true)}
+                          startIcon={<PlayArrowIcon />}
+                          size="small"
+                          sx={{ position: 'relative', zIndex: 1 }}
                         >
-                          Zoom Out
+                          Watch Video
                         </Button>
-                        <Button onClick={() => setScale(1)} startIcon={<FitIcon />}>
-                          Fit
-                        </Button>
-                      </ButtonGroup>
-                      <Typography variant="body2" sx={{ ml: 1 }}>
-                        {Math.round(scale * 100)}%
-                      </Typography>
+                      )}
                     </Box>
                     <Box
                       sx={{
@@ -305,23 +351,6 @@ export default function StepSubmissionModal({
                       </Document>
                     </Box>
                   </Stack>
-                </Box>
-              )}
-
-              {/* YouTube Video */}
-              {youtubeLink && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="h6" sx={{ mb: 1 }}>
-                    YouTube Video Submission
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => setShowYouTubeModal(true)}
-                    startIcon={<PlayArrowIcon />}
-                  >
-                    Watch Video
-                  </Button>
                 </Box>
               )}
 
