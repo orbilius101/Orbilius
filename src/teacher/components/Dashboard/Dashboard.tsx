@@ -310,7 +310,7 @@ export default function TeacherDashboard() {
                                     bgcolor: segment.isApproved
                                       ? 'success.main'
                                       : segment.isSubmitted
-                                        ? '#4ade80'
+                                        ? '#ffd700'
                                         : segment.isInProgress
                                           ? 'warning.main'
                                           : 'grey.300',
@@ -325,16 +325,16 @@ export default function TeacherDashboard() {
                                       : 'none',
                                     '@keyframes ledBlink': {
                                       '0%': {
-                                        bgcolor: '#4ade80',
-                                        boxShadow: '0 0 10px 2px rgba(74, 222, 128, 0.8)',
+                                        bgcolor: '#ffd700',
+                                        boxShadow: '0 0 10px 2px rgba(255, 215, 0, 0.8)',
                                       },
                                       '50%': {
-                                        bgcolor: '#065f46',
-                                        boxShadow: '0 0 0 0 rgba(6, 95, 70, 0)',
+                                        bgcolor: '#8b7500',
+                                        boxShadow: '0 0 0 0 rgba(139, 117, 0, 0)',
                                       },
                                       '100%': {
-                                        bgcolor: '#4ade80',
-                                        boxShadow: '0 0 10px 2px rgba(74, 222, 128, 0.8)',
+                                        bgcolor: '#ffd700',
+                                        boxShadow: '0 0 10px 2px rgba(255, 215, 0, 0.8)',
                                       },
                                     },
                                     '&:hover': segment.isApproved
@@ -346,7 +346,7 @@ export default function TeacherDashboard() {
                                       : segment.isSubmitted
                                         ? {
                                             transform: 'translateY(-2px)',
-                                            boxShadow: '0 0 12px 4px rgba(74, 222, 128, 0.6)',
+                                            boxShadow: '0 0 12px 4px rgba(255, 215, 0, 0.6)',
                                           }
                                         : {},
                                   }}
