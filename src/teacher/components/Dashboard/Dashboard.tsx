@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import EmailIcon from '@mui/icons-material/Email';
 import InviteModal from '../../../admin/components/InviteModal';
+import StepSubmissionModal from '../StepSubmissionModal/StepSubmissionModal';
 import {
   Box,
   Container,
@@ -12,7 +13,6 @@ import {
   AppBar,
   Toolbar,
   Chip,
-  LinearProgress,
   Tooltip,
   TableContainer,
   Table,
@@ -34,11 +34,23 @@ import { useDashboardHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 import { supabase } from '../../../supabaseClient';
 import orbiliusLogo from '../../../assets/merle-386x386-yellow.svg';
+import { Project } from '../../../types';
 
 export default function TeacherDashboard() {
   const data = useDashboardData();
   const handlers = useDashboardHandlers(data);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [submissionModal, setSubmissionModal] = useState<{
+    open: boolean;
+    projectId: string | null;
+    stepNumber: number | null;
+    project: Project | null;
+  }>({
+    open: false,
+    projectId: null,
+    stepNumber: null,
+    project: null,
+  });
 
   const { user, userProfile, projects, navigate, alertState, showAlert, closeAlert } = data;
 
@@ -57,7 +69,7 @@ export default function TeacherDashboard() {
     }
   };
 
-  const getProgressBarSegments = (project: any) => {
+  const getProgressBarSegments = (project: Project) => {
     const segments = [];
     const stepNames = [
       'Initial Research',
@@ -71,8 +83,10 @@ export default function TeacherDashboard() {
       segments.push({
         isApproved: stepStatus === 'Approved',
         isInProgress: i === project.current_step && stepStatus !== 'Approved',
+        isSubmitted: stepStatus === 'Submitted',
         stepName: stepNames[i - 1],
         status: stepStatus || 'Not Started',
+        stepNumber: i,
       });
     }
     return segments;
@@ -105,6 +119,34 @@ export default function TeacherDashboard() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
+  };
+
+  const handleStepClick = (project: Project, stepIndex: number) => {
+    const stepNumber = stepIndex + 1;
+    const stepStatus = project[`step${stepNumber}_status`];
+
+    // Navigate to approval page for submitted steps
+    if (stepStatus === 'Submitted') {
+      navigate(`/teacher/step-approval/${project.project_id}/${stepNumber}`);
+    }
+    // Open modal for approved steps
+    else if (stepStatus === 'Approved') {
+      setSubmissionModal({
+        open: true,
+        projectId: project.project_id,
+        stepNumber: stepNumber,
+        project: project,
+      });
+    }
+  };
+
+  const handleCloseSubmissionModal = () => {
+    setSubmissionModal({
+      open: false,
+      projectId: null,
+      stepNumber: null,
+      project: null,
+    });
   };
 
   return (
@@ -182,16 +224,25 @@ export default function TeacherDashboard() {
                       <TableCell>{project.grade}</TableCell>
                       <TableCell>
                         {project[`step${project.current_step}_status`] === 'Submitted' ? (
-                          <Button
+                          <Typography
+                            component="span"
                             onClick={() =>
                               navigate(
                                 `/teacher/step-approval/${project.project_id}/${project.current_step}`
                               )
                             }
-                            sx={{ textTransform: 'none' }}
+                            sx={{
+                              color: 'primary.main',
+                              fontWeight: 500,
+                              textDecoration: 'underline',
+                              cursor: 'pointer',
+                              '&:hover': {
+                                color: 'primary.dark',
+                              },
+                            }}
                           >
                             {project.project_title}
-                          </Button>
+                          </Typography>
                         ) : (
                           project.project_title
                         )}
@@ -205,20 +256,56 @@ export default function TeacherDashboard() {
                             {getProgressBarSegments(project).map((segment, index) => (
                               <Tooltip
                                 key={index}
-                                title={`${segment.stepName}: ${segment.status}`}
+                                title={`${segment.stepName}: ${segment.status}${segment.isApproved ? ' (Click to view)' : ''}${segment.isSubmitted ? ' (Click to review)' : ''}`}
                                 arrow
                               >
                                 <Box
+                                  onClick={() => handleStepClick(project, index)}
                                   sx={{
                                     flex: 1,
                                     height: 6,
                                     bgcolor: segment.isApproved
                                       ? 'success.main'
-                                      : segment.isInProgress
-                                        ? 'warning.main'
-                                        : 'grey.300',
+                                      : segment.isSubmitted
+                                        ? '#4ade80'
+                                        : segment.isInProgress
+                                          ? 'warning.main'
+                                          : 'grey.300',
                                     borderRadius: 1,
-                                    cursor: 'pointer',
+                                    cursor:
+                                      segment.isApproved || segment.isSubmitted
+                                        ? 'pointer'
+                                        : 'default',
+                                    transition: segment.isSubmitted ? 'none' : 'all 0.2s',
+                                    animation: segment.isSubmitted
+                                      ? 'ledBlink 1s step-end infinite'
+                                      : 'none',
+                                    '@keyframes ledBlink': {
+                                      '0%': {
+                                        bgcolor: '#4ade80',
+                                        boxShadow: '0 0 10px 2px rgba(74, 222, 128, 0.8)',
+                                      },
+                                      '50%': {
+                                        bgcolor: '#065f46',
+                                        boxShadow: '0 0 0 0 rgba(6, 95, 70, 0)',
+                                      },
+                                      '100%': {
+                                        bgcolor: '#4ade80',
+                                        boxShadow: '0 0 10px 2px rgba(74, 222, 128, 0.8)',
+                                      },
+                                    },
+                                    '&:hover': segment.isApproved
+                                      ? {
+                                          transform: 'translateY(-2px)',
+                                          boxShadow: 2,
+                                          bgcolor: 'success.dark',
+                                        }
+                                      : segment.isSubmitted
+                                        ? {
+                                            transform: 'translateY(-2px)',
+                                            boxShadow: '0 0 12px 4px rgba(74, 222, 128, 0.6)',
+                                          }
+                                        : {},
                                   }}
                                 />
                               </Tooltip>
@@ -333,6 +420,15 @@ export default function TeacherDashboard() {
         message={alertState.message}
         onClose={closeAlert}
       />
+      {submissionModal.open && submissionModal.projectId && submissionModal.stepNumber && (
+        <StepSubmissionModal
+          open={submissionModal.open}
+          onClose={handleCloseSubmissionModal}
+          projectId={submissionModal.projectId}
+          stepNumber={submissionModal.stepNumber}
+          project={submissionModal.project}
+        />
+      )}
     </Box>
   );
 }

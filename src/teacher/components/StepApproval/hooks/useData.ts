@@ -14,6 +14,7 @@ export function useStepApprovalData() {
   const [loading, setLoading] = useState(true);
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
+  const [scale, setScale] = useState(1.0);
   const [isApproving, setIsApproving] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
   const { alertState, showAlert, closeAlert } = useAlert();
@@ -123,6 +124,8 @@ export function useStepApprovalData() {
     setNumPages,
     pageNumber,
     setPageNumber,
+    scale,
+    setScale,
     isApproving,
     setIsApproving,
     isSavingComment,
