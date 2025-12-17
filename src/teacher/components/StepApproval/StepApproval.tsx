@@ -131,9 +131,9 @@ export default function StepApproval() {
                   <Box
                     sx={{
                       display: 'flex',
-                      justifyContent: 'space-between',
                       alignItems: 'center',
                       gap: 2,
+                      position: 'relative',
                     }}
                   >
                     <Button
@@ -144,50 +144,90 @@ export default function StepApproval() {
                     >
                       Back to Dashboard
                     </Button>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Button
-                        onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
-                        disabled={pageNumber <= 1}
-                        variant="outlined"
-                        size="small"
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      position: 'relative',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          pointerEvents: 'auto',
+                        }}
                       >
-                        Previous
-                      </Button>
-                      <Typography variant="body2">
-                        Page {pageNumber} of {numPages || '--'}
-                      </Typography>
-                      <Button
-                        onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
-                        disabled={pageNumber >= numPages}
-                        variant="outlined"
-                        size="small"
-                      >
-                        Next
-                      </Button>
-                      <Box sx={{ ml: 2 }} />
-                      <ButtonGroup size="small" variant="outlined">
                         <Button
-                          onClick={() => setScale((prev) => Math.min(prev + 0.25, 3))}
-                          disabled={scale >= 3}
-                          startIcon={<ZoomInIcon />}
+                          onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+                          disabled={pageNumber <= 1}
+                          variant="outlined"
+                          size="small"
                         >
-                          Zoom In
+                          Previous
                         </Button>
+                        <Typography variant="body2">
+                          Page {pageNumber} of {numPages || '--'}
+                        </Typography>
                         <Button
-                          onClick={() => setScale((prev) => Math.max(prev - 0.25, 0.5))}
-                          disabled={scale <= 0.5}
-                          startIcon={<ZoomOutIcon />}
+                          onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
+                          disabled={pageNumber >= numPages}
+                          variant="outlined"
+                          size="small"
                         >
-                          Zoom Out
+                          Next
                         </Button>
-                        <Button onClick={() => setScale(1)} startIcon={<FitIcon />}>
-                          Fit
-                        </Button>
-                      </ButtonGroup>
-                      <Typography variant="body2" sx={{ ml: 1 }}>
-                        {Math.round(scale * 100)}%
-                      </Typography>
+                        <Box sx={{ ml: 2 }} />
+                        <ButtonGroup size="small" variant="outlined">
+                          <Button
+                            onClick={() => setScale((prev) => Math.min(prev + 0.25, 3))}
+                            disabled={scale >= 3}
+                            startIcon={<ZoomInIcon />}
+                          >
+                            Zoom In
+                          </Button>
+                          <Button
+                            onClick={() => setScale((prev) => Math.max(prev - 0.25, 0.5))}
+                            disabled={scale <= 0.5}
+                            startIcon={<ZoomOutIcon />}
+                          >
+                            Zoom Out
+                          </Button>
+                          <Button onClick={() => setScale(1)} startIcon={<FitIcon />}>
+                            Fit
+                          </Button>
+                        </ButtonGroup>
+                        <Typography variant="body2" sx={{ ml: 1 }}>
+                          {Math.round(scale * 100)}%
+                        </Typography>
+                      </Box>
                     </Box>
+                    <Box sx={{ flex: 1 }} />
+                    {youtubeLink && (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => setShowYouTubePlayer(true)}
+                        startIcon={<PlayArrowIcon />}
+                        size="small"
+                        sx={{ position: 'relative', zIndex: 1 }}
+                      >
+                        Watch Video
+                      </Button>
+                    )}
                   </Box>
                   <Box
                     sx={{
@@ -216,22 +256,6 @@ export default function StepApproval() {
                     </Document>
                   </Box>
                 </Stack>
-              </Box>
-            )}
-
-            {youtubeLink && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>
-                  YouTube Video Submission
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => setShowYouTubePlayer(true)}
-                  startIcon={<PlayArrowIcon />}
-                >
-                  Watch Video
-                </Button>
               </Box>
             )}
 
