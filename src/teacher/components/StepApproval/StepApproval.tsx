@@ -10,7 +10,14 @@ import {
   Stack,
   CircularProgress,
   Link,
+  ButtonGroup,
 } from '@mui/material';
+import {
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
+  ZoomOutMap as FitIcon,
+  ArrowBack as ArrowBackIcon,
+} from '@mui/icons-material';
 import { useStepApprovalData } from './hooks/useData';
 import { useStepApprovalHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
@@ -32,6 +39,8 @@ export default function StepApproval() {
     numPages,
     pageNumber,
     setPageNumber,
+    scale,
+    setScale,
     isApproving,
     isSavingComment,
     stepNumber,
@@ -70,46 +79,100 @@ export default function StepApproval() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
-      <Container maxWidth="lg">
-        <Stack spacing={4}>
+      <Container maxWidth="xl">
+        <Stack spacing={2}>
           <Box>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h5" sx={{ mb: 1 }}>
               Review Step {stepNumber}: {getStepName(stepNumber)}
             </Typography>
-            <Typography variant="body1">
-              Project: {project.project_title || 'Untitled Project'}
-            </Typography>
-            <Typography variant="body1">
-              Student: {project.student?.first_name} {project.student?.last_name}
-            </Typography>
+            <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', fontSize: '0.875rem' }}>
+              <Typography variant="body2" color="text.primary">
+                <strong>Student:</strong> {project.student?.first_name} {project.student?.last_name}
+              </Typography>
+              <Typography variant="body2" color="text.primary">
+                <strong>Project:</strong> {project.project_title || 'Untitled Project'}
+              </Typography>
+            </Box>
           </Box>
 
-          <Stack spacing={3}>
+          <Stack spacing={2}>
             {submissionFile ? (
-              <Paper sx={{ p: 3 }}>
-                <Stack spacing={2}>
+              <Box>
+                <Stack spacing={1}>
                   <Box
-                    sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 2,
+                    }}
                   >
                     <Button
-                      onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
-                      disabled={pageNumber <= 1}
                       variant="outlined"
+                      onClick={() => navigate('/teacher/dashboard')}
+                      startIcon={<ArrowBackIcon />}
+                      size="small"
                     >
-                      Previous
+                      Back to Dashboard
                     </Button>
-                    <Typography>
-                      Page {pageNumber} of {numPages || '--'}
-                    </Typography>
-                    <Button
-                      onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
-                      disabled={pageNumber >= numPages}
-                      variant="outlined"
-                    >
-                      Next
-                    </Button>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Button
+                        onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+                        disabled={pageNumber <= 1}
+                        variant="outlined"
+                        size="small"
+                      >
+                        Previous
+                      </Button>
+                      <Typography variant="body2">
+                        Page {pageNumber} of {numPages || '--'}
+                      </Typography>
+                      <Button
+                        onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
+                        disabled={pageNumber >= numPages}
+                        variant="outlined"
+                        size="small"
+                      >
+                        Next
+                      </Button>
+                      <Box sx={{ ml: 2 }} />
+                      <ButtonGroup size="small" variant="outlined">
+                        <Button
+                          onClick={() => setScale((prev) => Math.min(prev + 0.25, 3))}
+                          disabled={scale >= 3}
+                          startIcon={<ZoomInIcon />}
+                        >
+                          Zoom In
+                        </Button>
+                        <Button
+                          onClick={() => setScale((prev) => Math.max(prev - 0.25, 0.5))}
+                          disabled={scale <= 0.5}
+                          startIcon={<ZoomOutIcon />}
+                        >
+                          Zoom Out
+                        </Button>
+                        <Button onClick={() => setScale(1)} startIcon={<FitIcon />}>
+                          Fit
+                        </Button>
+                      </ButtonGroup>
+                      <Typography variant="body2" sx={{ ml: 1 }}>
+                        {Math.round(scale * 100)}%
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', overflow: 'auto' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      overflow: 'auto',
+                      maxHeight: '65vh',
+                      border: '1px solid',
+                      borderColor: '#1e4976',
+                      borderRadius: 1,
+                      bgcolor: '#0a1929',
+                      p: 2,
+                    }}
+                  >
                     <Document
                       file={submissionFile}
                       onLoadSuccess={onDocumentLoadSuccess}
@@ -119,28 +182,29 @@ export default function StepApproval() {
                         pageNumber={pageNumber}
                         renderTextLayer={false}
                         renderAnnotationLayer={false}
+                        scale={scale}
                       />
                     </Document>
                   </Box>
                 </Stack>
-              </Paper>
+              </Box>
             ) : youtubeLink ? (
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>
                   YouTube Link Submitted:
                 </Typography>
                 <Link href={youtubeLink} target="_blank" rel="noopener noreferrer">
                   {youtubeLink}
                 </Link>
-              </Paper>
+              </Box>
             ) : (
-              <Paper sx={{ p: 3 }}>
-                <Typography>No submission found for this step</Typography>
-              </Paper>
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography color="text.secondary">No submission found for this step</Typography>
+              </Box>
             )}
 
-            <Paper sx={{ p: 3 }}>
-              <Stack spacing={3}>
+            <Paper sx={{ p: 2, mt: 2 }}>
+              <Stack spacing={2}>
                 <TextField
                   label="Teacher Comments (Optional)"
                   value={comment}
@@ -152,9 +216,6 @@ export default function StepApproval() {
                 />
 
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
-                  <Button variant="outlined" onClick={() => navigate('/teacher/dashboard')}>
-                    Back to Dashboard
-                  </Button>
                   <Button
                     variant="outlined"
                     onClick={handleSaveComment}
