@@ -65,7 +65,7 @@ export function useStepApprovalData() {
       } else if (fileData && fileData.length > 0) {
         const latestSubmission = fileData[0];
 
-        if (parseInt(stepNumber) === 5 && latestSubmission.youtube_link) {
+        if (latestSubmission.youtube_link) {
           setYoutubeLink(latestSubmission.youtube_link);
         }
 

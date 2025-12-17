@@ -28,6 +28,7 @@ import {
   Send as SubmittedIcon,
   CheckCircle as ApprovedIcon,
   RadioButtonUnchecked as NotStartedIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useDashboardData } from './hooks/useData';
 import { useDashboardHandlers } from './hooks/useHandlers';
@@ -96,6 +97,16 @@ export default function TeacherDashboard() {
   console.log('Teacher Dashboard - User ID:', user?.id);
   console.log('Teacher Dashboard - Projects:', projects);
   console.log('Teacher Dashboard - Projects length:', projects?.length);
+
+  // Count projects that need review (have any submitted step)
+  const projectsNeedingReview = projects.filter((project) => {
+    for (let i = 1; i <= 5; i++) {
+      if (project[`step${i}_status`] === 'Submitted') {
+        return true;
+      }
+    }
+    return false;
+  }).length;
 
   const {
     getCurrentStepName,
@@ -183,9 +194,41 @@ export default function TeacherDashboard() {
 
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Stack spacing={4}>
-          <Typography variant="h4" component="h1">
-            Teacher Dashboard
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h4" component="h1">
+              Teacher Dashboard
+            </Typography>
+            <Chip
+              icon={<AssignmentIcon />}
+              label={`${projectsNeedingReview} Project${projectsNeedingReview === 1 ? '' : 's'} Need${projectsNeedingReview === 1 ? 's' : ''} Review`}
+              sx={{
+                bgcolor: '#ffd700 !important',
+                color: '#0a1929 !important',
+                fontWeight: 600,
+                fontSize: '1rem',
+                px: 1,
+                height: '40px',
+                '& .MuiChip-icon': {
+                  color: '#0a1929',
+                },
+                '& .MuiChip-label': {
+                  color: '#0a1929',
+                },
+                animation: projectsNeedingReview > 0 ? 'pulse 2s ease-in-out infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%': {
+                    transform: 'scale(1)',
+                  },
+                  '50%': {
+                    transform: 'scale(1.05)',
+                  },
+                  '100%': {
+                    transform: 'scale(1)',
+                  },
+                },
+              }}
+            />
+          </Box>
           {projects.length > 0 ? (
             <TableContainer component={Paper}>
               <Table>
@@ -278,7 +321,7 @@ export default function TeacherDashboard() {
                                         : 'default',
                                     transition: segment.isSubmitted ? 'none' : 'all 0.2s',
                                     animation: segment.isSubmitted
-                                      ? 'ledBlink 1s step-end infinite'
+                                      ? 'ledBlink 2s ease-in-out infinite'
                                       : 'none',
                                     '@keyframes ledBlink': {
                                       '0%': {
