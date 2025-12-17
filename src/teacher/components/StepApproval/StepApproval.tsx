@@ -11,12 +11,19 @@ import {
   CircularProgress,
   Link,
   ButtonGroup,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from '@mui/material';
 import {
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
   ZoomOutMap as FitIcon,
   ArrowBack as ArrowBackIcon,
+  Close as CloseIcon,
+  PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
 import { useStepApprovalData } from './hooks/useData';
 import { useStepApprovalHandlers } from './hooks/useHandlers';
@@ -26,6 +33,8 @@ import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export default function StepApproval() {
+  const [showYouTubePlayer, setShowYouTubePlayer] = React.useState<boolean>(false);
+
   const data = useStepApprovalData();
   const handlers = useStepApprovalHandlers(data);
 
@@ -56,6 +65,26 @@ export default function StepApproval() {
     handleApprove,
     getStepName,
   } = handlers;
+
+  const extractYouTubeVideoId = (url: string): string | null => {
+    if (!url) return null;
+
+    // Handle various YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
+      /youtube\.com\/embed\/([^&\n?#]+)/,
+      /youtube\.com\/v\/([^&\n?#]+)/,
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+
+    return null;
+  };
 
   if (loading) {
     return (
@@ -96,7 +125,7 @@ export default function StepApproval() {
           </Box>
 
           <Stack spacing={2}>
-            {submissionFile ? (
+            {submissionFile && (
               <Box>
                 <Stack spacing={1}>
                   <Box
@@ -188,16 +217,25 @@ export default function StepApproval() {
                   </Box>
                 </Stack>
               </Box>
-            ) : youtubeLink ? (
+            )}
+
+            {youtubeLink && (
               <Box sx={{ mt: 2 }}>
                 <Typography variant="h6" sx={{ mb: 1 }}>
-                  YouTube Link Submitted:
+                  YouTube Video Submission
                 </Typography>
-                <Link href={youtubeLink} target="_blank" rel="noopener noreferrer">
-                  {youtubeLink}
-                </Link>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setShowYouTubePlayer(true)}
+                  startIcon={<PlayArrowIcon />}
+                >
+                  Watch Video
+                </Button>
               </Box>
-            ) : (
+            )}
+
+            {!submissionFile && !youtubeLink && (
               <Box sx={{ p: 2, textAlign: 'center' }}>
                 <Typography color="text.secondary">No submission found for this step</Typography>
               </Box>
@@ -237,6 +275,69 @@ export default function StepApproval() {
           </Stack>
         </Stack>
       </Container>
+
+      {/* YouTube Video Modal */}
+      <Dialog
+        open={showYouTubePlayer}
+        onClose={() => setShowYouTubePlayer(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            height: '80vh',
+            maxHeight: '80vh',
+          },
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">YouTube Video Submission</Typography>
+            <IconButton onClick={() => setShowYouTubePlayer(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              position: 'relative',
+              paddingBottom: '56.25%',
+              height: 0,
+              overflow: 'hidden',
+              width: '100%',
+              borderRadius: 1,
+              bgcolor: '#000',
+            }}
+          >
+            {youtubeLink && extractYouTubeVideoId(youtubeLink) ? (
+              <iframe
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                }}
+                src={`https://www.youtube.com/embed/${extractYouTubeVideoId(youtubeLink)}`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <Box sx={{ p: 2 }}>
+                <Typography color="error">Invalid YouTube URL</Typography>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setShowYouTubePlayer(false)} variant="contained">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <AlertDialog
         open={alertState.open}
         title={alertState.title}
