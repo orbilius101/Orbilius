@@ -244,73 +244,62 @@ export default function StepSubmissionModal({
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
+                        justifyContent: 'space-between',
                         gap: 2,
-                        position: 'relative',
                       }}
                     >
                       <Box
                         sx={{
-                          position: 'absolute',
-                          left: 0,
-                          right: 0,
                           display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          flex: 1,
                           justifyContent: 'center',
-                          pointerEvents: 'none',
                         }}
                       >
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            pointerEvents: 'auto',
-                          }}
+                        <Button
+                          onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+                          disabled={pageNumber <= 1}
+                          variant="outlined"
+                          size="small"
                         >
+                          Previous
+                        </Button>
+                        <Typography variant="body2">
+                          Page {pageNumber} of {numPages || '--'}
+                        </Typography>
+                        <Button
+                          onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
+                          disabled={pageNumber >= numPages}
+                          variant="outlined"
+                          size="small"
+                        >
+                          Next
+                        </Button>
+                        <Box sx={{ ml: 2 }} />
+                        <ButtonGroup size="small" variant="outlined">
                           <Button
-                            onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
-                            disabled={pageNumber <= 1}
-                            variant="outlined"
-                            size="small"
+                            onClick={() => setScale((prev) => Math.min(prev + 0.25, 3))}
+                            disabled={scale >= 3}
+                            startIcon={<ZoomInIcon />}
                           >
-                            Previous
+                            Zoom In
                           </Button>
-                          <Typography variant="body2">
-                            Page {pageNumber} of {numPages || '--'}
-                          </Typography>
                           <Button
-                            onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
-                            disabled={pageNumber >= numPages}
-                            variant="outlined"
-                            size="small"
+                            onClick={() => setScale((prev) => Math.max(prev - 0.25, 0.5))}
+                            disabled={scale <= 0.5}
+                            startIcon={<ZoomOutIcon />}
                           >
-                            Next
+                            Zoom Out
                           </Button>
-                          <Box sx={{ ml: 2 }} />
-                          <ButtonGroup size="small" variant="outlined">
-                            <Button
-                              onClick={() => setScale((prev) => Math.min(prev + 0.25, 3))}
-                              disabled={scale >= 3}
-                              startIcon={<ZoomInIcon />}
-                            >
-                              Zoom In
-                            </Button>
-                            <Button
-                              onClick={() => setScale((prev) => Math.max(prev - 0.25, 0.5))}
-                              disabled={scale <= 0.5}
-                              startIcon={<ZoomOutIcon />}
-                            >
-                              Zoom Out
-                            </Button>
-                            <Button onClick={() => setScale(1)} startIcon={<FitIcon />}>
-                              Fit
-                            </Button>
-                          </ButtonGroup>
-                          <Typography variant="body2" sx={{ ml: 1 }}>
-                            {Math.round(scale * 100)}%
-                          </Typography>
-                        </Box>
+                          <Button onClick={() => setScale(1)} startIcon={<FitIcon />}>
+                            Fit
+                          </Button>
+                        </ButtonGroup>
+                        <Typography variant="body2" sx={{ ml: 1 }}>
+                          {Math.round(scale * 100)}%
+                        </Typography>
                       </Box>
-                      <Box sx={{ flex: 1 }} />
                       {youtubeLink && (
                         <Button
                           variant="contained"
@@ -318,7 +307,6 @@ export default function StepSubmissionModal({
                           onClick={() => setShowYouTubeModal(true)}
                           startIcon={<PlayArrowIcon />}
                           size="small"
-                          sx={{ position: 'relative', zIndex: 1 }}
                         >
                           Watch Video
                         </Button>
