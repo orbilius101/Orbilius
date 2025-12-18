@@ -110,6 +110,35 @@ export async function deleteTeacher(teacherId: string) {
   }
 }
 
+export async function deleteStudent(studentId: string) {
+  // Call the backend API endpoint to delete student
+  // This endpoint has access to the service role key and can delete from auth.users
+  const apiUrl = import.meta.env.DEV
+    ? 'http://localhost:4000/api/deleteStudent'
+    : '/api/deleteStudent';
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ studentId }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return { data: null, error: result.error || 'Failed to delete student' };
+    }
+
+    return { data: result, error: null };
+  } catch (error) {
+    console.error('Error calling deleteStudent API:', error);
+    return { data: null, error: error.message || 'Failed to delete student' };
+  }
+}
+
 // AUTH SIGN-OUT
 export async function signOut() {
   await supabase.auth.signOut();

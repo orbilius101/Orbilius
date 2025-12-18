@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchTeachers, deleteTeacher } from '../api/adminApi';
+import { fetchTeachers, deleteTeacher, deleteStudent } from '../api/adminApi';
 import { supabase } from '../../supabaseClient';
 
 interface Teacher {
@@ -27,8 +27,9 @@ interface ToastState {
 
 interface ConfirmState {
   open: boolean;
-  teacherId: string;
-  teacherName: string;
+  id: string;
+  name: string;
+  type: 'teacher' | 'student';
 }
 
 export function useTeachers(showAlert: (message: string, title: string) => void) {
@@ -42,8 +43,9 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
   });
   const [confirmState, setConfirmState] = useState<ConfirmState>({
     open: false,
-    teacherId: '',
-    teacherName: '',
+    id: '',
+    name: '',
+    type: 'teacher',
   });
 
   const showToast = (
@@ -57,12 +59,12 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     setToastState((prev) => ({ ...prev, open: false }));
   };
 
-  const openConfirm = (teacherId: string, teacherName: string) => {
-    setConfirmState({ open: true, teacherId, teacherName });
+  const openConfirm = (id: string, name: string, type: 'teacher' | 'student' = 'teacher') => {
+    setConfirmState({ open: true, id, name, type });
   };
 
   const closeConfirm = () => {
-    setConfirmState({ open: false, teacherId: '', teacherName: '' });
+    setConfirmState({ open: false, id: '', name: '', type: 'teacher' });
   };
 
   const loadTeachers = async () => {
@@ -101,30 +103,53 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
   };
 
   const handleDelete = async (teacherId: string, teacherName: string) => {
-    openConfirm(teacherId, teacherName);
+    openConfirm(teacherId, teacherName, 'teacher');
+  };
+
+  const handleDeleteStudent = async (studentId: string, studentName: string) => {
+    openConfirm(studentId, studentName, 'student');
   };
 
   const confirmDelete = async () => {
-    const { teacherId, teacherName } = confirmState;
+    const { id, name, type } = confirmState;
     closeConfirm();
 
     setDeleting(true);
-    console.log('Deleting teacher:', teacherId, teacherName);
+    console.log(`Deleting ${type}:`, id, name);
 
-    const { data, error } = await deleteTeacher(teacherId);
+    let data, error;
+    if (type === 'teacher') {
+      const result = await deleteTeacher(id);
+      data = result.data;
+      error = result.error;
+    } else {
+      const result = await deleteStudent(id);
+      data = result.data;
+      error = result.error;
+    }
 
-    console.log('Delete teacher - Full response:', { data, error });
-    console.log('Delete teacher - Data:', data);
-    console.log('Delete teacher - Error:', error);
+    console.log(`Delete ${type} - Full response:`, { data, error });
 
     if (error) {
-      console.error('Error deleting teacher:', error);
-      showToast(`Failed to delete teacher: ${error.message}`, 'error');
+      console.error(`Error deleting ${type}:`, error);
+      showToast(`Failed to delete ${type}: ${error}`, 'error');
     } else {
-      console.log('Delete successful, reloading teachers...');
-      showToast(`${teacherName} has been deleted successfully`);
-      // Reload teachers list
-      await loadTeachers();
+      console.log('Delete successful, updating state...');
+      showToast(`${name} has been deleted successfully`);
+
+      // Update local state instead of reloading
+      if (type === 'teacher') {
+        // Remove teacher from the list
+        setTeachers((prevTeachers) => prevTeachers.filter((t) => t.id !== id));
+      } else {
+        // Remove student from their teacher's students array
+        setTeachers((prevTeachers) =>
+          prevTeachers.map((teacher) => ({
+            ...teacher,
+            students: teacher.students?.filter((s) => s.id !== id) || [],
+          }))
+        );
+      }
     }
 
     setDeleting(false);
@@ -139,6 +164,7 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     loading,
     deleting,
     handleDelete,
+    handleDeleteStudent,
     confirmDelete,
     refresh: loadTeachers,
     toastState,
