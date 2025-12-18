@@ -57,6 +57,7 @@ export default function AdminDashboard() {
     teachers,
     loading: loadingTeachers,
     handleDelete,
+    handleDeleteStudent,
     confirmDelete,
     toastState,
     closeToast,
@@ -136,7 +137,11 @@ export default function AdminDashboard() {
               <CircularProgress />
             </Box>
           ) : (
-            <TeachersList teachers={teachers} onDelete={handleDelete} />
+            <TeachersList
+              teachers={teachers}
+              onDelete={handleDelete}
+              onDeleteStudent={handleDeleteStudent}
+            />
           )}
         </Paper>
         {/* Invitation Modal */}
@@ -183,8 +188,12 @@ export default function AdminDashboard() {
         </Snackbar>
         <ConfirmDialog
           open={confirmState.open}
-          title="Delete Teacher"
-          message={`Are you sure you want to delete ${confirmState.teacherName}? This will also delete all their students and projects.`}
+          title={`Delete ${confirmState.type === 'teacher' ? 'Teacher' : 'Student'}`}
+          message={
+            confirmState.type === 'teacher'
+              ? `Are you sure you want to delete ${confirmState.name}? This will also delete all their students and projects.`
+              : `Are you sure you want to delete ${confirmState.name}? This will also delete all their projects.`
+          }
           onConfirm={confirmDelete}
           onCancel={closeConfirm}
           confirmText="Delete"

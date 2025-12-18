@@ -1,15 +1,18 @@
 # Use official Node.js LTS image
 FROM node:20-alpine
 
+# Install pnpm
+RUN npm install -g pnpm
+
 # Set working directory
 WORKDIR /app
 
-# Copy only package.json and package-lock.json first for caching
+# Copy only package.json and pnpm-lock.yaml first for caching
 COPY package.json ./
-COPY package-lock.json ./
+COPY pnpm-lock.yaml ./
 
 # Install only production dependencies
-RUN npm install --omit=dev
+RUN pnpm install --prod --frozen-lockfile
 
 # Copy API server code
 COPY server.mjs ./

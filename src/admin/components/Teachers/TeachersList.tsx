@@ -39,9 +39,10 @@ interface Teacher {
 interface TeachersListProps {
   teachers: Teacher[];
   onDelete: (teacherId: string, teacherName: string) => void;
+  onDeleteStudent: (studentId: string, studentName: string) => void;
 }
 
-export default function TeachersList({ teachers, onDelete }: TeachersListProps) {
+export default function TeachersList({ teachers, onDelete, onDeleteStudent }: TeachersListProps) {
   const [expandedTeacherId, setExpandedTeacherId] = useState<string | null>(null);
 
   const toggleExpand = (teacherId: string) => {
@@ -148,6 +149,12 @@ export default function TeachersList({ teachers, onDelete }: TeachersListProps) 
                                 <TableCell sx={{ color: 'text.primary', fontWeight: 600 }}>
                                   Joined
                                 </TableCell>
+                                <TableCell
+                                  sx={{ color: 'text.primary', fontWeight: 600 }}
+                                  align="center"
+                                >
+                                  Actions
+                                </TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -169,6 +176,22 @@ export default function TeachersList({ teachers, onDelete }: TeachersListProps) 
                                   </TableCell>
                                   <TableCell sx={{ color: 'text.primary' }}>
                                     {new Date(student.created_at).toLocaleDateString()}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    <Tooltip title="Delete Student">
+                                      <IconButton
+                                        color="error"
+                                        onClick={() =>
+                                          onDeleteStudent(
+                                            student.id,
+                                            `${student.first_name} ${student.last_name}`
+                                          )
+                                        }
+                                        size="small"
+                                      >
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
                                   </TableCell>
                                 </TableRow>
                               ))}
