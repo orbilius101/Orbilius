@@ -13,6 +13,8 @@ import {
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import { CLOUD_FUNCTIONS } from '../../config/functions';
+import { db } from '../../firebaseConfig';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
 
 interface InviteModalProps {
   open: boolean;
@@ -35,6 +37,14 @@ export default function InviteModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Email validation
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const isEmailValid = email.trim() !== '' && isValidEmail(email);
 
   // Check if user exists using secure API route
   const handleSend = async () => {
@@ -93,6 +103,24 @@ export default function InviteModal({
         return;
       }
 
+      // For teachers, create a pending user record in Firestore
+      if (role === 'teacher') {
+        try {
+          console.log('Creating pending teacher record...');
+          await addDoc(collection(db, 'pending_invitations'), {
+            email,
+            role: 'teacher',
+            status: 'pending',
+            invited_at: Timestamp.now(),
+            admin_code: adminCode || null,
+          });
+          console.log('Pending teacher record created');
+        } catch (firestoreError) {
+          console.error('Error creating pending teacher record:', firestoreError);
+          // Don't fail the whole operation, just log it
+        }
+      }
+
       setLoading(false);
       setSuccess('Invitation sent successfully!');
       showAlert('Invitation sent successfully!', 'Success');
@@ -110,8 +138,18 @@ export default function InviteModal({
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' && isEmailValid && !loading) {
+      event.preventDefault();
+      handleSend();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth onKeyDown={handleKeyDown}>
       <DialogTitle>
         <EmailIcon sx={{ mr: 1, verticalAlign: 'middle' }} /> Send{' '}
         {role === 'teacher' ? 'Teacher' : 'Student'} Invitation
@@ -130,6 +168,8 @@ export default function InviteModal({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
+          error={email.trim() !== '' && !isValidEmail}
+          helperText={email.trim() !== '' && !isValidEmail ? 'Please enter a valid email address' : ''}
         />
         {error && (
           <Alert severity="error" sx={{ mt: 2 }}>
@@ -151,7 +191,7 @@ export default function InviteModal({
           variant="contained"
           color="primary"
           startIcon={<EmailIcon />}
-          disabled={loading || !email}
+          disabled={loading || !isEmailValid}
         >
           {loading ? <CircularProgress size={20} /> : 'Send Invitation'}
         </Button>

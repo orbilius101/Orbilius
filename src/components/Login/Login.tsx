@@ -13,6 +13,12 @@ export default function Login() {
   const data = useLoginData();
   const handlers = useLoginHandlers(data);
 
+  // Email validation
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const { email, setEmail, password, setPassword, loading, resetLoading, alertState, closeAlert } =
     data;
 
@@ -47,6 +53,8 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               fullWidth
               variant="outlined"
+              error={email.trim() !== '' && !isValidEmail(email)}
+              helperText={email.trim() !== '' && !isValidEmail(email) ? 'Please enter a valid email address' : ''}
             />
 
             <TextField

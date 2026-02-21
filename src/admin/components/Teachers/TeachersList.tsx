@@ -17,6 +17,7 @@ import {
   Delete as DeleteIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  Email as EmailIcon,
 } from '@mui/icons-material';
 
 interface Student {
@@ -33,6 +34,8 @@ interface Teacher {
   first_name: string;
   last_name: string;
   created_at: string;
+  status: 'active' | 'pending';
+  invited_at?: string;
   students?: Student[];
 }
 
@@ -40,9 +43,10 @@ interface TeachersListProps {
   teachers: Teacher[];
   onDelete: (teacherId: string, teacherName: string) => void;
   onDeleteStudent: (studentId: string, studentName: string) => void;
+  onResendInvitation?: (email: string) => void;
 }
 
-export default function TeachersList({ teachers, onDelete, onDeleteStudent }: TeachersListProps) {
+export default function TeachersList({ teachers, onDelete, onDeleteStudent, onResendInvitation }: TeachersListProps) {
   const [expandedTeacherId, setExpandedTeacherId] = useState<string | null>(null);
 
   const toggleExpand = (teacherId: string) => {
@@ -67,7 +71,8 @@ export default function TeachersList({ teachers, onDelete, onDeleteStudent }: Te
             <TableCell width="50px"></TableCell>
             <TableCell>Name</TableCell>
             <TableCell>Email</TableCell>
-            <TableCell>Created</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Date</TableCell>
             <TableCell align="center">Students</TableCell>
             <TableCell align="center">Actions</TableCell>
           </TableRow>
@@ -90,10 +95,21 @@ export default function TeachersList({ teachers, onDelete, onDeleteStudent }: Te
                     </IconButton>
                   </TableCell>
                   <TableCell>
-                    {teacher.first_name} {teacher.last_name}
+                    {teacher.status === 'pending' ? teacher.email : `${teacher.first_name} ${teacher.last_name}`}
                   </TableCell>
                   <TableCell>{teacher.email}</TableCell>
-                  <TableCell>{new Date(teacher.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={teacher.status === 'pending' ? 'Invitation Sent' : 'Active'}
+                      color={teacher.status === 'pending' ? 'warning' : 'success'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {teacher.status === 'pending' && teacher.invited_at
+                      ? new Date(teacher.invited_at).toLocaleDateString()
+                      : new Date(teacher.created_at).toLocaleDateString()}
+                  </TableCell>
                   <TableCell align="center">
                     <Chip
                       label={studentCount}
@@ -102,11 +118,28 @@ export default function TeachersList({ teachers, onDelete, onDeleteStudent }: Te
                     />
                   </TableCell>
                   <TableCell align="center">
+                    {teacher.status === 'pending' && onResendInvitation && (
+                      <Tooltip title="Resend Invitation">
+                        <IconButton
+                          color="primary"
+                          onClick={() => onResendInvitation(teacher.email)}
+                          size="small"
+                          sx={{ mr: 1 }}
+                        >
+                          <EmailIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     <Tooltip title="Delete Teacher">
                       <IconButton
                         color="error"
                         onClick={() =>
-                          onDelete(teacher.id, `${teacher.first_name} ${teacher.last_name}`)
+                          onDelete(
+                            teacher.id,
+                            teacher.status === 'pending'
+                              ? teacher.email
+                              : `${teacher.first_name} ${teacher.last_name}`
+                          )
                         }
                         size="small"
                       >

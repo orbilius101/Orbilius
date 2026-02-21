@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchTeachers, deleteTeacher, deleteStudent } from '../api/adminApi';
-import { getDocuments, buildConstraints } from '../../utils/firebaseHelpers';
+import { getDocuments, buildConstraints, deleteDocument } from '../../utils/firebaseHelpers';
 
 interface Teacher {
   id: string;
@@ -8,6 +8,8 @@ interface Teacher {
   first_name: string;
   last_name: string;
   created_at: string;
+  status: 'active' | 'pending';
+  invited_at?: string;
   students?: Student[];
 }
 
@@ -69,19 +71,22 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
 
   const loadTeachers = async () => {
     setLoading(true);
+    
+    // Fetch active teachers
     const { data, error } = await fetchTeachers();
 
     console.log('Fetching teachers - Data:', data);
     console.log('Fetching teachers - Error:', error);
     console.log('Fetching teachers - Count:', data?.length);
 
+    let activeTeachers: Teacher[] = [];
+
     if (error) {
       console.error('Error fetching teachers:', error);
       showAlert('Failed to load teachers: ' + error.message, 'Error');
-      setTeachers([]);
     } else {
       // Fetch students for each teacher
-      const teachersWithStudents = await Promise.all(
+      activeTeachers = await Promise.all(
         (data || []).map(async (teacher) => {
           const { data: students } = await getDocuments(
             'users',
@@ -93,13 +98,35 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
 
           return {
             ...teacher,
+            status: 'active' as const,
             students: students || [],
           };
         })
       );
-      setTeachers(teachersWithStudents);
     }
 
+    // Fetch pending invitations
+    const { data: pendingInvites } = await getDocuments(
+      'pending_invitations',
+      buildConstraints({
+        eq: { role: 'teacher', status: 'pending' },
+        orderBy: { field: 'invited_at', direction: 'desc' },
+      })
+    );
+
+    const pendingTeachers: Teacher[] = (pendingInvites || []).map((invite) => ({
+      id: invite.id,
+      email: invite.email,
+      first_name: '',
+      last_name: '',
+      created_at: invite.invited_at || '',
+      invited_at: invite.invited_at || '',
+      status: 'pending' as const,
+      students: [],
+    }));
+
+    // Combine active and pending teachers
+    setTeachers([...activeTeachers, ...pendingTeachers]);
     setLoading(false);
   };
 
@@ -120,9 +147,19 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
 
     let data, error;
     if (type === 'teacher') {
-      const result = await deleteTeacher(id);
-      data = result.data;
-      error = result.error;
+      // Check if this is a pending invitation
+      const teacher = teachers.find(t => t.id === id);
+      if (teacher?.status === 'pending') {
+        // Delete from pending_invitations collection
+        const result = await deleteDocument('pending_invitations', id);
+        error = result.error;
+        data = result.data;
+      } else {
+        // Delete active teacher
+        const result = await deleteTeacher(id);
+        data = result.data;
+        error = result.error;
+      }
     } else {
       const result = await deleteStudent(id);
       data = result.data;

@@ -59,11 +59,19 @@ export default function AdminDashboard() {
     handleDelete,
     handleDeleteStudent,
     confirmDelete,
+    refresh: refreshTeachers,
     toastState,
     closeToast,
     confirmState,
     closeConfirm,
   } = useTeachers(showAlert);
+
+  const handleResendInvitation = (email: string) => {
+    // Set the email in the modal state and open it
+    setShowInviteModal(true);
+    // The invite modal will handle sending the invitation
+    showAlert(`Resending invitation to ${email}`, 'Info');
+  };
 
   if (loadingAuth) {
     return (
@@ -141,6 +149,7 @@ export default function AdminDashboard() {
               teachers={teachers}
               onDelete={handleDelete}
               onDeleteStudent={handleDeleteStudent}
+              onResendInvitation={handleResendInvitation}
             />
           )}
         </Paper>
@@ -148,7 +157,10 @@ export default function AdminDashboard() {
         {showInviteModal && (
           <InviteModal
             open={showInviteModal}
-            onClose={() => setShowInviteModal(false)}
+            onClose={() => {
+              setShowInviteModal(false);
+              refreshTeachers(); // Refresh teachers list after sending invitation
+            }}
             role="teacher"
             adminCode={adminCode}
             showAlert={showAlert}

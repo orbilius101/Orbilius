@@ -4,7 +4,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { auth } from '../../../firebaseConfig';
-import { getDocument, createDocument } from '../../../utils/firebaseHelpers';
+import { getDocument, createDocument, getDocuments, buildConstraints, deleteDocument } from '../../../utils/firebaseHelpers';
 import { SignupData, SignupHandlers } from '../../../types';
 
 export function useSignupHandlers(
@@ -86,6 +86,27 @@ export function useSignupHandlers(
 
       // Send email verification
       await sendEmailVerification(user);
+
+      // If this is a teacher signup, delete the pending invitation
+      if (role === 'teacher') {
+        try {
+          const { data: pendingInvites } = await getDocuments(
+            'pending_invitations',
+            buildConstraints({
+              eq: { email: user.email, role: 'teacher', status: 'pending' },
+            })
+          );
+          
+          if (pendingInvites && pendingInvites.length > 0) {
+            // Delete the pending invitation
+            await deleteDocument('pending_invitations', pendingInvites[0].id);
+            console.log('Deleted pending invitation for', user.email);
+          }
+        } catch (error) {
+          // Don't fail signup if we can't delete the pending invitation
+          console.error('Error deleting pending invitation:', error);
+        }
+      }
 
       setLoading(false);
       if (setShowEmailModal) {

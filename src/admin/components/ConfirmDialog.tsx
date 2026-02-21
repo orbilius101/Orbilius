@@ -26,8 +26,18 @@ export default function ConfirmDialog({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
 }: ConfirmDialogProps) {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      onConfirm();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      onCancel();
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth onKeyDown={handleKeyDown}>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <DialogContentText>{message}</DialogContentText>

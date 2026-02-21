@@ -31,6 +31,12 @@ export default function Signup() {
   const data = useSignupData();
   const handlers = useSignupHandlers({ ...data, setShowEmailModal });
 
+  // Email validation
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const {
     email,
     setEmail,
@@ -107,6 +113,8 @@ export default function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               fullWidth
               variant="outlined"
+              error={email.trim() !== '' && !isValidEmail(email)}
+              helperText={email.trim() !== '' && !isValidEmail(email) ? 'Please enter a valid email address' : ''}
             />
 
             <TextField
@@ -184,6 +192,13 @@ export default function Signup() {
         onClose={() => setShowEmailModal(false)}
         maxWidth="sm"
         fullWidth
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault();
+            setShowEmailModal(false);
+            data.navigate('/login');
+          }
+        }}
       >
         <DialogTitle sx={{ textAlign: 'center', fontSize: '1.75rem', pt: 4 }}>
           📧 Check Your Email!

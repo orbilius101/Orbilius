@@ -15,8 +15,15 @@ interface AlertDialogProps {
 }
 
 export default function AlertDialog({ open, title = 'Alert', message, onClose }: AlertDialogProps) {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth onKeyDown={handleKeyDown}>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Typography>{message}</Typography>

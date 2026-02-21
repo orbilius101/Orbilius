@@ -29,6 +29,13 @@ export default function ProjectReviewModal({
 }) {
   if (!project) return null;
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+    }
+  };
+
   const dl = async () => {
     if (!submission?.file_path) return;
     const { data, error } = await downloadProjectFile(submission.file_path);
@@ -47,7 +54,7 @@ export default function ProjectReviewModal({
   };
 
   return (
-    <Dialog open={true} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={true} onClose={onClose} maxWidth="md" fullWidth onKeyDown={handleKeyDown}>
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h5">Reviewing: {project.project_title}</Typography>

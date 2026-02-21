@@ -172,5 +172,20 @@ service cloud.firestore {
       // Only admins can write
       allow write: if isAdmin();
     }
+    
+    // Pending Invitations collection
+    match /pending_invitations/{inviteId} {
+      // Only admins can read
+      allow read: if isAdmin();
+      
+      // Only admins can create
+      allow create: if isAdmin();
+      
+      // Only admins can update
+      allow update: if isAdmin();
+      
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
   }
 }
