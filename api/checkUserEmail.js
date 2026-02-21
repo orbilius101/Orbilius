@@ -1,7 +1,19 @@
-// Vercel serverless function for checking if an email exists in users or auth.users
-// Place this in /api/checkUserEmail.js for Vercel/Next.js-style API support
+// Vercel serverless function for checking if an email exists in Firebase Auth or Firestore
+import admin from 'firebase-admin';
 
-import { createClient } from '@supabase/supabase-js';
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+const db = admin.firestore();
+const auth = admin.auth();
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,32 +24,26 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Email is required' });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  try {
+    // Check Firestore users collection
+    const usersSnapshot = await db.collection('users').where('email', '==', email).limit(1).get();
 
-  // Check users table
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle();
-  if (userError) {
-    return res.status(500).json({ error: 'Error checking users table' });
-  }
-  if (userData) {
-    return res.status(200).json({ exists: true });
-  }
+    if (!usersSnapshot.empty) {
+      return res.status(200).json({ exists: true });
+    }
 
-  // Check auth.users
-  const { data: authData, error: authError } = await supabase.auth.admin.listUsers({ email });
-  if (authError) {
-    return res.status(500).json({ error: 'Error checking auth.users' });
+    // Check Firebase Auth
+    try {
+      await auth.getUserByEmail(email);
+      return res.status(200).json({ exists: true });
+    } catch (error) {
+      if (error.code === 'auth/user-not-found') {
+        return res.status(200).json({ exists: false });
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error checking user email:', error);
+    return res.status(500).json({ error: 'Error checking email' });
   }
-  if (authData && authData.users && authData.users.length > 0) {
-    return res.status(200).json({ exists: true });
-  }
-
-  return res.status(200).json({ exists: false });
 }

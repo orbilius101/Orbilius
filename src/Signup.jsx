@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from './supabaseClient';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { auth } from './firebaseConfig';
+import { createDocument, getDocument } from './utils/firebaseHelpers';
 import merleLogo from './assets/merle-386x386-yellow.svg';
 
 export default function Signup() {
@@ -24,7 +26,6 @@ export default function Signup() {
   };
 
   useEffect(() => {
-    alert('useEffect is running!');
     const params = new URLSearchParams(window.location.search);
     const teacherIdParam = params.get('teacherId');
     console.log('teacherId from URL:', teacherIdParam);
@@ -36,16 +37,11 @@ export default function Signup() {
 
       // Optionally validate in the background
       const validateTeacherId = async () => {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('id')
-          .eq('id', teacherIdParam)
-          .eq('role', 'teacher')
-          .single();
+        const { data, error } = await getDocument('users', teacherIdParam);
 
         console.log('Validation result:', { data, error });
-        // If invalid, clear the field
-        if (error || !data) {
+        // If invalid or not a teacher, clear the field
+        if (error || !data || data.user_type !== 'teacher') {
           console.log('Invalid teacher ID, clearing field');
           setTeacherId('');
         }
@@ -70,11 +66,10 @@ export default function Signup() {
     // Validate admin code for teachers by fetching from database
     if (role === 'teacher') {
       try {
-        const { data: adminCodeData, error: adminCodeError } = await supabase
-          .from('admin_code')
-          .select('code')
-          .eq('id', 1)
-          .single();
+        const { data: adminCodeData, error: adminCodeError } = await getDocument(
+          'admin_code',
+          'main'
+        );
 
         if (adminCodeError) {
           alert('Error validating admin code. Please try again.');
@@ -96,75 +91,50 @@ export default function Signup() {
       }
     }
 
-    // Determine redirect URL based on environment
-    const redirectTo = window.location.origin;
-
-    // Sign up with Supabase Auth, storing profile fields in user_metadata
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectTo,
-        data: {
-          role,
-          teacher_id: role === 'student' && teacherId ? teacherId : null,
-          first_name,
-          last_name,
-        },
-      },
-    });
-
-    if (error) {
-      alert(error.message);
-      setLoading(false);
-      return;
-    }
-
-    console.log('Signup response:', { data, error });
-    console.log('User data:', data.user);
-    console.log('Session data:', data.session);
-
-    // Verify metadata exists on the created account (v2.53.0)
     try {
-      const { data: getUserRes, error: getUserErr } = await supabase.auth.getUser();
-      if (!getUserErr && getUserRes?.user) {
-        const existingMeta = getUserRes.user.user_metadata || {};
-        const desiredMeta = {
-          role,
-          teacher_id: role === 'student' && teacherId ? teacherId : null,
+      // Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      console.log('Signup successful, user:', user.uid);
+
+      // Send email verification
+      await sendEmailVerification(user, {
+        url: window.location.origin + '/login',
+      });
+
+      // Create user profile in Firestore
+      await createDocument(
+        'users',
+        {
+          email: user.email,
           first_name,
           last_name,
-        };
+          user_type: role,
+          teacher_id: role === 'student' && teacherId ? teacherId : null,
+        },
+        user.uid
+      );
 
-        const needsUpdate =
-          existingMeta.role !== desiredMeta.role ||
-          existingMeta.teacher_id !== desiredMeta.teacher_id ||
-          existingMeta.first_name !== desiredMeta.first_name ||
-          existingMeta.last_name !== desiredMeta.last_name;
+      console.log('User profile created in Firestore');
 
-        if (needsUpdate) {
-          const { error: updateErr } = await supabase.auth.updateUser({ data: desiredMeta });
-          if (updateErr) {
-            console.warn('Failed to backfill user_metadata:', updateErr);
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Metadata verification failed:', e);
-    }
-
-    // Guard if user is null (e.g. email confirmation required)
-    if (!data.user) {
-      console.log('No user data - showing modal');
+      // Show confirmation modal
       setLoading(false);
       setShowEmailModal(true);
+    } catch (error) {
+      console.error('Signup error:', error);
+      let errorMessage = error.message;
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please log in instead.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      }
+      alert(errorMessage);
+      setLoading(false);
       return;
     }
-
-    // Show confirmation modal
-    console.log('User data exists - showing modal');
-    setLoading(false);
-    setShowEmailModal(true);
   };
 
   return (

@@ -1,21 +1,28 @@
-import { supabase } from '../../../../supabaseClient';
+import { storage } from '../../../../firebaseConfig';
+import { ref, getDownloadURL } from 'firebase/storage';
 import { useAlert } from '../../../../hooks/useAlert';
 
 export function useStep1IndexData() {
   const { alertState, showAlert, closeAlert } = useAlert();
 
-  const getDiscoveryLogUrl = () => {
-    const { data } = supabase.storage
-      .from('resources')
-      .getPublicUrl('step1/Orbilius PM The Discovery Log.pdf');
-    return data?.publicUrl;
+  const getDiscoveryLogUrl = async () => {
+    try {
+      const fileRef = ref(storage, 'resources/step1/Orbilius PM The Discovery Log.pdf');
+      return await getDownloadURL(fileRef);
+    } catch (error) {
+      console.error('Error getting discovery log URL:', error);
+      return null;
+    }
   };
 
-  const getInstructionsUrl = () => {
-    const { data } = supabase.storage
-      .from('resources')
-      .getPublicUrl('step1/Orbilius PM Discovery Log Instructions.pdf');
-    return data?.publicUrl;
+  const getInstructionsUrl = async () => {
+    try {
+      const fileRef = ref(storage, 'resources/step1/Orbilius PM Discovery Log Instructions.pdf');
+      return await getDownloadURL(fileRef);
+    } catch (error) {
+      console.error('Error getting instructions URL:', error);
+      return null;
+    }
   };
 
   return {

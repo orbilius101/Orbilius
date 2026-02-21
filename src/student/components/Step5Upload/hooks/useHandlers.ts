@@ -1,4 +1,6 @@
-import { supabase } from '../../../../supabaseClient';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, storage } from '../../../../firebaseConfig';
+import { createDocument, updateDocument } from '../../../../utils/firebaseHelpers';
 import { generateSubmissionFilePath, getFileExtension } from '../../../../utils/filePathHelpers';
 
 export function useStep5UploadHandlers({
@@ -28,14 +30,11 @@ export function useStep5UploadHandlers({
     setSuccess(false);
 
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+      const user = auth.currentUser;
 
-      if (sessionError || !session?.user) throw new Error('Not authenticated.');
+      if (!user) throw new Error('Not authenticated.');
 
-      const userId = session.user.id;
+      const userId = user.uid;
 
       if (!file) throw new Error('Please select a file.');
       if (!youtubeLink.trim()) throw new Error('Please provide a YouTube link.');
@@ -43,41 +42,34 @@ export function useStep5UploadHandlers({
       const fileExt = getFileExtension(file.name);
       const filePath = generateSubmissionFilePath(userId, projectId, 5, fileExt);
 
-      const { error: uploadError } = await supabase.storage
-        .from('student-submissions')
-        .upload(filePath, file);
+      // Upload to Firebase Storage
+      const storageRef = ref(storage, `student-submissions/${filePath}`);
+      await uploadBytes(storageRef, file);
 
-      if (uploadError) throw uploadError;
+      // Get download URL
+      const fileUrl = await getDownloadURL(storageRef);
 
-      const { data: publicUrlData } = supabase.storage
-        .from('student-submissions')
-        .getPublicUrl(filePath);
-
-      const fileUrl = publicUrlData.publicUrl;
-
-      const { error: insertError } = await supabase.from('submissions').insert({
+      const { error: insertError } = await createDocument('submissions', {
         project_id: projectId,
         step_number: 5,
         file_url: fileUrl,
         youtube_link: youtubeLink.trim(),
+        submitted_at: new Date().toISOString(),
       });
 
       if (insertError) throw insertError;
 
-      const { error: updateError } = await supabase
-        .from('projects')
-        .update({
-          current_step_status: 'Submitted',
-          step5_status: 'Submitted',
-        })
-        .eq('project_id', projectId);
+      const { error: updateError } = await updateDocument('projects', projectId, {
+        current_step_status: 'Submitted',
+        step5_status: 'Submitted',
+      });
 
       if (updateError) throw updateError;
 
       setSuccess(true);
       setStatus('Submitted');
       setFile(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Submission failed. Please try again.');
     } finally {

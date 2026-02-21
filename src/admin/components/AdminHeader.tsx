@@ -3,9 +3,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Paper, Box, Button, Chip, useTheme } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { supabase } from '../../supabaseClient';
+import { auth } from '../../firebaseConfig';
+import { getDocument } from '../../utils/firebaseHelpers';
 import orbiliusLogoYellow from '../../assets/merle-386x386-yellow.svg';
 import orbiliusLogoDark from '../../assets/merle-386x386.svg';
+import { signOut } from 'firebase/auth';
 
 export default function AdminHeader() {
   const navigate = useNavigate();
@@ -16,20 +18,14 @@ export default function AdminHeader() {
 
   useEffect(() => {
     const fetchUserName = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('first_name, last_name')
-          .eq('id', session.user.id)
-          .single();
+      const user = auth.currentUser;
+      if (user) {
+        const { data: profile } = await getDocument('users', user.uid);
 
         if (profile) {
-          setUserName(`${profile.first_name} ${profile.last_name}`);
+          setUserName(`${(profile as any).first_name} ${(profile as any).last_name}`);
         } else {
-          setUserName(session.user.email || 'Admin');
+          setUserName(user.email || 'Admin');
         }
       }
     };
@@ -37,7 +33,7 @@ export default function AdminHeader() {
   }, []);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut(auth);
     navigate('/login');
   };
 

@@ -1,0 +1,176 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'admin';
+    }
+    
+    function isTeacher() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'teacher';
+    }
+    
+    function isStudent() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'student';
+    }
+    
+    function isTeacherOfStudent(studentId) {
+      let student = get(/databases/$(database)/documents/users/$(studentId)).data;
+      return student.teacher_id == request.auth.uid;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data
+      // Admins can read all users
+      // Teachers can read their students
+      allow read: if isOwner(userId) || isAdmin() || 
+                     (isTeacher() && isTeacherOfStudent(userId));
+      
+      // Users can update their own data
+      // Admins can update any user
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Only admins can create users (via admin panel)
+      // Or system can create during signup
+      allow create: if isAdmin() || !exists(/databases/$(database)/documents/users/$(userId));
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // Projects collection
+    match /projects/{projectId} {
+      // Students can read their own projects
+      // Teachers can read projects assigned to them
+      // Admins can read all projects
+      allow read: if isAuthenticated() && (
+        resource.data.student_id == request.auth.uid ||
+        resource.data.teacher_id == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Students can create their own projects
+      allow create: if isAuthenticated() && request.resource.data.student_id == request.auth.uid;
+      
+      // Students can update their own projects
+      // Teachers can update projects assigned to them
+      // Admins can update any project
+      allow update: if isAuthenticated() && (
+        resource.data.student_id == request.auth.uid ||
+        resource.data.teacher_id == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Only admins can delete projects
+      allow delete: if isAdmin();
+    }
+    
+    // Project Steps collection
+    match /project_steps/{stepId} {
+      function getProject(projectId) {
+        return get(/databases/$(database)/documents/projects/$(projectId)).data;
+      }
+      
+      // Students can read their own project steps
+      // Teachers can read steps for their assigned projects
+      // Admins can read all steps
+      allow read: if isAuthenticated() && (
+        getProject(resource.data.project_id).student_id == request.auth.uid ||
+        getProject(resource.data.project_id).teacher_id == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Students can create steps for their projects
+      allow create: if isAuthenticated() && 
+                      getProject(request.resource.data.project_id).student_id == request.auth.uid;
+      
+      // Students can update their own steps
+      // Teachers can update steps for their projects (comments, status)
+      allow update: if isAuthenticated() && (
+        getProject(resource.data.project_id).student_id == request.auth.uid ||
+        getProject(resource.data.project_id).teacher_id == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Only students and admins can delete steps
+      allow delete: if isAuthenticated() && (
+        getProject(resource.data.project_id).student_id == request.auth.uid ||
+        isAdmin()
+      );
+    }
+    
+    // Submissions collection (legacy)
+    match /submissions/{submissionId} {
+      function getProject(projectId) {
+        return get(/databases/$(database)/documents/projects/$(projectId)).data;
+      }
+      
+      allow read: if isAuthenticated() && (
+        getProject(resource.data.project_id).student_id == request.auth.uid ||
+        getProject(resource.data.project_id).teacher_id == request.auth.uid ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated();
+      
+      allow update: if isAuthenticated() && (
+        getProject(resource.data.project_id).student_id == request.auth.uid ||
+        getProject(resource.data.project_id).teacher_id == request.auth.uid ||
+        isAdmin()
+      );
+      
+      allow delete: if isAdmin();
+    }
+    
+    // Step Comments collection
+    match /step_comments/{commentId} {
+      function getProject(projectId) {
+        return get(/databases/$(database)/documents/projects/$(projectId)).data;
+      }
+      
+      // Students can read comments on their projects
+      // Teachers can read comments on their assigned projects
+      // Admins can read all comments
+      allow read: if isAuthenticated() && (
+        getProject(resource.data.project_id).student_id == request.auth.uid ||
+        getProject(resource.data.project_id).teacher_id == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Only teachers and admins can create comments
+      allow create: if isTeacher() || isAdmin();
+      
+      // Teachers can update their own comments
+      // Admins can update any comment
+      allow update: if isAuthenticated() && (
+        resource.data.teacher_id == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Only admins can delete comments
+      allow delete: if isAdmin();
+    }
+    
+    // Admin Code collection
+    match /admin_code/{codeId} {
+      // Only admins can read
+      allow read: if isAdmin();
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+  }
+}

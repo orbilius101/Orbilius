@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SignupData } from '../../../types';
 import { useAlert } from '../../../hooks/useAlert';
-import { supabase } from '../../../supabaseClient';
 
 export function useSignupData(): SignupData & { alertState: any; closeAlert: () => void } {
   const [email, setEmail] = useState('');

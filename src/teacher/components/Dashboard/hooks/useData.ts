@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../../../supabaseClient';
+import { auth } from '../../../../firebaseConfig';
+import { getDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 import { useAlert } from '../../../../hooks/useAlert';
 
 export function useDashboardData() {
@@ -12,27 +13,19 @@ export function useDashboardData() {
 
   useEffect(() => {
     const fetchUserAndProjects = async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+      const currentUser = auth.currentUser;
 
-      if (error || !session?.user) {
+      if (!currentUser) {
         navigate('/login');
         return;
       }
 
-      const user = session.user;
-      setUser(user);
+      setUser(currentUser as any);
 
       // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .single();
+      const { data: profile, error: profileError } = await getDocument('users', currentUser.uid);
 
-      console.log('Teacher Dashboard - Fetching profile for user ID:', user.id);
+      console.log('Teacher Dashboard - Fetching profile for user ID:', currentUser.uid);
       console.log('Teacher Dashboard - Profile data:', profile);
       console.log('Teacher Dashboard - Profile error:', profileError);
 
@@ -43,11 +36,13 @@ export function useDashboardData() {
       }
 
       // Fetch all projects assigned to this teacher with student email
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('teacher_id', user.id)
-        .order('created_at', { ascending: false });
+      const { data: projectsData, error: projectsError } = await getDocuments(
+        'projects',
+        buildConstraints({
+          eq: { teacher_id: currentUser.uid },
+          orderBy: { field: 'created_at', direction: 'desc' },
+        })
+      );
 
       if (projectsError) {
         console.error('Error fetching projects:', projectsError.message);
@@ -55,12 +50,8 @@ export function useDashboardData() {
       } else {
         // Fetch student details for each project
         const projectsWithStudents = await Promise.all(
-          (projectsData || []).map(async (project) => {
-            const { data: studentData } = await supabase
-              .from('users')
-              .select('email, first_name, last_name')
-              .eq('id', project.student_id)
-              .single();
+          ((projectsData as any[]) || []).map(async (project) => {
+            const { data: studentData } = await getDocument('users', project.student_id);
 
             return {
               ...project,

@@ -1,6 +1,7 @@
 // src/admin/hooks/useAuthAdmin.js
 import { useEffect, useState } from 'react';
 import { getCurrentUser } from '../api/adminApi';
+import { getDocument } from '../../utils/firebaseHelpers';
 import { useNavigate } from 'react-router-dom';
 
 export function useAuthAdmin(showAlert: (message: string, title?: string) => void) {
@@ -15,8 +16,11 @@ export function useAuthAdmin(showAlert: (message: string, title?: string) => voi
         navigate('/login');
         return;
       }
-      // Read role from user_metadata instead of public.users table
-      const role = u?.user_metadata?.role;
+      
+      // Get user role from Firestore
+      const { data: userData } = await getDocument('users', u.uid);
+      const role = (userData as any)?.user_type;
+      
       if (role !== 'admin') {
         showAlert('Access denied. Admin privileges required.', 'Error');
         navigate('/login');

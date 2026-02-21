@@ -1,67 +1,44 @@
 import { useEffect } from 'react';
-import { supabase } from '../../../supabaseClient';
+import { auth } from '../../../firebaseConfig';
+import { applyActionCode } from 'firebase/auth';
 
 export function useLandingPageHandlers(data: any) {
   const { searchParams, navigate, showAlert } = data;
 
   useEffect(() => {
     const handleEmailConfirmation = async () => {
-      // Check if this is an email confirmation callback
-      const token = searchParams.get('token');
-      const type = searchParams.get('type');
+      // Check if this is an email confirmation callback from Firebase
+      const mode = searchParams.get('mode');
+      const oobCode = searchParams.get('oobCode');
 
-      if (token && type === 'signup') {
+      if (mode === 'verifyEmail' && oobCode) {
         try {
-          // Handle the email confirmation
-          const { data: authData, error } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: 'signup',
-          });
-
-          if (error) {
-            console.error('Email confirmation error:', error);
-            showAlert('Email confirmation failed. Please try again or contact support.', 'Error');
-            return;
-          }
-
-          if (authData.user) {
-            // User successfully confirmed, redirect to appropriate dashboard
-            const role = authData.user.user_metadata?.role;
-
-            if (role === 'teacher') {
-              navigate('/teacher/dashboard');
-            } else if (role === 'student') {
-              navigate('/student/dashboard');
-            } else {
-              navigate('/login');
-            }
-            return;
-          }
+          // Apply the email verification code
+          await applyActionCode(auth, oobCode);
+          
+          showAlert('Email verified successfully! Please log in.', 'Success');
+          navigate('/login');
+          return;
         } catch (err) {
-          console.error('Confirmation error:', err);
-          showAlert('An error occurred during email confirmation.', 'Error');
+          console.error('Email confirmation error:', err);
+          showAlert('Email confirmation failed. Please try again or contact support.', 'Error');
+          return;
         }
       }
 
       // If not a confirmation, check current session
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const currentUser = auth.currentUser;
 
-      if (session?.user) {
-        // User is already authenticated
-        const role = session.user.user_metadata?.role;
-
-        if (role === 'teacher') {
-          navigate('/teacher/dashboard');
-        } else if (role === 'student') {
-          navigate('/student/dashboard');
-        }
+      if (currentUser) {
+        // User is already authenticated - redirect to dashboard
+        // Note: Firebase doesn't store role in user_metadata by default
+        // You may need to fetch from Firestore or use custom claims
+        navigate('/student/dashboard');
       }
     };
 
     handleEmailConfirmation();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, showAlert]);
 
   return {};
 }

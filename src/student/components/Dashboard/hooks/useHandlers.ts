@@ -1,4 +1,4 @@
-import { supabase } from '../../../../supabaseClient';
+import { updateDocument } from '../../../../utils/firebaseHelpers';
 
 export function useDashboardHandlers(data: any) {
   const {
@@ -26,10 +26,9 @@ export function useDashboardHandlers(data: any) {
     }
 
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ project_title: editedTitle.trim() })
-        .eq('project_id', project.project_id);
+      const { error } = await updateDocument('projects', project.id, {
+        project_title: editedTitle.trim(),
+      });
 
       if (error) {
         console.error('Error updating project title:', error.message);
@@ -86,10 +85,9 @@ export function useDashboardHandlers(data: any) {
 
     try {
       const dueDateField = `step${stepNum}_due_date`;
-      const { error } = await supabase
-        .from('projects')
-        .update({ [dueDateField]: dueDateToSave })
-        .eq('project_id', project.project_id);
+      const { error } = await updateDocument('projects', project.id, {
+        [dueDateField]: dueDateToSave,
+      });
 
       if (error) {
         console.error('Error updating due date:', error.message);

@@ -3,11 +3,25 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
-import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import admin from 'firebase-admin';
 
 // Load environment variables
 dotenv.config();
+
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+const db = admin.firestore();
+const auth = admin.auth();
 
 const app = express();
 app.use(cors());
@@ -19,37 +33,29 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 app.post('/api/checkUserEmail', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });
-  console.log('SUPABASE URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log(
-    'SUPABASE SERVICE ROLE KEY:',
-    process.env.SUPABASE_SERVICE_ROLE_KEY ? '***set***' : '***missing***'
-  );
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(500).json({ error: 'Supabase env vars missing' });
+
+  try {
+    // Check Firestore users collection
+    const usersSnapshot = await db.collection('users').where('email', '==', email).limit(1).get();
+
+    if (!usersSnapshot.empty) {
+      return res.status(200).json({ exists: true });
+    }
+
+    // Check Firebase Auth
+    try {
+      await auth.getUserByEmail(email);
+      return res.status(200).json({ exists: true });
+    } catch (error) {
+      if (error.code === 'auth/user-not-found') {
+        return res.status(200).json({ exists: false });
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error checking user email:', error);
+    return res.status(500).json({ error: 'Error checking email' });
   }
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-  // Check users table
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle();
-  if (userError) return res.status(500).json({ error: 'Error checking users table' });
-  console.log('userData:', userData);
-  if (userData) return res.status(200).json({ exists: true });
-  // Check auth.users
-  const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-  console.log('authData:', authData);
-  if (authError) return res.status(500).json({ error: 'Error checking auth.users' });
-  const foundUser =
-    authData && authData.users
-      ? authData.users.find((u) => u.email && u.email.toLowerCase() === email.toLowerCase())
-      : null;
-  if (foundUser) return res.status(200).json({ exists: true });
-  return res.status(200).json({ exists: false });
 });
 
 app.post('/api/sendInvite', async (req, res) => {
@@ -103,54 +109,43 @@ app.post('/api/deleteTeacher', async (req, res) => {
   const { teacherId } = req.body;
   if (!teacherId) return res.status(400).json({ error: 'Teacher ID is required' });
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(500).json({ error: 'Supabase env vars missing' });
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
   try {
-    // First, get all student IDs associated with this teacher
-    const { data: students } = await supabase
-      .from('users')
-      .select('id')
-      .eq('teacher_id', teacherId)
-      .eq('user_type', 'student');
+    // Get all students associated with this teacher from Firestore
+    const studentsSnapshot = await db
+      .collection('users')
+      .where('teacher_id', '==', teacherId)
+      .where('user_type', '==', 'student')
+      .get();
 
-    // Call the database function to delete teacher and students from users table
-    const { data: dbResult, error: dbError } = await supabase.rpc('delete_teacher', {
-      p_teacher_id: teacherId,
+    const studentIds = studentsSnapshot.docs.map((doc) => doc.id);
+
+    // Delete students from Firestore
+    const batch = db.batch();
+    studentsSnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
     });
 
-    if (dbError) {
-      console.error('Error deleting from database:', dbError);
-      return res
-        .status(500)
-        .json({ error: 'Failed to delete teacher from database', details: dbError });
-    }
+    // Delete teacher from Firestore
+    batch.delete(db.collection('users').doc(teacherId));
+    await batch.commit();
 
-    // Delete from auth.users (requires service role key)
+    // Delete from Firebase Auth
     const authResults = { students: [], teacher: null };
 
     // Delete student auth accounts
-    if (students && students.length > 0) {
-      for (const student of students) {
-        try {
-          const { error: authError } = await supabase.auth.admin.deleteUser(student.id);
-          authResults.students.push({ id: student.id, success: !authError, error: authError });
-        } catch (err) {
-          authResults.students.push({ id: student.id, success: false, error: err.message });
-        }
+    for (const studentId of studentIds) {
+      try {
+        await auth.deleteUser(studentId);
+        authResults.students.push({ id: studentId, success: true });
+      } catch (err) {
+        authResults.students.push({ id: studentId, success: false, error: err.message });
       }
     }
 
     // Delete teacher auth account
     try {
-      const { error: authError } = await supabase.auth.admin.deleteUser(teacherId);
-      authResults.teacher = { success: !authError, error: authError };
+      await auth.deleteUser(teacherId);
+      authResults.teacher = { success: true };
     } catch (err) {
       authResults.teacher = { success: false, error: err.message };
     }
@@ -158,7 +153,6 @@ app.post('/api/deleteTeacher', async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Teacher and students deleted',
-      dbResult,
       authResults,
     });
   } catch (error) {
@@ -171,33 +165,15 @@ app.post('/api/deleteStudent', async (req, res) => {
   const { studentId } = req.body;
   if (!studentId) return res.status(400).json({ error: 'Student ID is required' });
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(500).json({ error: 'Supabase env vars missing' });
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
   try {
-    // Call the database function to delete student from users table
-    const { data: dbResult, error: dbError } = await supabase.rpc('delete_student', {
-      p_student_id: studentId,
-    });
+    // Delete from Firestore
+    await db.collection('users').doc(studentId).delete();
 
-    if (dbError) {
-      console.error('Error deleting from database:', dbError);
-      return res
-        .status(500)
-        .json({ error: 'Failed to delete student from database', details: dbError });
-    }
-
-    // Delete from auth.users (requires service role key)
+    // Delete from Firebase Auth
     let authResult = null;
     try {
-      const { error: authError } = await supabase.auth.admin.deleteUser(studentId);
-      authResult = { success: !authError, error: authError };
+      await auth.deleteUser(studentId);
+      authResult = { success: true };
     } catch (err) {
       authResult = { success: false, error: err.message };
     }
@@ -205,7 +181,6 @@ app.post('/api/deleteStudent', async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Student deleted',
-      dbResult,
       authResult,
     });
   } catch (error) {
@@ -216,47 +191,41 @@ app.post('/api/deleteStudent', async (req, res) => {
 
 // Cleanup endpoint to remove orphaned auth users
 app.get('/api/cleanup-auth', async (req, res) => {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(500).json({ error: 'Supabase env vars missing' });
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
   try {
-    // Get all auth users
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-    if (authError) {
-      return res.status(500).json({ error: 'Failed to fetch auth users', details: authError });
-    }
+    // Get all Firebase Auth users
+    const listUsersResult = await auth.listUsers();
+    const authUsers = listUsersResult.users;
 
-    // Get all users from users table
-    const { data: dbUsers, error: dbError } = await supabase.from('users').select('id');
-    if (dbError) {
-      return res.status(500).json({ error: 'Failed to fetch users table', details: dbError });
-    }
+    // Get all users from Firestore
+    const usersSnapshot = await db.collection('users').get();
+    const dbUserIds = new Set(usersSnapshot.docs.map((doc) => doc.id));
 
     // Find orphaned users
-    const dbUserIds = new Set(dbUsers.map((u) => u.id));
-    const orphanedUsers = authUsers.users.filter((authUser) => !dbUserIds.has(authUser.id));
+    const orphanedUsers = authUsers.filter((authUser) => !dbUserIds.has(authUser.uid));
 
     // Delete orphaned users
     const results = [];
     for (const user of orphanedUsers) {
-      const { error } = await supabase.auth.admin.deleteUser(user.id);
-      results.push({
-        email: user.email,
-        id: user.id,
-        success: !error,
-        error: error?.message,
-      });
+      try {
+        await auth.deleteUser(user.uid);
+        results.push({
+          email: user.email,
+          id: user.uid,
+          success: true,
+        });
+      } catch (error) {
+        results.push({
+          email: user.email,
+          id: user.uid,
+          success: false,
+          error: error.message,
+        });
+      }
     }
 
     return res.status(200).json({
-      total_auth_users: authUsers.users.length,
-      total_db_users: dbUsers.length,
+      total_auth_users: authUsers.length,
+      total_db_users: usersSnapshot.size,
       orphaned_count: orphanedUsers.length,
       results,
     });

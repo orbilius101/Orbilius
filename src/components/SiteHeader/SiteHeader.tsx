@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Box, Typography, Button, Avatar } from '@mui/material';
-import { supabase } from '../../supabaseClient';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '../../firebaseConfig';
+import { getDocument } from '../../utils/firebaseHelpers';
 import logo from '../../assets/merle-386x386-yellow.svg';
 
 interface UserProfile {
@@ -23,34 +25,20 @@ export default function SiteHeader() {
     if (isPublicPage) return;
 
     const fetchUserProfile = async (userId: string) => {
-      const { data: profile, error } = await supabase
-        .from('users')
-        .select('first_name, last_name')
-        .eq('id', userId)
-        .single();
+      const { data: profile, error } = await getDocument('users', userId);
 
       if (error) {
         console.error('Error fetching user profile:', error);
       } else if (profile) {
-        setUserProfile(profile);
+        setUserProfile(profile as UserProfile);
       }
     };
 
-    // Get current user
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // Listen for auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
-        fetchUserProfile(user.id);
-      }
-    });
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(user.uid);
       } else {
         setUser(null);
         setUserProfile(null);
@@ -58,12 +46,12 @@ export default function SiteHeader() {
     });
 
     return () => {
-      subscription.unsubscribe();
+      unsubscribe();
     };
   }, [isPublicPage, location.pathname]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut(auth);
     navigate('/login');
   };
 

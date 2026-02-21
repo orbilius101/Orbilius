@@ -1,4 +1,4 @@
-import { supabase } from '../../../../supabaseClient';
+import { updateDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 
 export function useStepApprovalHandlers(data: any) {
   const {
@@ -49,26 +49,26 @@ export function useStepApprovalHandlers(data: any) {
     setIsSavingComment(true);
 
     try {
-      const { error: commentError } = await supabase
-        .from('submissions')
-        .update({
-          teacher_comments: comment.trim(),
+      // Find the submission document
+      const { data: submissions } = await getDocuments(
+        'submissions',
+        buildConstraints({
+          eq: { project_id: projectId, step_number: parseInt(stepNumber) },
         })
-        .eq('project_id', projectId)
-        .eq('step_number', parseInt(stepNumber));
+      );
 
-      if (commentError) {
-        console.error('Error saving comment:', commentError.message);
-        if (commentError.message.includes('teacher_comments')) {
-          showAlert(
-            'Database needs to be updated to support teacher comments. Please contact the administrator.',
-            'Error'
-          );
-        } else {
+      if (submissions && (submissions as any[]).length > 0) {
+        const submissionId = (submissions as any[])[0].id;
+        const { error: commentError } = await updateDocument('submissions', submissionId, {
+          teacher_comments: comment.trim(),
+        });
+
+        if (commentError) {
+          console.error('Error saving comment:', commentError.message);
           showAlert('Error saving comment. Please try again.', 'Error');
+          setIsSavingComment(false);
+          return;
         }
-        setIsSavingComment(false);
-        return;
       }
 
       const currentStepStatusField = `step${stepNumber}_status`;
@@ -77,10 +77,7 @@ export function useStepApprovalHandlers(data: any) {
         current_step: parseInt(stepNumber),
       };
 
-      const { error: statusError } = await supabase
-        .from('projects')
-        .update(updateData)
-        .eq('project_id', projectId);
+      const { error: statusError } = await updateDocument('projects', projectId, updateData);
 
       if (statusError) {
         console.error('Error updating project status:', statusError.message);
@@ -104,16 +101,23 @@ export function useStepApprovalHandlers(data: any) {
 
     try {
       if (comment.trim()) {
-        const { error: commentError } = await supabase
-          .from('submissions')
-          .update({
-            teacher_comments: comment.trim(),
+        // Find the submission document
+        const { data: submissions } = await getDocuments(
+          'submissions',
+          buildConstraints({
+            eq: { project_id: projectId, step_number: parseInt(stepNumber) },
           })
-          .eq('project_id', projectId)
-          .eq('step_number', parseInt(stepNumber));
+        );
 
-        if (commentError) {
-          console.error('Error saving comment:', commentError.message);
+        if (submissions && (submissions as any[]).length > 0) {
+          const submissionId = (submissions as any[])[0].id;
+          const { error: commentError } = await updateDocument('submissions', submissionId, {
+            teacher_comments: comment.trim(),
+          });
+
+          if (commentError) {
+            console.error('Error saving comment:', commentError.message);
+          }
         }
       }
 
@@ -133,10 +137,7 @@ export function useStepApprovalHandlers(data: any) {
         updateData[nextStepStatusField] = 'In Progress';
       }
 
-      const { error: updateError } = await supabase
-        .from('projects')
-        .update(updateData)
-        .eq('project_id', projectId);
+      const { error: updateError } = await updateDocument('projects', projectId, updateData);
 
       if (updateError) {
         console.error('Error updating project:', updateError.message);

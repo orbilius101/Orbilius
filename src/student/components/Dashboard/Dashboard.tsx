@@ -29,7 +29,7 @@ import { useDashboardData } from './hooks/useData';
 import { useDashboardHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 import SharedModal from '../SharedModal/SharedModal';
-import { supabase } from '../../../supabaseClient';
+import { auth } from '../../../firebaseConfig';
 import { useTheme } from '../../../contexts/ThemeContext';
 import yellowLogo from '../../../assets/merle-386x386-yellow.svg';
 import regularLogo from '../../../assets/merle-386x386.svg';
@@ -212,7 +212,7 @@ export default function StudentDashboard() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await auth.signOut();
     navigate('/login');
   };
 

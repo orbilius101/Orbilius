@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { supabase } from '../../supabaseClient';
 import {
   Dialog,
   DialogTitle,
@@ -13,6 +12,7 @@ import {
   Alert,
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
+import { CLOUD_FUNCTIONS } from '../../config/functions';
 
 interface InviteModalProps {
   open: boolean;
@@ -38,21 +38,21 @@ export default function InviteModal({
 
   // Check if user exists using secure API route
   const handleSend = async () => {
+    console.log('Sending invitation to:', email, 'as role:', role);
     setLoading(true);
     setError('');
     setSuccess('');
     try {
-      // Use local Express server in development, Vercel serverless in production
-      const apiUrl =
-        process.env.NODE_ENV === 'development'
-          ? 'http://localhost:4000/api/checkUserEmail'
-          : '/api/checkUserEmail';
-      const response = await fetch(apiUrl, {
+      // Use Firebase Cloud Function
+      console.log('Checking if user exists...');
+      const response = await fetch(CLOUD_FUNCTIONS.checkUserEmail, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
       const result = await response.json();
+      console.log('checkUserEmail response:', { status: response.status, result });
+      
       if (!response.ok) {
         setLoading(false);
         setError(result.error || 'Error checking email. Please try again.');
@@ -66,14 +66,11 @@ export default function InviteModal({
 
       // Generate signup URL with role and metadata
       const signupUrl = `${window.location.origin}/signup?role=${role}${role === 'student' && teacherId ? `&teacher=${teacherId}` : ''}${role === 'teacher' && adminCode ? `&code=${adminCode}` : ''}`;
+      console.log('Generated signup URL:', signupUrl);
 
-      // Send invitation email via API
-      const inviteApiUrl =
-        process.env.NODE_ENV === 'development'
-          ? 'http://localhost:4000/api/sendInvite'
-          : '/api/sendInvite';
-
-      const inviteResponse = await fetch(inviteApiUrl, {
+      // Send invitation email via Firebase Cloud Function
+      console.log('Sending invitation email...');
+      const inviteResponse = await fetch(CLOUD_FUNCTIONS.sendInvite, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,10 +81,15 @@ export default function InviteModal({
       });
 
       const inviteResult = await inviteResponse.json();
+      console.log('sendInvite response:', { status: inviteResponse.status, result: inviteResult });
 
       if (!inviteResponse.ok) {
         setLoading(false);
-        setError(inviteResult.error || 'Failed to send invitation. Please try again.');
+        const errorMessage = inviteResult.details 
+          ? `${inviteResult.error}: ${inviteResult.details}` 
+          : inviteResult.error || 'Failed to send invitation. Please try again.';
+        console.error('Invitation failed:', errorMessage);
+        setError(errorMessage);
         return;
       }
 
@@ -99,8 +101,12 @@ export default function InviteModal({
         onClose();
       }, 1500);
     } catch (err) {
+      console.error('Exception in handleSend:', err);
       setLoading(false);
-      setError('Error sending invitation. Please try again.');
+      const errorMessage = err instanceof Error 
+        ? `Error: ${err.message}` 
+        : 'Error sending invitation. Please try again.';
+      setError(errorMessage);
     }
   };
 
