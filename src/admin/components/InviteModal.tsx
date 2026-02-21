@@ -168,8 +168,8 @@ export default function InviteModal({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
-          error={email.trim() !== '' && !isValidEmail}
-          helperText={email.trim() !== '' && !isValidEmail ? 'Please enter a valid email address' : ''}
+          error={email.trim() !== '' && !isEmailValid}
+          helperText={email.trim() !== '' && !isEmailValid ? 'Please enter a valid email address' : ''}
         />
         {error && (
           <Alert severity="error" sx={{ mt: 2 }}>
