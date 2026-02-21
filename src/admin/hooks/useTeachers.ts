@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchTeachers, deleteTeacher, deleteStudent } from '../api/adminApi';
-import { supabase } from '../../supabaseClient';
+import { getDocuments, buildConstraints } from '../../utils/firebaseHelpers';
 
 interface Teacher {
   id: string;
@@ -83,12 +83,13 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
       // Fetch students for each teacher
       const teachersWithStudents = await Promise.all(
         (data || []).map(async (teacher) => {
-          const { data: students } = await supabase
-            .from('users')
-            .select('id, email, first_name, last_name, created_at')
-            .eq('teacher_id', teacher.id)
-            .eq('user_type', 'student')
-            .order('created_at', { ascending: false });
+          const { data: students } = await getDocuments(
+            'users',
+            buildConstraints({
+              eq: { teacher_id: teacher.id, user_type: 'student' },
+              orderBy: { field: 'created_at', direction: 'desc' },
+            })
+          );
 
           return {
             ...teacher,

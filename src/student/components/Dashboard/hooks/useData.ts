@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../../../supabaseClient';
+import { auth } from '../../../../firebaseConfig';
+import { getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 import { useAlert } from '../../../../hooks/useAlert';
 
 export function useDashboardData() {
@@ -17,53 +18,46 @@ export function useDashboardData() {
   useEffect(() => {
     const fetchUserAndProfile = async () => {
       try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+        const currentUser = auth.currentUser;
 
-        if (error || !session?.user) {
+        if (!currentUser) {
           navigate('/login');
           return;
         }
 
-        const user = session.user;
-        setUser(user);
+        setUser(currentUser);
 
-        // Get user profile from metadata instead of separate table
+        // Get user profile from custom claims or display name
         const profile = {
-          first_name: user.user_metadata?.first_name || 'Unknown',
-          last_name: user.user_metadata?.last_name || 'User',
+          first_name: currentUser.displayName?.split(' ')[0] || 'Unknown',
+          last_name: currentUser.displayName?.split(' ').slice(1).join(' ') || 'User',
         };
 
         setUserProfile(profile);
-        console.log('User loaded:', user.email, profile); // Debug log
+        console.log('User loaded:', currentUser.email, profile); // Debug log
 
         // Fetch project for the student
-        const { data: projectData, error: projectError } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('student_id', user.id)
-          .single();
+        const { data: projectData, error: projectError } = await getDocuments(
+          'projects',
+          buildConstraints({ eq: { student_id: currentUser.uid }, limit: 1 })
+        );
 
         if (projectError) {
           console.error('Error fetching project:', projectError.message);
-        } else {
-          setProject(projectData);
-          setEditedTitle(projectData?.project_title || '');
+        } else if (projectData && projectData.length > 0) {
+          setProject(projectData[0]);
+          setEditedTitle(projectData[0]?.project_title || '');
         }
       } catch (err) {
         console.error('Error in fetchUserAndProfile:', err);
         // Still set basic user data even if there's an error
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const currentUser = auth.currentUser;
 
-        if (session?.user) {
-          setUser(session.user);
+        if (currentUser) {
+          setUser(currentUser);
           setUserProfile({
-            first_name: session.user.user_metadata?.first_name || 'Unknown',
-            last_name: session.user.user_metadata?.last_name || 'User',
+            first_name: currentUser.displayName?.split(' ')[0] || 'Unknown',
+            last_name: currentUser.displayName?.split(' ').slice(1).join(' ') || 'User',
           });
         }
       }

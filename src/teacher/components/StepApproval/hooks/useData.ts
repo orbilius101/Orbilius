@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../../../../supabaseClient';
+import { auth } from '../../../../firebaseConfig';
+import { getDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 import { useAlert } from '../../../../hooks/useAlert';
 
 export function useStepApprovalData() {
@@ -25,49 +26,44 @@ export function useStepApprovalData() {
       setYoutubeLink(null);
       setSubmissionFile(null);
 
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+      const currentUser = auth.currentUser;
 
-      if (error || !session?.user) {
+      if (!currentUser) {
         navigate('/login');
         return;
       }
 
-      setUser(session.user);
+      setUser(currentUser as any);
 
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .select(
-          `
-          *,
-          student:users!student_id(first_name, last_name, email)
-        `
-        )
-        .eq('project_id', projectId)
-        .single();
+      const { data: projectData, error: projectError } = await getDocument('projects', projectId!);
 
-      if (projectError) {
-        console.error('Error fetching project:', projectError.message);
+      if (projectError || !projectData) {
+        console.error('Error fetching project:', projectError?.message);
         navigate('/teacher/dashboard');
         return;
       }
 
-      setProject(projectData);
+      // Get student data
+      const { data: studentData } = await getDocument('users', (projectData as any).student_id);
 
-      const { data: fileData, error: fileError } = await supabase
-        .from('submissions')
-        .select('file_url, teacher_comments, submitted_at, youtube_link')
-        .eq('project_id', projectId)
-        .eq('step_number', stepNumber)
-        .order('submitted_at', { ascending: false })
-        .limit(1);
+      setProject({
+        ...projectData,
+        student: studentData,
+      } as any);
+
+      const { data: fileDataArray, error: fileError } = await getDocuments(
+        'submissions',
+        buildConstraints({
+          eq: { project_id: projectId, step_number: Number(stepNumber) },
+          orderBy: { field: 'submitted_at', direction: 'desc' },
+          limit: 1,
+        })
+      );
 
       if (fileError) {
         console.error('Error fetching submission file:', fileError.message);
-      } else if (fileData && fileData.length > 0) {
-        const latestSubmission = fileData[0];
+      } else if (fileDataArray && (fileDataArray as any[]).length > 0) {
+        const latestSubmission = (fileDataArray as any[])[0];
 
         if (latestSubmission.youtube_link) {
           console.log('Setting YouTube link:', latestSubmission.youtube_link);
@@ -77,34 +73,9 @@ export function useStepApprovalData() {
         }
 
         if (latestSubmission.file_url) {
-          console.log('Original PDF file URL:', latestSubmission.file_url);
-
-          try {
-            const urlParts = latestSubmission.file_url.split(
-              '/storage/v1/object/public/student-submissions/'
-            );
-            if (urlParts.length > 1) {
-              const filePath = urlParts[1];
-              console.log('File path:', filePath);
-
-              const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-                .from('student-submissions')
-                .createSignedUrl(filePath, 3600);
-
-              if (signedUrlError) {
-                console.error('Error creating signed URL:', signedUrlError);
-                setSubmissionFile(latestSubmission.file_url);
-              } else {
-                console.log('Using signed URL:', signedUrlData.signedUrl);
-                setSubmissionFile(signedUrlData.signedUrl);
-              }
-            } else {
-              setSubmissionFile(latestSubmission.file_url);
-            }
-          } catch (error) {
-            console.error('Error processing file URL:', error);
-            setSubmissionFile(latestSubmission.file_url);
-          }
+          console.log('PDF file URL:', latestSubmission.file_url);
+          // Firebase Storage URLs are already secured by storage rules
+          setSubmissionFile(latestSubmission.file_url);
         }
 
         if (latestSubmission.teacher_comments) {

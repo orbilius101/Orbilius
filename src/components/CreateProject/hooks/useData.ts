@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../../supabaseClient';
+import { auth } from '../../../firebaseConfig';
+import { getDocument } from '../../../utils/firebaseHelpers';
 import { useAlert } from '../../../hooks/useAlert';
 
 export function useCreateProjectData() {
@@ -12,23 +13,23 @@ export function useCreateProjectData() {
 
   useEffect(() => {
     const fetchUserAndInfo = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const user = auth.currentUser;
 
-      if (!session?.user) {
+      if (!user) {
         navigate('/login');
         return;
       }
 
-      const user = session.user;
+      // Get user profile from Firestore
+      const { data: profile } = await getDocument('users', user.uid);
+      const profileData = Array.isArray(profile) ? profile[0] : profile;
 
       setUserData({
-        id: user.id,
+        id: user.uid,
         email: user.email,
-        first_name: user.user_metadata.first_name,
-        last_name: user.user_metadata.last_name,
-        teacher_id: user.user_metadata.teacher_id,
+        first_name: profileData?.first_name,
+        last_name: profileData?.last_name,
+        teacher_id: profileData?.teacher_id,
       });
     };
 

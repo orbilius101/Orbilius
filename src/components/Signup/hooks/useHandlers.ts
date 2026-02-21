@@ -1,4 +1,10 @@
-import { supabase } from '../../../supabaseClient';
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  updateProfile,
+} from 'firebase/auth';
+import { auth } from '../../../firebaseConfig';
+import { getDocument, createDocument } from '../../../utils/firebaseHelpers';
 import { SignupData, SignupHandlers } from '../../../types';
 
 export function useSignupHandlers(
@@ -30,10 +36,7 @@ export function useSignupHandlers(
     // Validate admin code for teachers by fetching from database
     if (role === 'teacher') {
       try {
-        const { data: adminCodeData, error: adminCodeError } = await supabase
-          .from('admin_code')
-          .select('code')
-          .eq('id', 1);
+        const { data: adminCodeData, error: adminCodeError } = await getDocument('admin_code', '1');
 
         if (adminCodeError) {
           showAlert('Error validating admin code. Please try again.', 'Error');
@@ -41,7 +44,7 @@ export function useSignupHandlers(
           return;
         }
 
-        if (!adminCodeData || adminCodeData.length === 0 || adminCode !== adminCodeData[0].code) {
+        if (!adminCodeData || adminCode !== (adminCodeData as any).code) {
           showAlert(
             'Invalid Orbilius Admin Code. Please contact your administrator for the correct code.',
             'Invalid Code'
@@ -56,61 +59,34 @@ export function useSignupHandlers(
       }
     }
 
-    // Determine redirect URL based on environment
-    const redirectTo = window.location.origin;
-
-    // Sign up with Supabase Auth, storing profile fields in user_metadata
-    const { data: signUpData, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectTo,
-        data: {
-          role,
-          teacher_id: role === 'student' && teacherId ? teacherId : null,
-          first_name: firstName,
-          last_name: lastName,
-        },
-      },
-    });
-
-    if (error) {
-      showAlert(error.message, 'Signup Error');
-      setLoading(false);
-      return;
-    }
-
-    // Verify metadata exists on the created account (v2.53.0)
     try {
-      const { data: getUserRes, error: getUserErr } = await supabase.auth.getUser();
-      if (!getUserErr && getUserRes?.user) {
-        const existingMeta = getUserRes.user.user_metadata || {};
-        const desiredMeta = {
-          role,
+      // Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Update profile with display name
+      await updateProfile(user, {
+        displayName: `${firstName} ${lastName}`,
+      });
+
+      // Create user profile in Firestore
+      await createDocument(
+        'users',
+        {
+          id: user.uid,
+          email: user.email,
+          user_type: role,
           teacher_id: role === 'student' && teacherId ? teacherId : null,
           first_name: firstName,
           last_name: lastName,
-        };
+          created_at: new Date().toISOString(),
+        },
+        user.uid
+      );
 
-        const needsUpdate =
-          existingMeta.role !== desiredMeta.role ||
-          existingMeta.teacher_id !== desiredMeta.teacher_id ||
-          existingMeta.first_name !== desiredMeta.first_name ||
-          existingMeta.last_name !== desiredMeta.last_name;
+      // Send email verification
+      await sendEmailVerification(user);
 
-        if (needsUpdate) {
-          const { error: updateErr } = await supabase.auth.updateUser({ data: desiredMeta });
-          if (updateErr) {
-            console.warn('Failed to backfill user_metadata:', updateErr);
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Metadata verification failed:', e);
-    }
-
-    // Guard if user is null (e.g. email confirmation required)
-    if (!signUpData.user) {
       setLoading(false);
       if (setShowEmailModal) {
         setShowEmailModal(true);
@@ -118,16 +94,10 @@ export function useSignupHandlers(
         showAlert('Sign-up successful. Check your email to confirm your account.', 'Success');
         navigate('/login');
       }
-      return;
-    }
-
-    // Show confirmation modal or alert
-    setLoading(false);
-    if (setShowEmailModal) {
-      setShowEmailModal(true);
-    } else {
-      showAlert('Sign-up successful. Check your email to confirm.', 'Success');
-      navigate('/login');
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      showAlert(error.message || 'An error occurred during signup', 'Signup Error');
+      setLoading(false);
     }
   }
 

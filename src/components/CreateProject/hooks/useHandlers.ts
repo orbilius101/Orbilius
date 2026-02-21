@@ -1,4 +1,4 @@
-import { supabase } from '../../../supabaseClient';
+import { createDocument } from '../../../utils/firebaseHelpers';
 
 export function useCreateProjectHandlers(data: any) {
   const { projectTitle, grade, userData, navigate, showAlert } = data;
@@ -30,34 +30,31 @@ export function useCreateProjectHandlers(data: any) {
     console.log('Creating project with user ID:', userData.id);
     console.log('User data:', userData);
 
-    const { data: insertData, error } = await supabase
-      .from('projects')
-      .insert([
-        {
-          student_id: userData.id,
-          email: userData.email,
-          teacher_id: userData.teacher_id || null,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          grade: grade,
-          project_title: projectTitle,
-          current_step: 1,
-          current_step_status: 'In Progress',
-          step1_status: 'In Progress',
-          step2_status: 'Not Started',
-          step3_status: 'Not Started',
-          step4_status: 'Not Started',
-          step5_status: 'Not Started',
-          step1_due_date: dueDates.step1,
-          step2_due_date: dueDates.step2,
-          step3_due_date: dueDates.step3,
-          step4_due_date: dueDates.step4,
-          step5_due_date: dueDates.step5,
-          submitted_to_orbilius: false,
-          approved_by_orbilius: false,
-        },
-      ])
-      .select();
+    const projectData = {
+      student_id: userData.id,
+      email: userData.email,
+      teacher_id: userData.teacher_id || null,
+      first_name: userData.first_name,
+      last_name: userData.last_name,
+      grade: grade,
+      project_title: projectTitle,
+      current_step: 1,
+      current_step_status: 'In Progress',
+      step1_status: 'In Progress',
+      step2_status: 'Not Started',
+      step3_status: 'Not Started',
+      step4_status: 'Not Started',
+      step5_status: 'Not Started',
+      step1_due_date: dueDates.step1,
+      step2_due_date: dueDates.step2,
+      step3_due_date: dueDates.step3,
+      step4_due_date: dueDates.step4,
+      step5_due_date: dueDates.step5,
+      submitted_to_orbilius: false,
+      approved_by_orbilius: false,
+    };
+
+    const { data: insertData, error } = await createDocument('projects', projectData);
 
     if (error) {
       console.error('Project creation error:', error);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../../../supabaseClient';
+import { auth } from '../../../../firebaseConfig';
+import { getDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 
 export function useStep1UploadData(navigate: any) {
   const [file, setFile] = useState(null);
@@ -13,21 +14,14 @@ export function useStep1UploadData(navigate: any) {
   useEffect(() => {
     const fetchExistingData = async () => {
       try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
+        const user = auth.currentUser;
 
-        if (sessionError || !session?.user) {
+        if (!user) {
           navigate('/login');
           return;
         }
 
-        const { data: projectData, error: projectError } = await supabase
-          .from('projects')
-          .select('project_id, step1_status')
-          .eq('student_id', session.user.id)
-          .single();
+        const { data: projectData, error: projectError } = await getDocument('projects', user.uid);
 
         if (projectError) {
           console.error('Error fetching project:', projectError.message);
@@ -40,40 +34,29 @@ export function useStep1UploadData(navigate: any) {
           return;
         }
 
-        const currentProjectId = projectData.project_id;
+        const currentProjectId = (projectData as any).project_id;
         setProjectId(currentProjectId);
-        setStatus(projectData.step1_status || 'Not Submitted');
+        setStatus((projectData as any).step1_status || 'Not Submitted');
 
-        const { data: projectStatus, error: statusError } = await supabase
-          .from('projects')
-          .select('step1_status')
-          .eq('project_id', currentProjectId)
-          .single();
-
-        if (statusError) {
-          console.error('Error fetching project status:', statusError.message);
-        } else if (projectStatus) {
-          setStatus(projectStatus.step1_status || 'Not Submitted');
-        }
-
-        const { data: submissionData, error: submissionError } = await supabase
-          .from('submissions')
-          .select('teacher_comments')
-          .eq('project_id', currentProjectId)
-          .eq('step_number', 1)
-          .order('submitted_at', { ascending: false })
-          .limit(1);
+        const { data: submissionDataArray, error: submissionError } = await getDocuments(
+          'submissions',
+          buildConstraints({
+            eq: { project_id: currentProjectId, step_number: 1 },
+            orderBy: { field: 'submitted_at', direction: 'desc' },
+            limit: 1,
+          })
+        );
 
         if (submissionError) {
           console.error('Error fetching submission:', submissionError.message);
         } else if (
-          submissionData &&
-          submissionData.length > 0 &&
-          submissionData[0].teacher_comments
+          submissionDataArray &&
+          (submissionDataArray as any[]).length > 0 &&
+          (submissionDataArray as any[])[0].teacher_comments
         ) {
-          setTeacherComments(submissionData[0].teacher_comments);
+          setTeacherComments((submissionDataArray as any[])[0].teacher_comments);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching existing data:', err.message);
         setErrorMsg('Error loading data');
       }

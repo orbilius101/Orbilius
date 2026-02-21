@@ -1,95 +1,158 @@
-// src/admin/api/adminApi.js
-import { supabase } from '../../supabaseClient';
+// src/admin/api/adminApi.ts
+import { auth, db, storage } from '../../firebaseConfig';
+import {
+  getDocument,
+  getDocuments,
+  updateDocument,
+  buildConstraints,
+} from '../../utils/firebaseHelpers';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { signOut as firebaseSignOut } from 'firebase/auth';
+import { CLOUD_FUNCTIONS } from '../../config/functions';
 
 // AUTH / ROLE
 export async function getCurrentUser() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  return auth.currentUser;
 }
-export async function getUserRole(userId) {
-  return supabase.from('users').select('role').eq('id', userId).single();
+export async function getUserRole(userId: string) {
+  return getDocument('users', userId);
 }
 
 // ADMIN CODE
 export async function fetchAdminCodeRows() {
-  return supabase.from('admin_code').select('*');
+  // In Firebase, admin_code is a single document with ID '1'
+  const { data, error } = await getDocument('admin_code', '1');
+  if (error) return { data: null, error };
+  // Add id field to match expected structure
+  return { data: data ? [{ ...data, id: 1 }] : [], error: null };
 }
-export async function updateAdminCodeById(id, code) {
-  // Use the database function to bypass RLS
-  const { data, error } = await supabase.rpc('update_admin_code', { new_code: code });
-
-  return { data, error };
+export async function updateAdminCodeById(id: string, code: string) {
+  // Update the admin_code document
+  return updateDocument('admin_code', '1', { code });
 }
 
 // PROJECTS
 export async function fetchPendingProjects() {
-  return supabase
-    .from('projects')
-    .select(
-      `
-      *,
-      users!projects_student_id_fkey(email, first_name, last_name),
-      project_steps!inner(step_number, status, file_path)
-    `
-    )
-    .eq('submitted_to_orbilius', true)
-    .eq('approved_by_orbilius', false)
-    .eq('project_steps.step_number', 5)
-    .eq('project_steps.status', 'Approved');
+  try {
+    // Query projects where submitted_to_orbilius=true and approved_by_orbilius=false
+    const projectsRef = collection(db, 'projects');
+    const q = query(
+      projectsRef,
+      where('submitted_to_orbilius', '==', true),
+      where('approved_by_orbilius', '==', false)
+    );
+
+    const snapshot = await getDocs(q);
+    const projects = [];
+
+    for (const doc of snapshot.docs) {
+      const projectData = { ...doc.data(), project_id: doc.id };
+
+      // Get user data
+      const { data: userData } = await getDocument('users', (projectData as any).student_id);
+
+      // Get step 5 data
+      const { data: step5Array } = await getDocuments(
+        'project_steps',
+        buildConstraints({
+          eq: { project_id: doc.id, step_number: 5, status: 'Approved' },
+        })
+      );
+
+      if (step5Array && (step5Array as any[]).length > 0) {
+        projects.push({
+          ...projectData,
+          users: userData,
+          project_steps: step5Array,
+        });
+      }
+    }
+
+    return { data: projects, error: null };
+  } catch (error: any) {
+    return { data: null, error };
+  }
 }
-export async function fetchStep5Submission(projectId) {
-  return supabase
-    .from('project_steps')
-    .select('file_path, youtube_link, teacher_comments')
-    .eq('project_id', projectId)
-    .eq('step_number', 5)
-    .single();
-}
-export async function setProjectApproval(projectId, approved, comments) {
-  return supabase
-    .from('projects')
-    .update({
-      approved_by_orbilius: approved,
-      orbilius_comments: comments || null,
+export async function fetchStep5Submission(projectId: string) {
+  const { data, error } = await getDocuments(
+    'project_steps',
+    buildConstraints({
+      eq: { project_id: projectId, step_number: 5 },
+      limit: 1,
     })
-    .eq('project_id', projectId);
+  );
+
+  if (error) return { data: null, error };
+  return { data: (data as any[])?.[0] || null, error: null };
 }
-export async function revertStep5(projectId, comments) {
-  return supabase
-    .from('project_steps')
-    .update({
-      status: 'In Progress',
-      teacher_comments: comments || 'Project needs revision before Orbilius certification.',
+export async function setProjectApproval(projectId: string, approved: boolean, comments: string) {
+  return updateDocument('projects', projectId, {
+    approved_by_orbilius: approved,
+    orbilius_comments: comments || null,
+  });
+}
+export async function revertStep5(projectId: string, comments: string) {
+  const { data: stepsArray } = await getDocuments(
+    'project_steps',
+    buildConstraints({
+      eq: { project_id: projectId, step_number: 5 },
     })
-    .eq('project_id', projectId)
-    .eq('step_number', 5);
+  );
+
+  if (!stepsArray || !(stepsArray as any[]).length) {
+    return { data: null, error: new Error('Step 5 not found') };
+  }
+
+  const stepId = (stepsArray as any[])[0].id;
+  return updateDocument('project_steps', stepId, {
+    status: 'In Progress',
+    teacher_comments: comments || 'Project needs revision before Orbilius certification.',
+  });
 }
 
 // STORAGE
-export async function downloadProjectFile(filePath) {
-  return supabase.storage.from('project-files').download(filePath);
+export async function downloadProjectFile(filePath: string) {
+  try {
+    const storageRef = ref(storage, `project-files/${filePath}`);
+    const url = await getDownloadURL(storageRef);
+
+    // Download the file
+    const response = await fetch(url);
+    const blob = await response.blob();
+
+    return { data: blob, error: null };
+  } catch (error: any) {
+    return { data: null, error };
+  }
 }
 
 // TEACHERS
 export async function fetchTeachers() {
-  return supabase
-    .from('users')
-    .select('id, email, first_name, last_name, created_at')
-    .eq('user_type', 'teacher')
-    .order('created_at', { ascending: false });
+  try {
+    // Fetch all users and filter client-side to avoid index requirement
+    const usersRef = collection(db, 'users');
+    const snapshot = await getDocs(usersRef);
+    
+    const teachers = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter((user: any) => user.user_type === 'teacher')
+      .sort((a: any, b: any) => {
+        const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return bTime - aTime; // Descending order
+      });
+    
+    return { data: teachers, error: null };
+  } catch (error: any) {
+    return { data: null, error };
+  }
 }
 
 export async function deleteTeacher(teacherId: string) {
-  // Call the backend API endpoint to delete teacher and students
-  // This endpoint has access to the service role key and can delete from auth.users
-  const apiUrl = import.meta.env.DEV
-    ? 'http://localhost:4000/api/deleteTeacher'
-    : '/api/deleteTeacher';
-
+  // Call Firebase Cloud Function to delete teacher and students
   try {
-    const response = await fetch(apiUrl, {
+    const response = await fetch(CLOUD_FUNCTIONS.deleteTeacher, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,21 +167,16 @@ export async function deleteTeacher(teacherId: string) {
     }
 
     return { data: result, error: null };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error calling deleteTeacher API:', error);
     return { data: null, error: error.message || 'Failed to delete teacher' };
   }
 }
 
 export async function deleteStudent(studentId: string) {
-  // Call the backend API endpoint to delete student
-  // This endpoint has access to the service role key and can delete from auth.users
-  const apiUrl = import.meta.env.DEV
-    ? 'http://localhost:4000/api/deleteStudent'
-    : '/api/deleteStudent';
-
+  // Call Firebase Cloud Function to delete student
   try {
-    const response = await fetch(apiUrl, {
+    const response = await fetch(CLOUD_FUNCTIONS.deleteStudent, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -133,7 +191,7 @@ export async function deleteStudent(studentId: string) {
     }
 
     return { data: result, error: null };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error calling deleteStudent API:', error);
     return { data: null, error: error.message || 'Failed to delete student' };
   }
@@ -141,5 +199,5 @@ export async function deleteStudent(studentId: string) {
 
 // AUTH SIGN-OUT
 export async function signOut() {
-  await supabase.auth.signOut();
+  await firebaseSignOut(auth);
 }

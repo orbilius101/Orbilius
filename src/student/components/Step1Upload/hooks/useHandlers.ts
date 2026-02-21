@@ -1,4 +1,6 @@
-import { supabase } from '../../../../supabaseClient';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, storage } from '../../../../firebaseConfig';
+import { createDocument, getDocument, updateDocument } from '../../../../utils/firebaseHelpers';
 import { generateSubmissionFilePath, getFileExtension } from '../../../../utils/filePathHelpers';
 
 export function useStep1UploadHandlers({
@@ -24,41 +26,31 @@ export function useStep1UploadHandlers({
     setSuccess(false);
 
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+      const user = auth.currentUser;
 
-      if (sessionError || !session?.user) throw new Error('Not authenticated.');
+      if (!user) throw new Error('Not authenticated.');
 
-      const userId = session.user.id;
+      const userId = user.uid;
 
       if (!file) throw new Error('Please select a file.');
 
       const fileExt = getFileExtension(file.name);
       const filePath = generateSubmissionFilePath(userId, projectId, 1, fileExt);
 
-      const { error: uploadError } = await supabase.storage
-        .from('student-submissions')
-        .upload(filePath, file, { upsert: true, contentType: file.type });
+      // Upload to Firebase Storage
+      const storageRef = ref(storage, `student-submissions/${filePath}`);
+      await uploadBytes(storageRef, file, { contentType: file.type });
 
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('student-submissions')
-        .getPublicUrl(filePath);
-
-      const fileUrl = publicUrlData.publicUrl;
+      // Get download URL
+      const fileUrl = await getDownloadURL(storageRef);
 
       // Verify project ownership before inserting
-      const { data: projectCheck, error: projectCheckError } = await supabase
-        .from('projects')
-        .select('project_id, student_id')
-        .eq('project_id', projectId)
-        .eq('student_id', userId)
-        .single();
+      const { data: projectCheck, error: projectCheckError } = await getDocument(
+        'projects',
+        projectId
+      );
 
-      if (projectCheckError || !projectCheck) {
+      if (projectCheckError || !projectCheck || (projectCheck as any).student_id !== userId) {
         console.error('Project ownership verification failed:', projectCheckError);
         throw new Error('Unable to verify project ownership. Please try again.');
       }
@@ -69,10 +61,11 @@ export function useStep1UploadHandlers({
         file_url: fileUrl,
       });
 
-      const { error: insertError } = await supabase.from('submissions').insert({
+      const { error: insertError } = await createDocument('submissions', {
         project_id: projectId,
         step_number: 1,
         file_url: fileUrl,
+        submitted_at: new Date().toISOString(),
       });
 
       if (insertError) {
@@ -80,20 +73,17 @@ export function useStep1UploadHandlers({
         throw insertError;
       }
 
-      const { error: updateError } = await supabase
-        .from('projects')
-        .update({
-          current_step_status: 'Submitted',
-          step1_status: 'Submitted',
-        })
-        .eq('project_id', projectId);
+      const { error: updateError } = await updateDocument('projects', projectId, {
+        current_step_status: 'Submitted',
+        step1_status: 'Submitted',
+      });
 
       if (updateError) throw updateError;
 
       setSuccess(true);
       setStatus('Submitted');
       setFile(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Upload failed. Please try again.');
     } finally {

@@ -38,7 +38,7 @@ export function useAdminCode(showAlert: (message: string, title?: string) => voi
       showAlert('Admin code cannot be empty', 'Error');
       return;
     }
-    const { data, error } = await updateAdminCodeById(1, newAdminCode.trim());
+    const { data, error } = await updateAdminCodeById('1', newAdminCode.trim());
     if (error) {
       if (error.message.includes('row-level security')) {
         showAlert(
@@ -50,7 +50,7 @@ export function useAdminCode(showAlert: (message: string, title?: string) => voi
       }
       return;
     }
-    if (data?.length) {
+    if (data) {
       setAdminCode(newAdminCode.trim());
       setIsEditing(false);
       showAlert('Admin code updated successfully', 'Success');

@@ -1,4 +1,6 @@
-import { supabase } from '../../../../supabaseClient';
+import { auth, storage } from '../../../../firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { createDocument, updateDocument } from '../../../../utils/firebaseHelpers';
 
 export function useSubmitStepHandlers({
   setFile,
@@ -19,34 +21,24 @@ export function useSubmitStepHandlers({
     setSuccess(false);
 
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+      const currentUser = auth.currentUser;
 
-      if (sessionError || !session?.user) throw new Error('Not authenticated.');
+      if (!currentUser) throw new Error('Not authenticated.');
 
-      const userId = session.user.id;
+      const userId = currentUser.uid;
 
       if (!file || !stepNumber) throw new Error('File and Step Number are required.');
 
       const fileExt = file.name.split('.').pop().toLowerCase();
       const filePath = `submissions/${projectId}/${userId}_${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('student-submissions')
-        .upload(filePath, file);
+      const storageRef = ref(storage, filePath);
+      await uploadBytes(storageRef, file);
 
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('student-submissions')
-        .getPublicUrl(filePath);
-
-      const fileUrl = publicUrlData.publicUrl;
+      const fileUrl = await getDownloadURL(storageRef);
       const stepNum = parseInt(stepNumber);
 
-      const { error: insertError } = await supabase.from('submissions').insert({
+      const { error: insertError } = await createDocument('submissions', {
         project_id: projectId,
         step_number: stepNum,
         file_url: fileUrl,
@@ -57,13 +49,10 @@ export function useSubmitStepHandlers({
 
       const stepField = `step${stepNum}_status`;
 
-      const { error: updateError } = await supabase
-        .from('projects')
-        .update({
-          current_step_status: 'Submitted',
-          [stepField]: 'Submitted',
-        })
-        .eq('project_id', projectId);
+      const { error: updateError } = await updateDocument('projects', projectId, {
+        current_step_status: 'Submitted',
+        [stepField]: 'Submitted',
+      });
 
       if (updateError) throw updateError;
 

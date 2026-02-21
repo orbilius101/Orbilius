@@ -21,8 +21,8 @@ import {
   ZoomOutMap as FitIcon,
   PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
-import { supabase } from '../../../supabaseClient';
 import { Project } from '../../../types';
+import { getDocuments, buildConstraints } from '../../../utils/firebaseHelpers';
 
 // Use CDN that matches installed pdfjs-dist version
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -97,19 +97,20 @@ export default function StepSubmissionModal({
       setSubmissionFile(null);
 
       try {
-        // Fetch submission data
-        const { data: fileData, error: fileError } = await supabase
-          .from('submissions')
-          .select('file_url, teacher_comments, submitted_at, youtube_link')
-          .eq('project_id', projectId)
-          .eq('step_number', stepNumber)
-          .order('submitted_at', { ascending: false })
-          .limit(1);
+        // Fetch submission data from Firebase
+        const { data: fileData, error: fileError } = await getDocuments(
+          'submissions',
+          buildConstraints({
+            eq: { project_id: projectId, step_number: stepNumber },
+            orderBy: { field: 'submitted_at', direction: 'desc' },
+            limit: 1,
+          })
+        );
 
         if (fileError) {
           console.error('Error fetching submission:', fileError.message);
-        } else if (fileData && fileData.length > 0) {
-          const latestSubmission = fileData[0];
+        } else if (fileData && (fileData as any[]).length > 0) {
+          const latestSubmission = (fileData as any[])[0];
 
           // Set YouTube link
           if (latestSubmission.youtube_link) {
@@ -119,42 +120,10 @@ export default function StepSubmissionModal({
             console.log('No YouTube link found');
           }
 
-          // Handle file URL
+          // Handle file URL - Firebase Storage URLs are already secured by rules
           if (latestSubmission.file_url) {
-            try {
-              // Extract the storage path from the public URL
-              // file_url format: userId/projects/projectId/stepN/timestamp.ext
-              let filePath = latestSubmission.file_url;
-
-              // If it's a full URL, extract just the path after the bucket name
-              if (filePath.includes('/storage/v1/object/public/student-submissions/')) {
-                filePath = filePath.split('/storage/v1/object/public/student-submissions/')[1];
-              } else if (filePath.includes('supabase.co')) {
-                // If it's any other Supabase URL format, extract the path
-                const urlParts = filePath.split('student-submissions/');
-                if (urlParts.length > 1) {
-                  filePath = urlParts[1];
-                }
-              }
-
-              console.log('Attempting to create signed URL for path:', filePath);
-
-              const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-                .from('student-submissions')
-                .createSignedUrl(filePath, 3600);
-
-              if (signedUrlError) {
-                console.error('Error creating signed URL:', signedUrlError.message);
-                console.error('File path attempted:', filePath);
-                setSubmissionFile(latestSubmission.file_url);
-              } else if (signedUrlData) {
-                console.log('Successfully created signed URL');
-                setSubmissionFile(signedUrlData.signedUrl);
-              }
-            } catch (error) {
-              console.error('Error processing file URL:', error);
-              setSubmissionFile(latestSubmission.file_url);
-            }
+            console.log('Setting file URL:', latestSubmission.file_url);
+            setSubmissionFile(latestSubmission.file_url);
           }
 
           // Set teacher comments and submitted date

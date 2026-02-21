@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.user_type == 'admin';
+    }
+    
+    function isTeacher() {
+      return isAuthenticated() && 
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.user_type == 'teacher';
+    }
+    
+    // Project files bucket
+    match /project-files/{studentId}/{projectId}/{fileName} {
+      // Students can upload files to their own projects
+      // Teachers and admins can read all files
+      allow read: if isAuthenticated() && (
+        isTeacher() || 
+        isAdmin() || 
+        request.auth.uid == studentId
+      );
+      
+      // Students can upload to their own projects
+      allow create: if isAuthenticated() && request.auth.uid == studentId;
+      
+      // Students can update/delete their own files
+      // Admins can delete any file
+      allow update, delete: if isAuthenticated() && (
+        request.auth.uid == studentId || 
+        isAdmin()
+      );
+    }
+  }
+}

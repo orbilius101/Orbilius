@@ -33,7 +33,7 @@ import {
 import { useDashboardData } from './hooks/useData';
 import { useDashboardHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
-import { supabase } from '../../../supabaseClient';
+import { auth } from '../../../firebaseConfig';
 import orbiliusLogo from '../../../assets/merle-386x386-yellow.svg';
 import { Project } from '../../../types';
 
@@ -128,7 +128,7 @@ export default function TeacherDashboard() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await auth.signOut();
     navigate('/login');
   };
 

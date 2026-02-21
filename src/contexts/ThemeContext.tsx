@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { themes, ThemeName } from '../theme';
-import { supabase } from '../supabaseClient';
+import { getDocument, updateDocument } from '../utils/firebaseHelpers';
+import { onSnapshot, doc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 interface ThemeContextType {
   currentTheme: ThemeName;
@@ -36,55 +38,34 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Fetch theme from database on mount
   useEffect(() => {
-    const fetchTheme = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('admin_code')
-          .select('theme')
-          .eq('id', 1)
-          .single();
+    // Subscribe to theme changes using Firestore real-time listener
+    const adminCodeRef = doc(db, 'admin_code', '1');
 
-        if (error) {
-          console.error('Error fetching theme:', error);
-        } else if (data && data.theme) {
-          setCurrentTheme(data.theme as ThemeName);
-        }
-      } catch (err) {
-        console.error('Error loading theme:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTheme();
-
-    // Subscribe to theme changes
-    const channel = supabase
-      .channel('theme-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'admin_code',
-          filter: 'id=eq.1',
-        },
-        (payload) => {
-          if (payload.new && payload.new.theme) {
-            setCurrentTheme(payload.new.theme as ThemeName);
+    const unsubscribe = onSnapshot(
+      adminCodeRef,
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          if (data.theme) {
+            setCurrentTheme(data.theme as ThemeName);
           }
         }
-      )
-      .subscribe();
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching theme:', error);
+        setLoading(false);
+      }
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
   }, []);
 
   const setTheme = async (theme: ThemeName) => {
     try {
-      const { error } = await supabase.from('admin_code').update({ theme }).eq('id', 1);
+      const { error } = await updateDocument('admin_code', '1', { theme });
 
       if (error) {
         console.error('Error updating theme:', error);

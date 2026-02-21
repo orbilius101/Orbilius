@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Box, Typography, Button, Chip } from '@mui/material';
 import { Logout as LogoutIcon } from '@mui/icons-material';
-import { supabase } from '../../../supabaseClient';
+import { auth } from '../../../firebaseConfig';
 import { useTheme } from '../../../contexts/ThemeContext';
 import yellowLogo from '../../../assets/merle-386x386-yellow.svg';
 import regularLogo from '../../../assets/merle-386x386.svg';
@@ -17,13 +17,11 @@ export default function SharedHeader() {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
         setUserProfile({
-          first_name: session.user.user_metadata?.first_name || 'Unknown',
-          last_name: session.user.user_metadata?.last_name || 'User',
+          first_name: currentUser.displayName?.split(' ')[0] || 'Unknown',
+          last_name: currentUser.displayName?.split(' ').slice(1).join(' ') || 'User',
         });
       }
     };
@@ -31,7 +29,7 @@ export default function SharedHeader() {
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await auth.signOut();
     navigate('/login');
   };
 
