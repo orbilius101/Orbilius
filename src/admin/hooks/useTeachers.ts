@@ -114,16 +114,19 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
       })
     );
 
-    const pendingTeachers: Teacher[] = (pendingInvites || []).map((invite) => ({
-      id: invite.id,
-      email: invite.email,
-      first_name: '',
-      last_name: '',
-      created_at: invite.invited_at || '',
-      invited_at: invite.invited_at || '',
-      status: 'pending' as const,
-      students: [],
-    }));
+    const pendingTeachers: Teacher[] = (pendingInvites || []).map((invite) => {
+      const invitedDate = invite.invited_at?.toDate ? invite.invited_at.toDate() : new Date(invite.invited_at || Date.now());
+      return {
+        id: invite.id,
+        email: invite.email,
+        first_name: '',
+        last_name: '',
+        created_at: invitedDate.toISOString(),
+        invited_at: invitedDate.toISOString(),
+        status: 'pending' as const,
+        students: [],
+      };
+    });
 
     // Combine active and pending teachers
     setTeachers([...activeTeachers, ...pendingTeachers]);

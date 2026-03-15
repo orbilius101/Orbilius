@@ -25,9 +25,10 @@ export function useLoginHandlers(data: LoginData): LoginHandlers {
       }
 
       const role = (userData as any).user_type;
+      const verifiedViaInvitation = (userData as any).verified_via_invitation;
 
-      // Check if email is verified (skip for admin users)
-      if (!user.emailVerified && role !== 'admin') {
+      // Check if email is verified (skip for admin users and invitation signups)
+      if (!user.emailVerified && !verifiedViaInvitation && role !== 'admin') {
         showAlert(
           'Your email address has to be confirmed before using Orbilius. Check your inbox for a confirmation email and verify your email before logging in to Orbilius',
           'Email Not Confirmed'

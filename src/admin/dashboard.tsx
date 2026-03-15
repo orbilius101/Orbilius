@@ -37,6 +37,9 @@ import InviteModal from './components/InviteModal';
 export default function AdminDashboard() {
   const _navigate = useNavigate();
   const [showInviteModal, setShowInviteModal] = React.useState(false);
+  const [resendEmail, setResendEmail] = React.useState<string | undefined>(undefined);
+  const [resendConfirmOpen, setResendConfirmOpen] = React.useState(false);
+  const [emailToResend, setEmailToResend] = React.useState<string>('');
   const { alertState, showAlert, closeAlert } = useAlert();
   const { currentTheme, setTheme, availableThemes } = useTheme();
   const { loadingAuth } = useAuthAdmin(showAlert);
@@ -67,10 +70,20 @@ export default function AdminDashboard() {
   } = useTeachers(showAlert);
 
   const handleResendInvitation = (email: string) => {
-    // Set the email in the modal state and open it
+    // Show confirmation dialog first
+    setEmailToResend(email);
+    setResendConfirmOpen(true);
+  };
+
+  const confirmResend = () => {
+    setResendConfirmOpen(false);
+    setResendEmail(emailToResend);
     setShowInviteModal(true);
-    // The invite modal will handle sending the invitation
-    showAlert(`Resending invitation to ${email}`, 'Info');
+  };
+
+  const cancelResend = () => {
+    setResendConfirmOpen(false);
+    setEmailToResend('');
   };
 
   if (loadingAuth) {
@@ -159,11 +172,13 @@ export default function AdminDashboard() {
             open={showInviteModal}
             onClose={() => {
               setShowInviteModal(false);
+              setResendEmail(undefined); // Clear resend email
               refreshTeachers(); // Refresh teachers list after sending invitation
             }}
             role="teacher"
             adminCode={adminCode}
             showAlert={showAlert}
+            initialEmail={resendEmail}
           />
         )}
         <Paper sx={{ p: 3, mb: 3 }}>
@@ -210,6 +225,15 @@ export default function AdminDashboard() {
           onCancel={closeConfirm}
           confirmText="Delete"
           cancelText="Cancel"
+        />
+
+        {/* Resend Confirmation Dialog */}
+        <ConfirmDialog
+          open={resendConfirmOpen}
+          title="Resend Invitation"
+          message={`Are you sure you want to resend the invitation to ${emailToResend}?`}
+          onConfirm={confirmResend}
+          onCancel={cancelResend}
         />
       </Container>
     </Box>

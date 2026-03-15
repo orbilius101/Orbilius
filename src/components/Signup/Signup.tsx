@@ -28,13 +28,48 @@ export default function Signup() {
   const { currentTheme } = useTheme();
   const merleLogo = currentTheme === 'light' ? regularLogo : yellowLogo;
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({
+    firstName: false,
+    lastName: false,
+    password: false,
+    email: false,
+    teacherId: false,
+  });
   const data = useSignupData();
   const handlers = useSignupHandlers({ ...data, setShowEmailModal });
+  
+  // Check if this is an invitation signup (has invitation data from invite code)
+  const isInvitation = data.invitationData !== null;
+  
+  // Check if teacher ID was pre-filled from URL parameter or invitation
+  const params = new URLSearchParams(window.location.search);
+  const hasTeacherIdParam = params.get('teacherId') !== null;
+  const hasTeacherIdFromInvitation = isInvitation && data.invitationData?.teacher_id;
+  const isTeacherIdPrefilled = hasTeacherIdParam || hasTeacherIdFromInvitation;
 
   // Email validation
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  // Password validation (minimum 6 characters as per Firebase requirement)
+  const isValidPassword = (password: string): boolean => {
+    return password.length >= 6;
+  };
+
+  // Field validation
+  const isFirstNameValid = data.firstName.trim().length > 0;
+  const isLastNameValid = data.lastName.trim().length > 0;
+  const isPasswordValid = isValidPassword(data.password);
+  const isEmailValid = isValidEmail(data.email);
+  const isTeacherIdValid = data.role !== 'student' || data.teacherId.trim().length > 0;
+
+  // Check if form is valid for submission
+  const isFormValid = isFirstNameValid && isLastNameValid && isPasswordValid && isEmailValid && isTeacherIdValid;
+
+  const handleBlur = (field: keyof typeof touchedFields) => {
+    setTouchedFields(prev => ({ ...prev, [field]: true }));
   };
 
   const {
@@ -93,8 +128,12 @@ export default function Signup() {
               label="First Name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
+              onBlur={() => handleBlur('firstName')}
               fullWidth
               variant="outlined"
+              required
+              error={touchedFields.firstName && !isFirstNameValid}
+              helperText={touchedFields.firstName && !isFirstNameValid ? 'First name is required' : ''}
             />
 
             <TextField
@@ -102,8 +141,12 @@ export default function Signup() {
               label="Last Name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
+              onBlur={() => handleBlur('lastName')}
               fullWidth
               variant="outlined"
+              required
+              error={touchedFields.lastName && !isLastNameValid}
+              helperText={touchedFields.lastName && !isLastNameValid ? 'Last name is required' : ''}
             />
 
             <TextField
@@ -111,10 +154,13 @@ export default function Signup() {
               label="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => handleBlur('email')}
               fullWidth
               variant="outlined"
-              error={email.trim() !== '' && !isValidEmail(email)}
-              helperText={email.trim() !== '' && !isValidEmail(email) ? 'Please enter a valid email address' : ''}
+              required
+              disabled={isInvitation}
+              error={touchedFields.email && !isEmailValid}
+              helperText={touchedFields.email && !isEmailValid ? 'Please enter a valid email address' : ''}
             />
 
             <TextField
@@ -122,13 +168,21 @@ export default function Signup() {
               label="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => handleBlur('password')}
               fullWidth
               variant="outlined"
+              required
+              error={touchedFields.password && !isPasswordValid}
+              helperText={
+                touchedFields.password && !isPasswordValid 
+                  ? 'Password must be at least 6 characters' 
+                  : ''
+              }
             />
 
             <FormControl fullWidth>
               <InputLabel>Role</InputLabel>
-              <Select value={role} onChange={(e) => setRole(e.target.value)} label="Role">
+              <Select value={role} onChange={(e) => setRole(e.target.value)} label="Role" disabled={isInvitation}>
                 <MenuItem value="student">Student</MenuItem>
                 <MenuItem value="teacher">Teacher</MenuItem>
               </Select>
@@ -137,11 +191,20 @@ export default function Signup() {
             {role === 'student' && (
               <TextField
                 type="text"
-                label="Teacher ID (optional)"
+                label="Teacher ID"
                 value={teacherId}
                 onChange={(e) => setTeacherId(e.target.value)}
+                onBlur={() => handleBlur('teacherId')}
                 fullWidth
                 variant="outlined"
+                required
+                disabled={isTeacherIdPrefilled}
+                error={touchedFields.teacherId && !isTeacherIdValid}
+                helperText={
+                  touchedFields.teacherId && !isTeacherIdValid
+                    ? 'Teacher ID is required'
+                    : ''
+                }
               />
             )}
 
@@ -153,13 +216,14 @@ export default function Signup() {
                 onChange={(e) => setAdminCode(e.target.value)}
                 fullWidth
                 variant="outlined"
+                disabled={isInvitation}
                 required
               />
             )}
 
             <Button
               onClick={handleSignUp}
-              disabled={loading}
+              disabled={loading || !isFormValid}
               variant="contained"
               fullWidth
               size="large"

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import EmailIcon from '@mui/icons-material/Email';
 import InviteModal from '../../../admin/components/InviteModal';
 import StepSubmissionModal from '../StepSubmissionModal/StepSubmissionModal';
+import StudentsList from './StudentsList';
+import ConfirmDialog from '../../../admin/components/ConfirmDialog';
 import {
   Box,
   Container,
@@ -20,6 +22,11 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
 import {
   ContentCopy as CopyIcon,
@@ -32,6 +39,7 @@ import {
 } from '@mui/icons-material';
 import { useDashboardData } from './hooks/useData';
 import { useDashboardHandlers } from './hooks/useHandlers';
+import { useStudents } from './hooks/useStudents';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 import { auth } from '../../../firebaseConfig';
 import orbiliusLogo from '../../../assets/merle-386x386-yellow.svg';
@@ -41,6 +49,9 @@ export default function TeacherDashboard() {
   const data = useDashboardData();
   const handlers = useDashboardHandlers(data);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [initialEmail, setInitialEmail] = useState('');
+  const [resendConfirmOpen, setResendConfirmOpen] = useState(false);
+  const [emailToResend, setEmailToResend] = useState('');
   const [submissionModal, setSubmissionModal] = useState<{
     open: boolean;
     projectId: string | null;
@@ -54,6 +65,9 @@ export default function TeacherDashboard() {
   });
 
   const { user, userProfile, projects, navigate, alertState, showAlert, closeAlert } = data;
+
+  // Initialize students hook
+  const studentsHook = useStudents(user?.uid, showAlert);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -94,7 +108,7 @@ export default function TeacherDashboard() {
   };
 
   // Debug logging
-  console.log('Teacher Dashboard - User ID:', user?.id);
+  console.log('Teacher Dashboard - User ID:', user?.uid);
   console.log('Teacher Dashboard - Projects:', projects);
   console.log('Teacher Dashboard - Projects length:', projects?.length);
 
@@ -117,14 +131,32 @@ export default function TeacherDashboard() {
   } = handlers;
 
   const handleCopyTeacherId = () => {
-    navigator.clipboard.writeText(user?.id);
+    navigator.clipboard.writeText(user?.uid);
     showAlert('Teacher ID copied to clipboard!', 'Success');
   };
 
   const handleCopySignupLink = () => {
-    const signupLink = `${window.location.origin}/signup?teacherId=${user?.id}`;
+    const signupLink = `${window.location.origin}/signup?teacherId=${user?.uid}`;
     navigator.clipboard.writeText(signupLink);
     showAlert('Signup link copied to clipboard!', 'Success');
+  };
+
+  const handleResendInvitation = (email: string) => {
+    setEmailToResend(email);
+    setResendConfirmOpen(true);
+  };
+
+  const handleConfirmResend = () => {
+    setResendConfirmOpen(false);
+    setInitialEmail(emailToResend);
+    setShowInviteModal(true);
+  };
+
+  const handleCloseInviteModal = () => {
+    setShowInviteModal(false);
+    setInitialEmail('');
+    // Reload students after sending/resending invitation
+    studentsHook.loadStudents();
   };
 
   const handleLogout = async () => {
@@ -380,18 +412,31 @@ export default function TeacherDashboard() {
           ) : (
             <Typography>No projects assigned yet.</Typography>
           )}
+
+          {/* Students Section */}
+          <Paper sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h5">Students</Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<EmailIcon />}
+                onClick={() => setShowInviteModal(true)}
+              >
+                Invite Student
+              </Button>
+            </Box>
+            <StudentsList
+              students={studentsHook.students}
+              onDelete={studentsHook.openConfirm}
+              onResendInvitation={handleResendInvitation}
+            />
+          </Paper>
+
           <Paper sx={{ p: 3 }}>
             <Stack spacing={2}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h5">Student Signup Information</Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<EmailIcon />}
-                  onClick={() => setShowInviteModal(true)}
-                >
-                  Send Invitation
-                </Button>
               </Box>
               <Typography variant="body1">
                 Students need your Teacher ID to sign up. Share this ID with your students:
@@ -412,7 +457,7 @@ export default function TeacherDashboard() {
                     flex: 1,
                   }}
                 >
-                  {user?.id}
+                  {user?.uid}
                 </Typography>
                 <IconButton onClick={handleCopyTeacherId} color="primary">
                   <CopyIcon />
@@ -437,24 +482,56 @@ export default function TeacherDashboard() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {window.location.origin}/signup?teacherId={user?.id}
+                  {window.location.origin}/signup?teacherId={user?.uid}
                 </Typography>
                 <IconButton onClick={handleCopySignupLink} color="primary">
                   <CopyIcon />
                 </IconButton>
               </Box>
             </Stack>
-            {/* Invitation Modal placeholder */}
-            {showInviteModal && (
-              <InviteModal
-                open={showInviteModal}
-                onClose={() => setShowInviteModal(false)}
-                role="student"
-                teacherId={user?.id}
-                showAlert={showAlert}
-              />
-            )}
           </Paper>
+
+          {/* Invitation Modal */}
+          {showInviteModal && (
+            <InviteModal
+              open={showInviteModal}
+              onClose={handleCloseInviteModal}
+              role="student"
+              teacherId={user?.uid}
+              showAlert={showAlert}
+              initialEmail={initialEmail}
+            />
+          )}
+
+          {/* Resend Confirmation Dialog */}
+          <Dialog
+            open={resendConfirmOpen}
+            onClose={() => setResendConfirmOpen(false)}
+          >
+            <DialogTitle>Resend Invitation</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Are you sure you want to resend the invitation to {emailToResend}?
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setResendConfirmOpen(false)}>Cancel</Button>
+              <Button onClick={handleConfirmResend} variant="contained" color="primary">
+                Resend
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Delete Confirmation Dialog */}
+          <ConfirmDialog
+            open={studentsHook.confirmState.open}
+            title={`Delete ${studentsHook.confirmState.type}`}
+            message={`Are you sure you want to delete ${studentsHook.confirmState.name}?`}
+            onConfirm={studentsHook.confirmDelete}
+            onCancel={studentsHook.closeConfirm}
+            confirmText="Delete"
+            cancelText="Cancel"
+          />
         </Stack>
       </Container>
       <AlertDialog

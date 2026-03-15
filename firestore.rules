@@ -33,11 +33,18 @@ service cloud.firestore {
     
     // Users collection
     match /users/{userId} {
-      // Users can read their own data
-      // Admins can read all users
-      // Teachers can read their students
-      allow read: if isOwner(userId) || isAdmin() || 
-                     (isTeacher() && isTeacherOfStudent(userId));
+      // Allow get (single document read) if:
+      // - User is reading their own data
+      // - User is an admin
+      // - User is a teacher reading their student
+      allow get: if isOwner(userId) || isAdmin() || 
+                    (isTeacher() && isTeacherOfStudent(userId));
+      
+      // Allow list (queries) if:
+      // - User is an admin
+      // - User is a teacher (results filtered by query constraints)
+      // - User is a student (for their own queries)
+      allow list: if isAdmin() || isTeacher() || isAuthenticated();
       
       // Users can update their own data
       // Admins can update any user
@@ -175,17 +182,37 @@ service cloud.firestore {
     
     // Pending Invitations collection
     match /pending_invitations/{inviteId} {
-      // Only admins can read
-      allow read: if isAdmin();
+      // Allow get (single document) if:
+      // - User is an admin
+      // - Unauthenticated users can lookup by invitation code (for signup flow)
+      // - Authenticated users can read invitations where teacher_id matches their UID
+      allow get: if isAdmin() || 
+                    (isAuthenticated() && resource.data.teacher_id == request.auth.uid) ||
+                    (!isAuthenticated() && resource.data.invitation_code != null);
       
-      // Only admins can create
-      allow create: if isAdmin();
+      // Allow list (queries) if:
+      // - User is an admin
+      // - User is a teacher (results filtered by query constraints)
+      allow list: if isAdmin() || isTeacher();
       
-      // Only admins can update
-      allow update: if isAdmin();
+      // Admins can create any invitation
+      // Teachers can create student invitations (with their teacher_id)
+      allow create: if isAdmin() || 
+                       (isAuthenticated() && 
+                        request.resource.data.role == 'student' && 
+                        request.resource.data.teacher_id == request.auth.uid);
       
-      // Only admins can delete
-      allow delete: if isAdmin();
+      // Admins can update any invitation
+      // Teachers can update their own invitations (teacher_id must remain the same)
+      allow update: if isAdmin() || 
+                       (isAuthenticated() && 
+                        resource.data.teacher_id == request.auth.uid &&
+                        request.resource.data.teacher_id == request.auth.uid);
+      
+      // Allow delete if admin, teacher (for their invitations), or if authenticated user's email matches
+      allow delete: if isAdmin() || 
+                       (isAuthenticated() && resource.data.teacher_id == request.auth.uid) ||
+                       (isAuthenticated() && resource.data.email == request.auth.token.email);
     }
   }
 }

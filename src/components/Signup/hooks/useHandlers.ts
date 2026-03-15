@@ -8,7 +8,10 @@ import { getDocument, createDocument, getDocuments, buildConstraints, deleteDocu
 import { SignupData, SignupHandlers } from '../../../types';
 
 export function useSignupHandlers(
-  data: SignupData & { setShowEmailModal?: (show: boolean) => void }
+  data: SignupData & { 
+    setShowEmailModal?: (show: boolean) => void;
+    invitationData?: any;
+  }
 ): SignupHandlers {
   const {
     email,
@@ -22,6 +25,7 @@ export function useSignupHandlers(
     navigate,
     showAlert,
     setShowEmailModal,
+    invitationData,
   } = data;
 
   async function handleSignUp() {
@@ -69,6 +73,9 @@ export function useSignupHandlers(
         displayName: `${firstName} ${lastName}`,
       });
 
+      // Check if this is an invitation signup
+      const isInvitationSignup = invitationData !== null && invitationData !== undefined;
+
       // Create user profile in Firestore
       await createDocument(
         'users',
@@ -80,27 +87,37 @@ export function useSignupHandlers(
           first_name: firstName,
           last_name: lastName,
           created_at: new Date().toISOString(),
+          verified_via_invitation: isInvitationSignup ? true : false,
         },
         user.uid
       );
 
-      // Send email verification
-      await sendEmailVerification(user);
+      // Only send email verification if this is NOT an invitation signup
+      // (invitation signups already confirmed email by clicking the link)
+      if (!isInvitationSignup) {
+        await sendEmailVerification(user);
+      }
 
       // If this is a teacher signup, delete the pending invitation
       if (role === 'teacher') {
         try {
-          const { data: pendingInvites } = await getDocuments(
-            'pending_invitations',
-            buildConstraints({
-              eq: { email: user.email, role: 'teacher', status: 'pending' },
-            })
-          );
-          
-          if (pendingInvites && pendingInvites.length > 0) {
-            // Delete the pending invitation
-            await deleteDocument('pending_invitations', pendingInvites[0].id);
-            console.log('Deleted pending invitation for', user.email);
+          // If we have invitation data, delete it directly
+          if (invitationData && invitationData.id) {
+            await deleteDocument('pending_invitations', invitationData.id);
+            console.log('Deleted pending invitation:', invitationData.id);
+          } else {
+            // Fallback: search for pending invitation by email
+            const { data: pendingInvites } = await getDocuments(
+              'pending_invitations',
+              buildConstraints({
+                eq: { email: user.email, role: 'teacher', status: 'pending' },
+              })
+            );
+            
+            if (pendingInvites && pendingInvites.length > 0) {
+              await deleteDocument('pending_invitations', pendingInvites[0].id);
+              console.log('Deleted pending invitation for', user.email);
+            }
           }
         } catch (error) {
           // Don't fail signup if we can't delete the pending invitation
@@ -109,11 +126,18 @@ export function useSignupHandlers(
       }
 
       setLoading(false);
-      if (setShowEmailModal) {
-        setShowEmailModal(true);
-      } else {
-        showAlert('Sign-up successful. Check your email to confirm your account.', 'Success');
+      
+      // Different messaging based on whether email verification was sent
+      if (isInvitationSignup) {
+        showAlert('Account created successfully! You can now log in.', 'Success');
         navigate('/login');
+      } else {
+        if (setShowEmailModal) {
+          setShowEmailModal(true);
+        } else {
+          showAlert('Sign-up successful. Check your email to confirm your account.', 'Success');
+          navigate('/login');
+        }
       }
     } catch (error: any) {
       console.error('Signup error:', error);
