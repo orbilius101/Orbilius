@@ -19,19 +19,6 @@ export async function getUserRole(userId: string) {
   return getDocument('users', userId);
 }
 
-// ADMIN CODE
-export async function fetchAdminCodeRows() {
-  // In Firebase, admin_code is a single document with ID '1'
-  const { data, error } = await getDocument('admin_code', '1');
-  if (error) return { data: null, error };
-  // Add id field to match expected structure
-  return { data: data ? [{ ...data, id: 1 }] : [], error: null };
-}
-export async function updateAdminCodeById(id: string, code: string) {
-  // Update the admin_code document
-  return updateDocument('admin_code', '1', { code });
-}
-
 // PROJECTS
 export async function fetchPendingProjects() {
   try {

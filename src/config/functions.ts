@@ -5,9 +5,13 @@
 // Cloud Function URLs (2nd Gen Cloud Run endpoints)
 const CLOUD_RUN_BASE = 'https://vxzm7ahria-uc.a.run.app';
 
+// Firebase project details for emulator
+const PROJECT_ID = 'orbilius-81978';
+const REGION = 'us-central1';
+
 // Functions base URL - use emulator in dev, Cloud Run in production
 const FUNCTIONS_BASE_URL = import.meta.env.DEV
-  ? 'http://127.0.0.1:5001' // Local emulator
+  ? `http://127.0.0.1:5001/${PROJECT_ID}/${REGION}` // Local emulator
   : CLOUD_RUN_BASE;
 
 // Export function endpoints

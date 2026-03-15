@@ -81,8 +81,6 @@ export default function Signup() {
     setRole,
     teacherId,
     setTeacherId,
-    adminCode,
-    setAdminCode,
     firstName,
     setFirstName,
     lastName,
@@ -205,19 +203,6 @@ export default function Signup() {
                     ? 'Teacher ID is required'
                     : ''
                 }
-              />
-            )}
-
-            {role === 'teacher' && (
-              <TextField
-                type="text"
-                label="Orbilius Admin Code"
-                value={adminCode}
-                onChange={(e) => setAdminCode(e.target.value)}
-                fullWidth
-                variant="outlined"
-                disabled={isInvitation}
-                required
               />
             )}
 

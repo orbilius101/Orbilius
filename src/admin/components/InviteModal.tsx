@@ -21,7 +21,6 @@ interface InviteModalProps {
   open: boolean;
   onClose: () => void;
   role: 'teacher' | 'student';
-  adminCode?: string;
   teacherId?: string;
   showAlert: (msg: string, title?: string) => void;
   initialEmail?: string;
@@ -31,7 +30,6 @@ export default function InviteModal({
   open,
   onClose,
   role,
-  adminCode,
   teacherId,
   showAlert,
   initialEmail,
@@ -65,6 +63,7 @@ export default function InviteModal({
   const handleSend = async () => {
     setTouched(true); // Mark field as touched when attempting to send
     console.log('Sending invitation to:', email, 'as role:', role);
+    console.log('Cloud Functions URL:', CLOUD_FUNCTIONS.checkUserEmail);
     setLoading(true);
     setError('');
     setSuccess('');
@@ -112,7 +111,6 @@ export default function InviteModal({
             await updateDocument('pending_invitations', existingInvite.id, {
               status: 'pending',
               invited_at: Timestamp.now(),
-              admin_code: adminCode || null,
               invitation_code: invitationCode,
             });
             console.log('Pending teacher record updated with code:', invitationCode);
@@ -124,7 +122,6 @@ export default function InviteModal({
               role: 'teacher',
               status: 'pending',
               invited_at: Timestamp.now(),
-              admin_code: adminCode || null,
               invitation_code: invitationCode,
             });
             console.log('Pending teacher record created with code:', invitationCode);
@@ -279,10 +276,23 @@ export default function InviteModal({
       }, 1500);
     } catch (err) {
       console.error('Exception in handleSend:', err);
+      console.error('Error details:', {
+        message: err instanceof Error ? err.message : String(err),
+        name: err instanceof Error ? err.name : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined,
+      });
       setLoading(false);
-      const errorMessage = err instanceof Error 
-        ? `Error: ${err.message}` 
-        : 'Error sending invitation. Please try again.';
+      
+      let errorMessage = 'Error sending invitation. Please try again.';
+      
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        errorMessage = 'Cannot connect to server. Make sure Firebase emulators are running (pnpm firebase:emulators).';
+        console.error('⚠️  Fetch failed - Cloud Functions URL:', CLOUD_FUNCTIONS.checkUserEmail);
+        console.error('⚠️  Make sure Firebase emulators are running: pnpm firebase:emulators');
+      } else if (err instanceof Error) {
+        errorMessage = `Error: ${err.message}`;
+      }
+      
       setError(errorMessage);
     }
   };

@@ -39,10 +39,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Fetch theme from database on mount
   useEffect(() => {
     // Subscribe to theme changes using Firestore real-time listener
-    const adminCodeRef = doc(db, 'admin_code', '1');
+    const settingsRef = doc(db, 'settings', 'theme');
 
     const unsubscribe = onSnapshot(
-      adminCodeRef,
+      settingsRef,
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
@@ -65,7 +65,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   const setTheme = async (theme: ThemeName) => {
     try {
-      const { error } = await updateDocument('admin_code', '1', { theme });
+      const { error } = await updateDocument('settings', 'theme', { theme });
 
       if (error) {
         console.error('Error updating theme:', error);

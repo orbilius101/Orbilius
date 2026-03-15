@@ -19,14 +19,12 @@ import EmailIcon from '@mui/icons-material/Email';
 import PaletteIcon from '@mui/icons-material/Palette';
 
 import { useAuthAdmin } from './hooks/useAuthAdmin';
-import { useAdminCode } from './hooks/useAdminCode';
 import { usePendingProjects } from './hooks/usePendingProjects';
 import { useTeachers } from './hooks/useTeachers';
 import { useAlert } from '../hooks/useAlert';
 import { useTheme } from '../contexts/ThemeContext';
 
 import AdminHeader from './components/AdminHeader';
-import AdminCodeManager from './components/AdminCodeManager';
 import ProjectsList from './components/Projects/ProjectsList';
 import TeachersList from './components/Teachers/TeachersList';
 import ProjectReviewModal from './components/ReviewModal/ProjectReviewModal';
@@ -43,8 +41,6 @@ export default function AdminDashboard() {
   const { alertState, showAlert, closeAlert } = useAlert();
   const { currentTheme, setTheme, availableThemes } = useTheme();
   const { loadingAuth } = useAuthAdmin(showAlert);
-  const { adminCode, newAdminCode, setNewAdminCode, isEditing, setIsEditing, save } =
-    useAdminCode(showAlert);
   const {
     projects,
     selected,
@@ -129,14 +125,6 @@ export default function AdminDashboard() {
           </FormControl>
         </Paper>
 
-        <AdminCodeManager
-          adminCode={adminCode}
-          newAdminCode={newAdminCode}
-          setNewAdminCode={setNewAdminCode}
-          isEditing={isEditing}
-          setIsEditing={setIsEditing}
-          onSave={save}
-        />
         <Paper sx={{ p: 3, mb: 3 }}>
           <Box
             sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
@@ -176,7 +164,6 @@ export default function AdminDashboard() {
               refreshTeachers(); // Refresh teachers list after sending invitation
             }}
             role="teacher"
-            adminCode={adminCode}
             showAlert={showAlert}
             initialEmail={resendEmail}
           />

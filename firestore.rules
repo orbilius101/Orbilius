@@ -171,12 +171,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
-    // Admin Code collection
-    match /admin_code/{codeId} {
-      // Only admins can read
-      allow read: if isAdmin();
+    // Settings collection (global app settings like theme)
+    match /settings/{settingId} {
+      // Anyone can read settings
+      allow read: if true;
       
-      // Only admins can write
+      // Only admins can write settings
       allow write: if isAdmin();
     }
     

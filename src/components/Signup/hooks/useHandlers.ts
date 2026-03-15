@@ -18,7 +18,6 @@ export function useSignupHandlers(
     password,
     role,
     teacherId,
-    adminCode,
     firstName,
     lastName,
     setLoading,
@@ -35,32 +34,6 @@ export function useSignupHandlers(
       showAlert('Please choose a role before creating your account.', 'Role Required');
       setLoading(false);
       return;
-    }
-
-    // Validate admin code for teachers by fetching from database
-    if (role === 'teacher') {
-      try {
-        const { data: adminCodeData, error: adminCodeError } = await getDocument('admin_code', '1');
-
-        if (adminCodeError) {
-          showAlert('Error validating admin code. Please try again.', 'Error');
-          setLoading(false);
-          return;
-        }
-
-        if (!adminCodeData || adminCode !== (adminCodeData as any).code) {
-          showAlert(
-            'Invalid Orbilius Admin Code. Please contact your administrator for the correct code.',
-            'Invalid Code'
-          );
-          setLoading(false);
-          return;
-        }
-      } catch {
-        showAlert('Error validating admin code. Please try again.', 'Error');
-        setLoading(false);
-        return;
-      }
     }
 
     try {

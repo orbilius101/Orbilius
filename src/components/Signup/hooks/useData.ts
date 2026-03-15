@@ -14,7 +14,6 @@ export function useSignupData(): SignupData & {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
   const [teacherId, setTeacherId] = useState('');
-  const [adminCode, setAdminCode] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,7 +48,6 @@ export function useSignupData(): SignupData & {
         setInvitationData(invitation);
         setEmail(invitation.email || '');
         setRole(invitation.role || 'teacher');
-        setAdminCode(invitation.admin_code || '');
         // Set teacher_id for student invitations
         if (invitation.role === 'student' && invitation.teacher_id) {
           setTeacherId(invitation.teacher_id);
@@ -72,8 +70,6 @@ export function useSignupData(): SignupData & {
     setRole,
     teacherId,
     setTeacherId,
-    adminCode,
-    setAdminCode,
     firstName,
     setFirstName,
     lastName,

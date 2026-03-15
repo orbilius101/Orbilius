@@ -9,8 +9,6 @@ export interface SignupData {
   setRole: (value: string) => void;
   teacherId: string;
   setTeacherId: (value: string) => void;
-  adminCode: string;
-  setAdminCode: (value: string) => void;
   firstName: string;
   setFirstName: (value: string) => void;
   lastName: string;
