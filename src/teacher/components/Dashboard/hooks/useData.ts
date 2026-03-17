@@ -11,6 +11,37 @@ export function useDashboardData() {
   const navigate = useNavigate();
   const { alertState, showAlert, closeAlert } = useAlert();
 
+  const fetchProjects = async (teacherId: string) => {
+    // Fetch all projects assigned to this teacher with student email
+    const { data: projectsData, error: projectsError } = await getDocuments(
+      'projects',
+      buildConstraints({
+        eq: { teacher_id: teacherId },
+        orderBy: { field: 'created_at', direction: 'desc' },
+      })
+    );
+
+    if (projectsError) {
+      console.error('Error fetching projects:', projectsError.message);
+      setProjects([]);
+    } else {
+      // Fetch student details for each project
+      const projectsWithStudents = await Promise.all(
+        ((projectsData as any[]) || []).map(async (project) => {
+          const { data: studentData } = await getDocument('users', project.student_id);
+
+          return {
+            ...project,
+            project_id: project.id, // Map Firestore document ID to project_id
+            student: studentData,
+          };
+        })
+      );
+
+      setProjects(projectsWithStudents);
+    }
+  };
+
   useEffect(() => {
     const fetchUserAndProjects = async () => {
       const currentUser = auth.currentUser;
@@ -22,10 +53,17 @@ export function useDashboardData() {
 
       setUser(currentUser as any);
 
-      // Fetch user profile
-      const { data: profile, error: profileError } = await getDocument('users', currentUser.uid);
+      // Check if admin is impersonating a teacher
+      const impersonatingTeacherId = sessionStorage.getItem('impersonating_teacher_uid');
+      const effectiveUserId = impersonatingTeacherId || currentUser.uid;
 
-      console.log('Teacher Dashboard - Fetching profile for user ID:', currentUser.uid);
+      console.log('Impersonating teacher ID:', impersonatingTeacherId);
+      console.log('Effective user ID for data fetch:', effectiveUserId);
+
+      // Fetch user profile (use impersonated teacher's profile if applicable)
+      const { data: profile, error: profileError } = await getDocument('users', effectiveUserId);
+
+      console.log('Teacher Dashboard - Fetching profile for user ID:', effectiveUserId);
       console.log('Teacher Dashboard - Profile data:', profile);
       console.log('Teacher Dashboard - Profile error:', profileError);
 
@@ -35,33 +73,7 @@ export function useDashboardData() {
         setUserProfile(profile);
       }
 
-      // Fetch all projects assigned to this teacher with student email
-      const { data: projectsData, error: projectsError } = await getDocuments(
-        'projects',
-        buildConstraints({
-          eq: { teacher_id: currentUser.uid },
-          orderBy: { field: 'created_at', direction: 'desc' },
-        })
-      );
-
-      if (projectsError) {
-        console.error('Error fetching projects:', projectsError.message);
-        setProjects([]);
-      } else {
-        // Fetch student details for each project
-        const projectsWithStudents = await Promise.all(
-          ((projectsData as any[]) || []).map(async (project) => {
-            const { data: studentData } = await getDocument('users', project.student_id);
-
-            return {
-              ...project,
-              student: studentData,
-            };
-          })
-        );
-
-        setProjects(projectsWithStudents);
-      }
+      await fetchProjects(effectiveUserId);
     };
 
     fetchUserAndProjects();
@@ -75,5 +87,6 @@ export function useDashboardData() {
     alertState,
     showAlert,
     closeAlert,
+    refreshProjects: fetchProjects,
   };
 }

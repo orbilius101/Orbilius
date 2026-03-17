@@ -77,7 +77,7 @@ export default function InviteModal({
       });
       const result = await response.json();
       console.log('checkUserEmail response:', { status: response.status, result });
-      
+
       if (!response.ok) {
         setLoading(false);
         setError(result.error || 'Error checking email. Please try again.');
@@ -87,6 +87,25 @@ export default function InviteModal({
         setLoading(false);
         setError('A user with this email already exists.');
         return;
+      }
+
+      // Check if there's already a pending invitation for this email
+      console.log('Checking for existing pending invitations...');
+      const { data: existingPendingInvites } = await getDocuments(
+        'pending_invitations',
+        buildConstraints({
+          eq: { email, status: 'pending' },
+        })
+      );
+
+      if (existingPendingInvites && existingPendingInvites.length > 0) {
+        // Check if the pending invitation is for the same role
+        const existingInvite = existingPendingInvites[0];
+        if ((existingInvite as any).role === role) {
+          setLoading(false);
+          setError(`A pending ${role} invitation already exists for this email.`);
+          return;
+        }
       }
 
       // For teachers, create or update pending invitation record in Firestore
@@ -100,10 +119,10 @@ export default function InviteModal({
               eq: { email, role: 'teacher' },
             })
           );
-          
+
           // Generate a unique invitation code (timestamp + random string)
           const invitationCode = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-          
+
           if (existingInvitations && existingInvitations.length > 0) {
             // Update existing invitation
             const existingInvite = existingInvitations[0];
@@ -126,11 +145,11 @@ export default function InviteModal({
             });
             console.log('Pending teacher record created with code:', invitationCode);
           }
-          
+
           // Generate signup URL with invitation code
           const signupUrl = `${window.location.origin}/signup?invite=${invitationCode}`;
           console.log('Generated signup URL:', signupUrl);
-          
+
           // Send invitation email via Firebase Cloud Function
           console.log('Sending invitation email...');
           const inviteResponse = await fetch(CLOUD_FUNCTIONS.sendInvite, {
@@ -144,12 +163,15 @@ export default function InviteModal({
           });
 
           const inviteResult = await inviteResponse.json();
-          console.log('sendInvite response:', { status: inviteResponse.status, result: inviteResult });
+          console.log('sendInvite response:', {
+            status: inviteResponse.status,
+            result: inviteResult,
+          });
 
           if (!inviteResponse.ok) {
             setLoading(false);
-            const errorMessage = inviteResult.details 
-              ? `${inviteResult.error}: ${inviteResult.details}` 
+            const errorMessage = inviteResult.details
+              ? `${inviteResult.error}: ${inviteResult.details}`
               : inviteResult.error || 'Failed to send invitation. Please try again.';
             console.error('Invitation failed:', errorMessage);
             setError(errorMessage);
@@ -171,10 +193,10 @@ export default function InviteModal({
               eq: { email, role: 'student', teacher_id: teacherId || null },
             })
           );
-          
+
           // Generate a unique invitation code (timestamp + random string)
           const invitationCode = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-          
+
           if (existingInvitations && existingInvitations.length > 0) {
             // Update existing invitation
             const existingInvite = existingInvitations[0];
@@ -199,11 +221,11 @@ export default function InviteModal({
             });
             console.log('Pending student record created with code:', invitationCode);
           }
-          
+
           // Generate signup URL with invitation code
           const signupUrl = `${window.location.origin}/signup?invite=${invitationCode}`;
           console.log('Generated signup URL:', signupUrl);
-          
+
           // Send invitation email via Firebase Cloud Function
           console.log('Sending invitation email...');
           const inviteResponse = await fetch(CLOUD_FUNCTIONS.sendInvite, {
@@ -217,12 +239,15 @@ export default function InviteModal({
           });
 
           const inviteResult = await inviteResponse.json();
-          console.log('sendInvite response:', { status: inviteResponse.status, result: inviteResult });
+          console.log('sendInvite response:', {
+            status: inviteResponse.status,
+            result: inviteResult,
+          });
 
           if (!inviteResponse.ok) {
             setLoading(false);
-            const errorMessage = inviteResult.details 
-              ? `${inviteResult.error}: ${inviteResult.details}` 
+            const errorMessage = inviteResult.details
+              ? `${inviteResult.error}: ${inviteResult.details}`
               : inviteResult.error || 'Failed to send invitation. Please try again.';
             console.error('Invitation failed:', errorMessage);
             setError(errorMessage);
@@ -253,12 +278,15 @@ export default function InviteModal({
         });
 
         const inviteResult = await inviteResponse.json();
-        console.log('sendInvite response:', { status: inviteResponse.status, result: inviteResult });
+        console.log('sendInvite response:', {
+          status: inviteResponse.status,
+          result: inviteResult,
+        });
 
         if (!inviteResponse.ok) {
           setLoading(false);
-          const errorMessage = inviteResult.details 
-            ? `${inviteResult.error}: ${inviteResult.details}` 
+          const errorMessage = inviteResult.details
+            ? `${inviteResult.error}: ${inviteResult.details}`
             : inviteResult.error || 'Failed to send invitation. Please try again.';
           console.error('Invitation failed:', errorMessage);
           setError(errorMessage);
@@ -267,13 +295,22 @@ export default function InviteModal({
       }
 
       setLoading(false);
-      setSuccess('Invitation sent successfully!');
-      showAlert('Invitation sent successfully!', 'Success');
-      setEmail('');
-      setTouched(false); // Reset touched state for next use
-      setTimeout(() => {
+
+      // For students, just close immediately without showing success message
+      if (role === 'student') {
+        setEmail('');
+        setTouched(false);
         onClose();
-      }, 1500);
+      } else {
+        // For teachers, show success message
+        setSuccess('Invitation sent successfully!');
+        showAlert('Invitation sent successfully!', 'Success');
+        setEmail('');
+        setTouched(false);
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
     } catch (err) {
       console.error('Exception in handleSend:', err);
       console.error('Error details:', {
@@ -282,17 +319,18 @@ export default function InviteModal({
         stack: err instanceof Error ? err.stack : undefined,
       });
       setLoading(false);
-      
+
       let errorMessage = 'Error sending invitation. Please try again.';
-      
+
       if (err instanceof TypeError && err.message.includes('fetch')) {
-        errorMessage = 'Cannot connect to server. Make sure Firebase emulators are running (pnpm firebase:emulators).';
+        errorMessage =
+          'Cannot connect to server. Make sure Firebase emulators are running (pnpm firebase:emulators).';
         console.error('⚠️  Fetch failed - Cloud Functions URL:', CLOUD_FUNCTIONS.checkUserEmail);
         console.error('⚠️  Make sure Firebase emulators are running: pnpm firebase:emulators');
       } else if (err instanceof Error) {
         errorMessage = `Error: ${err.message}`;
       }
-      
+
       setError(errorMessage);
     }
   };
@@ -308,7 +346,7 @@ export default function InviteModal({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth onKeyDown={handleKeyDown}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth onKeyDown={handleKeyDown}>
       <DialogTitle>
         <EmailIcon sx={{ mr: 1, verticalAlign: 'middle' }} /> Send{' '}
         {role === 'teacher' ? 'Teacher' : 'Student'} Invitation
@@ -353,7 +391,11 @@ export default function InviteModal({
           startIcon={<EmailIcon />}
           disabled={loading || !isEmailValid}
         >
-          {loading ? <CircularProgress size={20} /> : 'Send Invitation'}
+          {loading ? (
+            <CircularProgress size={20} />
+          ) : (
+            `Invite ${role === 'teacher' ? 'Teacher' : 'Student'}`
+          )}
         </Button>
       </DialogActions>
     </Dialog>

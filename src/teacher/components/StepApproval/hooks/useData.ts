@@ -4,6 +4,7 @@ import { auth } from '../../../../firebaseConfig';
 import { getDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 import { useAlert } from '../../../../hooks/useAlert';
 
+
 export function useStepApprovalData() {
   const { projectId, stepNumber } = useParams();
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export function useStepApprovalData() {
   const [submissionFile, setSubmissionFile] = useState(null);
   const [youtubeLink, setYoutubeLink] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [submissionDownloadUrl, setSubmissionDownloadUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
@@ -48,6 +50,7 @@ export function useStepApprovalData() {
 
       setProject({
         ...projectData,
+        project_id: (projectData as any).id, // Map Firestore document ID to project_id
         student: studentData,
       } as any);
 
@@ -74,7 +77,7 @@ export function useStepApprovalData() {
 
         if (latestSubmission.file_url) {
           console.log('PDF file URL:', latestSubmission.file_url);
-          // Firebase Storage URLs are already secured by storage rules
+          setSubmissionDownloadUrl(latestSubmission.file_url);
           setSubmissionFile(latestSubmission.file_url);
         }
 
@@ -96,6 +99,8 @@ export function useStepApprovalData() {
     comment,
     setComment,
     submissionFile,
+    setSubmissionFile,
+    submissionDownloadUrl,
     youtubeLink,
     loading,
     numPages,

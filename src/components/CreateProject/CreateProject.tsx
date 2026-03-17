@@ -6,16 +6,22 @@ import {
   Button,
   Typography,
   Stack,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from '@mui/material';
 import { useCreateProjectData } from './hooks/useData';
 import { useCreateProjectHandlers } from './hooks/useHandlers';
+import { useTheme } from '../../contexts/ThemeContext';
 import AlertDialog from '../AlertDialog/AlertDialog';
+import yellowLogo from '../../assets/merle-386x386-yellow.svg';
+import regularLogo from '../../assets/merle-386x386.svg';
 
 export default function CreateProject() {
+  const { currentTheme } = useTheme();
+  const merleLogo = currentTheme === 'light' ? regularLogo : yellowLogo;
   const data = useCreateProjectData();
   const handlers = useCreateProjectHandlers(data);
 
@@ -36,9 +42,39 @@ export default function CreateProject() {
     >
       <Card sx={{ maxWidth: 600, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h4" component="h2" gutterBottom align="center" sx={{ mb: 3 }}>
-            Create New Project
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <img src={merleLogo} alt="Orbilius Logo" style={{ width: 40, height: 40 }} />
+            </Box>
+            <Typography
+              variant="h4"
+              component="h2"
+              gutterBottom
+              align="center"
+              sx={{ flex: 1, m: 0 }}
+            >
+              Create New Project
+            </Typography>
+          </Stack>
+
+          <Box
+            sx={{
+              mb: 3,
+              p: 2.5,
+              bgcolor: 'primary.main',
+              borderRadius: 2,
+              color: 'primary.contrastText',
+              boxShadow: 2,
+            }}
+          >
+            <Typography variant="h6" align="center" sx={{ fontWeight: 600, mb: 0.5 }}>
+              Welcome to Orbilius!
+            </Typography>
+            <Typography variant="body1" align="center" sx={{ mt: 1.5, opacity: 0.95 }}>
+              To begin your journey give your first project a name and select your current grade
+              level.
+            </Typography>
+          </Box>
 
           <Stack spacing={3}>
             <TextField
@@ -51,41 +87,22 @@ export default function CreateProject() {
               variant="outlined"
             />
 
-            <TextField
-              type="number"
-              label="Grade"
-              value={grade}
-              onChange={(e) => setGrade(e.target.value)}
-              required
-              fullWidth
-              variant="outlined"
-            />
-
-            <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
-              <Typography variant="h6" gutterBottom>
-                Project Timeline
-              </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                Each step will have a 1-month deadline starting from today:
-              </Typography>
-              <List dense>
-                <ListItem>
-                  <ListItemText primary="Step 1: Initial Research - Due in 1 month" />
-                </ListItem>
-                <ListItem>
-                  <ListItemText primary="Step 2: Design Brief - Due in 2 months" />
-                </ListItem>
-                <ListItem>
-                  <ListItemText primary="Step 3: Planning - Due in 3 months" />
-                </ListItem>
-                <ListItem>
-                  <ListItemText primary="Step 4: Implementation - Due in 4 months" />
-                </ListItem>
-                <ListItem>
-                  <ListItemText primary="Step 5: Archival Records - Due in 5 months" />
-                </ListItem>
-              </List>
-            </Paper>
+            <FormControl component="fieldset" required>
+              <FormLabel component="legend" sx={{ mb: 1 }}>
+                Grade
+              </FormLabel>
+              <RadioGroup
+                row
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                sx={{ justifyContent: 'center', gap: 3 }}
+              >
+                <FormControlLabel value="9" control={<Radio />} label="9" />
+                <FormControlLabel value="10" control={<Radio />} label="10" />
+                <FormControlLabel value="11" control={<Radio />} label="11" />
+                <FormControlLabel value="12" control={<Radio />} label="12" />
+              </RadioGroup>
+            </FormControl>
 
             <Button
               onClick={handleSubmit}

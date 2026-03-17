@@ -17,14 +17,14 @@ const auth = admin.auth();
  */
 exports.checkUserEmail = onRequest({ cors: true, invoker: 'public' }, async (req, res) => {
   console.log('checkUserEmail called', { method: req.method });
-  
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { email } = req.body;
   console.log('Request body:', { email });
-  
+
   if (!email) {
     console.error('No email provided in request');
     return res.status(400).json({ error: 'Email is required' });
@@ -55,7 +55,11 @@ exports.checkUserEmail = onRequest({ cors: true, invoker: 'public' }, async (req
     }
   } catch (error) {
     console.error('Error checking user email:', error);
-    console.error('Error details:', { code: error.code, message: error.message, stack: error.stack });
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack,
+    });
     return res.status(500).json({ error: 'Error checking email' });
   }
 });
@@ -82,7 +86,10 @@ exports.deleteStudent = onRequest({ cors: true, invoker: 'public' }, async (req,
     batch.delete(userRef);
 
     // Delete all student's projects
-    const projectsSnapshot = await db.collection('projects').where('student_id', '==', studentId).get();
+    const projectsSnapshot = await db
+      .collection('projects')
+      .where('student_id', '==', studentId)
+      .get();
 
     projectsSnapshot.forEach((doc) => {
       batch.delete(doc.ref);
@@ -90,17 +97,26 @@ exports.deleteStudent = onRequest({ cors: true, invoker: 'public' }, async (req,
 
     // Delete all project-related data
     for (const projectDoc of projectsSnapshot.docs) {
-      const stepsSnapshot = await db.collection('project_steps').where('project_id', '==', projectDoc.id).get();
+      const stepsSnapshot = await db
+        .collection('project_steps')
+        .where('project_id', '==', projectDoc.id)
+        .get();
       stepsSnapshot.forEach((stepDoc) => {
         batch.delete(stepDoc.ref);
       });
 
-      const commentsSnapshot = await db.collection('step_comments').where('project_id', '==', projectDoc.id).get();
+      const commentsSnapshot = await db
+        .collection('step_comments')
+        .where('project_id', '==', projectDoc.id)
+        .get();
       commentsSnapshot.forEach((commentDoc) => {
         batch.delete(commentDoc.ref);
       });
 
-      const submissionsSnapshot = await db.collection('submissions').where('project_id', '==', projectDoc.id).get();
+      const submissionsSnapshot = await db
+        .collection('submissions')
+        .where('project_id', '==', projectDoc.id)
+        .get();
       submissionsSnapshot.forEach((submissionDoc) => {
         batch.delete(submissionDoc.ref);
       });
@@ -119,10 +135,10 @@ exports.deleteStudent = onRequest({ cors: true, invoker: 'public' }, async (req,
       }
     }
 
-    return res.status(200).json({ 
-      success: true, 
+    return res.status(200).json({
+      success: true,
       message: 'Student deleted successfully',
-      data: { studentId } 
+      data: { studentId },
     });
   } catch (error) {
     console.error('Error deleting student:', error);
@@ -145,6 +161,15 @@ exports.deleteTeacher = onRequest({ cors: true, invoker: 'public' }, async (req,
   }
 
   try {
+    console.log('Starting teacher deletion for ID:', teacherId);
+
+    // Check if teacher exists in users collection
+    const teacherDoc = await db.collection('users').doc(teacherId).get();
+    console.log('Teacher document exists:', teacherDoc.exists);
+    if (teacherDoc.exists) {
+      console.log('Teacher data:', teacherDoc.data());
+    }
+
     // First, get all student IDs associated with this teacher
     const studentsSnapshot = await db
       .collection('users')
@@ -153,6 +178,8 @@ exports.deleteTeacher = onRequest({ cors: true, invoker: 'public' }, async (req,
       .get();
 
     const studentIds = studentsSnapshot.docs.map((doc) => doc.id);
+    console.log('Found students to delete:', studentIds.length);
+
     const batch = db.batch();
 
     // Delete all students and their related data
@@ -162,7 +189,11 @@ exports.deleteTeacher = onRequest({ cors: true, invoker: 'public' }, async (req,
       batch.delete(studentRef);
 
       // Delete student's projects
-      const projectsSnapshot = await db.collection('projects').where('student_id', '==', studentId).get();
+      const projectsSnapshot = await db
+        .collection('projects')
+        .where('student_id', '==', studentId)
+        .get();
+      console.log(`Found ${projectsSnapshot.docs.length} projects for student ${studentId}`);
 
       projectsSnapshot.forEach((doc) => {
         batch.delete(doc.ref);
@@ -170,17 +201,26 @@ exports.deleteTeacher = onRequest({ cors: true, invoker: 'public' }, async (req,
 
       // Delete all project-related data
       for (const projectDoc of projectsSnapshot.docs) {
-        const stepsSnapshot = await db.collection('project_steps').where('project_id', '==', projectDoc.id).get();
+        const stepsSnapshot = await db
+          .collection('project_steps')
+          .where('project_id', '==', projectDoc.id)
+          .get();
         stepsSnapshot.forEach((stepDoc) => {
           batch.delete(stepDoc.ref);
         });
 
-        const commentsSnapshot = await db.collection('step_comments').where('project_id', '==', projectDoc.id).get();
+        const commentsSnapshot = await db
+          .collection('step_comments')
+          .where('project_id', '==', projectDoc.id)
+          .get();
         commentsSnapshot.forEach((commentDoc) => {
           batch.delete(commentDoc.ref);
         });
 
-        const submissionsSnapshot = await db.collection('submissions').where('project_id', '==', projectDoc.id).get();
+        const submissionsSnapshot = await db
+          .collection('submissions')
+          .where('project_id', '==', projectDoc.id)
+          .get();
         submissionsSnapshot.forEach((submissionDoc) => {
           batch.delete(submissionDoc.ref);
         });
@@ -190,16 +230,23 @@ exports.deleteTeacher = onRequest({ cors: true, invoker: 'public' }, async (req,
     // Delete teacher's user document
     const teacherRef = db.collection('users').doc(teacherId);
     batch.delete(teacherRef);
+    console.log('Added teacher document to delete batch:', teacherId);
 
     // Delete teacher's projects (if any)
-    const teacherProjectsSnapshot = await db.collection('projects').where('teacher_id', '==', teacherId).get();
+    const teacherProjectsSnapshot = await db
+      .collection('projects')
+      .where('teacher_id', '==', teacherId)
+      .get();
+    console.log(`Found ${teacherProjectsSnapshot.docs.length} projects for teacher ${teacherId}`);
 
     teacherProjectsSnapshot.forEach((doc) => {
       batch.delete(doc.ref);
     });
 
     // Commit the batch
+    console.log('Committing batch delete...');
     await batch.commit();
+    console.log('Batch delete committed successfully');
 
     // Delete teacher from Firebase Auth
     try {
@@ -208,6 +255,8 @@ exports.deleteTeacher = onRequest({ cors: true, invoker: 'public' }, async (req,
     } catch (authError) {
       if (authError.code !== 'auth/user-not-found') {
         console.error('Error deleting teacher from Auth:', authError);
+      } else {
+        console.log('Teacher not found in Auth (may not have completed signup):', teacherId);
       }
     }
 
@@ -223,13 +272,13 @@ exports.deleteTeacher = onRequest({ cors: true, invoker: 'public' }, async (req,
       }
     }
 
-    return res.status(200).json({ 
-      success: true, 
+    return res.status(200).json({
+      success: true,
       message: 'Teacher and all students deleted successfully',
-      data: { 
+      data: {
         teacherId,
-        deletedStudents: studentIds.length 
-      } 
+        deletedStudents: studentIds.length,
+      },
     });
   } catch (error) {
     console.error('Error deleting teacher:', error);
@@ -243,7 +292,7 @@ exports.deleteTeacher = onRequest({ cors: true, invoker: 'public' }, async (req,
 exports.sendInvite = onRequest({ cors: true, invoker: 'public' }, async (req, res) => {
   console.log('sendInvite called', { method: req.method });
   console.log('Request body:', JSON.stringify(req.body, null, 2));
-  
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -267,9 +316,9 @@ exports.sendInvite = onRequest({ cors: true, invoker: 'public' }, async (req, re
 
     console.log('Gmail credentials available:', {
       user: !!process.env.GMAIL_USER,
-      password: !!process.env.GMAIL_APP_PASSWORD
+      password: !!process.env.GMAIL_APP_PASSWORD,
     });
-    
+
     console.log('Attempting to send email via Gmail SMTP...');
     const mailOptions = {
       from: `Orbilius <${process.env.GMAIL_USER}>`,
@@ -300,22 +349,22 @@ exports.sendInvite = onRequest({ cors: true, invoker: 'public' }, async (req, re
 
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent successfully:', info.messageId);
-    
-    return res.status(200).json({ 
-      success: true, 
-      messageId: info.messageId 
+
+    return res.status(200).json({
+      success: true,
+      messageId: info.messageId,
     });
   } catch (error) {
     console.error('Send invite error:', error);
-    console.error('Error details:', { 
-      message: error.message, 
-      code: error.code, 
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
       stack: error.stack,
-      name: error.name 
+      name: error.name,
     });
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to send invitation email',
-      details: error.message 
+      details: error.message,
     });
   }
 });

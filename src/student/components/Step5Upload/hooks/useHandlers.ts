@@ -11,8 +11,19 @@ export function useStep5UploadHandlers({
   setSuccess,
   setStatus,
 }) {
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+  const handleFileChange = async (e) => {
+    const selected = e.target.files[0];
+    if (!selected) return;
+    const header = await selected.slice(0, 5).arrayBuffer();
+    const magic = new Uint8Array(header);
+    const isPdf = magic[0] === 0x25 && magic[1] === 0x50 && magic[2] === 0x44 && magic[3] === 0x46 && magic[4] === 0x2d;
+    if (!isPdf) {
+      setErrorMsg('Invalid file. Please upload a valid PDF.');
+      e.target.value = '';
+      return;
+    }
+    setErrorMsg('');
+    setFile(selected);
   };
 
   const handleYoutubeLinkChange = (e, setYoutubeLink) => {

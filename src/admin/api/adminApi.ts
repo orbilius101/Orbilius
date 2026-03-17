@@ -120,16 +120,26 @@ export async function fetchTeachers() {
     // Fetch all users and filter client-side to avoid index requirement
     const usersRef = collection(db, 'users');
     const snapshot = await getDocs(usersRef);
-    
+
     const teachers = snapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          // Convert Firestore Timestamp to ISO string
+          created_at: data.created_at?.toDate
+            ? data.created_at.toDate().toISOString()
+            : data.created_at,
+        };
+      })
       .filter((user: any) => user.user_type === 'teacher')
       .sort((a: any, b: any) => {
         const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
         const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
         return bTime - aTime; // Descending order
       });
-    
+
     return { data: teachers, error: null };
   } catch (error: any) {
     return { data: null, error };
@@ -139,6 +149,9 @@ export async function fetchTeachers() {
 export async function deleteTeacher(teacherId: string) {
   // Call Firebase Cloud Function to delete teacher and students
   try {
+    console.log('Calling deleteTeacher Cloud Function for:', teacherId);
+    console.log('Function URL:', CLOUD_FUNCTIONS.deleteTeacher);
+
     const response = await fetch(CLOUD_FUNCTIONS.deleteTeacher, {
       method: 'POST',
       headers: {
@@ -147,15 +160,24 @@ export async function deleteTeacher(teacherId: string) {
       body: JSON.stringify({ teacherId }),
     });
 
+    console.log('Delete teacher response status:', response.status);
+
     const result = await response.json();
+    console.log('Delete teacher response:', result);
 
     if (!response.ok) {
+      console.error('Delete teacher failed:', result.error);
       return { data: null, error: result.error || 'Failed to delete teacher' };
     }
 
     return { data: result, error: null };
   } catch (error: any) {
     console.error('Error calling deleteTeacher API:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+    });
     return { data: null, error: error.message || 'Failed to delete teacher' };
   }
 }

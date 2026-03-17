@@ -173,8 +173,8 @@ service cloud.firestore {
     
     // Settings collection (global app settings like theme)
     match /settings/{settingId} {
-      // Anyone can read settings
-      allow read: if true;
+      // Anyone authenticated can read settings
+      allow read: if isAuthenticated();
       
       // Only admins can write settings
       allow write: if isAdmin();
@@ -193,7 +193,10 @@ service cloud.firestore {
       // Allow list (queries) if:
       // - User is an admin
       // - User is a teacher (results filtered by query constraints)
-      allow list: if isAdmin() || isTeacher();
+      // - Unauthenticated users can query by invitation_code (for signup flow)
+      allow list: if isAdmin() || 
+                     isTeacher() ||
+                     (!isAuthenticated() && request.query.limit <= 1);
       
       // Admins can create any invitation
       // Teachers can create student invitations (with their teacher_id)

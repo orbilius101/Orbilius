@@ -4,11 +4,17 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { auth } from '../../../firebaseConfig';
-import { getDocument, createDocument, getDocuments, buildConstraints, deleteDocument } from '../../../utils/firebaseHelpers';
+import {
+  getDocument,
+  createDocument,
+  getDocuments,
+  buildConstraints,
+  deleteDocument,
+} from '../../../utils/firebaseHelpers';
 import { SignupData, SignupHandlers } from '../../../types';
 
 export function useSignupHandlers(
-  data: SignupData & { 
+  data: SignupData & {
     setShowEmailModal?: (show: boolean) => void;
     invitationData?: any;
   }
@@ -71,8 +77,8 @@ export function useSignupHandlers(
         await sendEmailVerification(user);
       }
 
-      // If this is a teacher signup, delete the pending invitation
-      if (role === 'teacher') {
+      // Delete the pending invitation after successful signup
+      if (isInvitationSignup) {
         try {
           // If we have invitation data, delete it directly
           if (invitationData && invitationData.id) {
@@ -83,10 +89,10 @@ export function useSignupHandlers(
             const { data: pendingInvites } = await getDocuments(
               'pending_invitations',
               buildConstraints({
-                eq: { email: user.email, role: 'teacher', status: 'pending' },
+                eq: { email: user.email, role, status: 'pending' },
               })
             );
-            
+
             if (pendingInvites && pendingInvites.length > 0) {
               await deleteDocument('pending_invitations', pendingInvites[0].id);
               console.log('Deleted pending invitation for', user.email);
@@ -99,12 +105,37 @@ export function useSignupHandlers(
       }
 
       setLoading(false);
-      
+
       // Different messaging based on whether email verification was sent
       if (isInvitationSignup) {
-        showAlert('Account created successfully! You can now log in.', 'Success');
-        navigate('/login');
+        // For invitation signups, user is already verified - redirect to dashboard
+        if (role === 'student') {
+          // Check if student has any projects
+          const { data: projectData, error: projectError } = await getDocuments(
+            'projects',
+            buildConstraints({
+              eq: { student_id: user.uid },
+              limit: 1,
+            })
+          );
+
+          if (projectError) {
+            showAlert('Account created! Redirecting to dashboard...', 'Success');
+            navigate('/student/dashboard');
+          } else if (!projectData || (projectData as any[]).length === 0) {
+            // No projects found, redirect to create project screen
+            navigate('/createProject');
+          } else {
+            navigate('/student/dashboard');
+          }
+        } else if (role === 'teacher') {
+          navigate('/teacher/dashboard');
+        } else {
+          // Fallback
+          navigate('/login');
+        }
       } else {
+        // For non-invitation signups, require email verification
         if (setShowEmailModal) {
           setShowEmailModal(true);
         } else {

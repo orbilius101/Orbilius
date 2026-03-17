@@ -120,9 +120,9 @@ export default function StepSubmissionModal({
             console.log('No YouTube link found');
           }
 
-          // Handle file URL - Firebase Storage URLs are already secured by rules
+          // Handle file URL
           if (latestSubmission.file_url) {
-            console.log('Setting file URL:', latestSubmission.file_url);
+            console.log('Fetching PDF from:', latestSubmission.file_url);
             setSubmissionFile(latestSubmission.file_url);
           }
 
@@ -298,6 +298,10 @@ export default function StepSubmissionModal({
                         file={submissionFile}
                         onLoadSuccess={onDocumentLoadSuccess}
                         onLoadError={(error) => console.error('Error loading PDF:', error)}
+                        options={{
+                          cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                          cMapPacked: true,
+                        }}
                       >
                         <Page
                           pageNumber={pageNumber}

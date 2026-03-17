@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import {
   Box,
@@ -24,6 +24,7 @@ import {
   ArrowBack as ArrowBackIcon,
   Close as CloseIcon,
   PlayArrow as PlayArrowIcon,
+  OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { useStepApprovalData } from './hooks/useData';
 import { useStepApprovalHandlers } from './hooks/useHandlers';
@@ -34,6 +35,23 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 
 export default function StepApproval() {
   const [showYouTubePlayer, setShowYouTubePlayer] = React.useState<boolean>(false);
+  const [isPoppedOut, setIsPoppedOut] = useState(false);
+  const popupRef = useRef<Window | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const pdfPageWidthRef = useRef<number>(612);
+  const pdfPageHeightRef = useRef<number>(792);
+
+  // Poll the popup window to detect when it's closed
+  useEffect(() => {
+    if (!isPoppedOut) return;
+    const interval = setInterval(() => {
+      if (popupRef.current?.closed) {
+        setIsPoppedOut(false);
+        popupRef.current = null;
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [isPoppedOut]);
 
   const data = useStepApprovalData();
   const handlers = useStepApprovalHandlers(data);
@@ -42,6 +60,7 @@ export default function StepApproval() {
     loading,
     project,
     submissionFile,
+    submissionDownloadUrl,
     youtubeLink,
     comment,
     setComment,
@@ -65,6 +84,21 @@ export default function StepApproval() {
     handleApprove,
     getStepName,
   } = handlers;
+
+  const handleFitPage = useCallback(() => {
+    if (!containerRef.current) { setScale(1); return; }
+    const containerWidth = containerRef.current.clientWidth - 32;   // subtract p:2 padding
+    const containerHeight = containerRef.current.clientHeight - 32;
+    const widthScale = containerWidth / pdfPageWidthRef.current;
+    const heightScale = containerHeight / pdfPageHeightRef.current;
+    const fitScale = Math.min(widthScale, heightScale);
+    setScale(Math.round(fitScale * 100) / 100);
+  }, [setScale]);
+
+  const handlePageRenderSuccess = useCallback((page: any) => {
+    if (page?.originalWidth) pdfPageWidthRef.current = page.originalWidth;
+    if (page?.originalHeight) pdfPageHeightRef.current = page.originalHeight;
+  }, []);
 
   const extractYouTubeVideoId = (url: string): string | null => {
     if (!url) return null;
@@ -107,11 +141,12 @@ export default function StepApproval() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
-      <Container maxWidth="xl">
-        <Stack spacing={2}>
-          <Box>
-            <Typography variant="h5" sx={{ mb: 1 }}>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', overflow: 'hidden' }}>
+      <Container maxWidth="xl" sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, py: 2 }}>
+        <Stack spacing={1} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          {/* Header */}
+          <Box sx={{ flexShrink: 0 }}>
+            <Typography variant="h5" sx={{ mb: 0.5 }}>
               Review Step {stepNumber}: {getStepName(stepNumber)}
             </Typography>
             <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', fontSize: '0.875rem' }}>
@@ -124,12 +159,14 @@ export default function StepApproval() {
             </Box>
           </Box>
 
-          <Stack spacing={2}>
+          <Stack spacing={1} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             {submissionFile && (
-              <Box>
-                <Stack spacing={1}>
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <Stack spacing={1} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  {/* Toolbar */}
                   <Box
                     sx={{
+                      flexShrink: 0,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -188,7 +225,7 @@ export default function StepApproval() {
                         >
                           Zoom Out
                         </Button>
-                        <Button onClick={() => setScale(1)} startIcon={<FitIcon />}>
+                        <Button onClick={handleFitPage} startIcon={<FitIcon />}>
                           Fit
                         </Button>
                       </ButtonGroup>
@@ -196,55 +233,114 @@ export default function StepApproval() {
                         {Math.round(scale * 100)}%
                       </Typography>
                     </Box>
-                    {youtubeLink && (
+                    <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => setShowYouTubePlayer(true)}
-                        startIcon={<PlayArrowIcon />}
+                        variant="outlined"
                         size="small"
+                        startIcon={<OpenInNewIcon />}
+                        onClick={() => {
+                          const popup = window.open(submissionFile as string, '_blank', 'width=900,height=700');
+                          if (popup) { popupRef.current = popup; setIsPoppedOut(true); }
+                        }}
                       >
-                        Watch Video
+                        Pop Out
                       </Button>
-                    )}
+                      {youtubeLink && (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => setShowYouTubePlayer(true)}
+                          startIcon={<PlayArrowIcon />}
+                          size="small"
+                        >
+                          Watch Video
+                        </Button>
+                      )}
+                    </Box>
                   </Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      overflow: 'auto',
-                      maxHeight: '65vh',
-                      border: '1px solid',
-                      borderColor: '#1e4976',
-                      borderRadius: 1,
-                      bgcolor: '#0a1929',
-                      p: 2,
-                    }}
-                  >
-                    <Document
-                      file={submissionFile}
-                      onLoadSuccess={onDocumentLoadSuccess}
-                      onLoadError={onDocumentLoadError}
+
+                  {/* PDF viewer */}
+                  {isPoppedOut ? (
+                    <Box
+                      sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid',
+                        borderColor: '#1e4976',
+                        borderRadius: 1,
+                        bgcolor: '#0a1929',
+                        color: 'text.secondary',
+                      }}
                     >
-                      <Page
-                        pageNumber={pageNumber}
-                        renderTextLayer={false}
-                        renderAnnotationLayer={false}
-                        scale={scale}
-                      />
-                    </Document>
-                  </Box>
+                      <Typography variant="body2">PDF opened in separate window</Typography>
+                    </Box>
+                  ) : (
+                    <Box
+                      ref={containerRef}
+                      sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        overflow: 'auto',
+                        border: '1px solid',
+                        borderColor: '#1e4976',
+                        borderRadius: 1,
+                        bgcolor: '#0a1929',
+                        p: 2,
+                      }}
+                    >
+                      <Document
+                        file={submissionFile}
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        onLoadError={onDocumentLoadError}
+                        options={{
+                          cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                          cMapPacked: true,
+                        }}
+                      >
+                        <Page
+                          pageNumber={pageNumber}
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                          scale={scale}
+                          onRenderSuccess={handlePageRenderSuccess}
+                        />
+                      </Document>
+                    </Box>
+                  )}
                 </Stack>
               </Box>
             )}
 
-            {!submissionFile && !youtubeLink && (
+            {!submissionFile && submissionDownloadUrl && (
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography color="text.secondary" sx={{ mb: 1 }}>
+                  File preview unavailable.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  component="a"
+                  href={submissionDownloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Download Submission
+                </Button>
+              </Box>
+            )}
+
+            {!submissionFile && !submissionDownloadUrl && !youtubeLink && (
               <Box sx={{ p: 2, textAlign: 'center' }}>
                 <Typography color="text.secondary">No submission found for this step</Typography>
               </Box>
             )}
 
-            <Paper sx={{ p: 2, mt: 2 }}>
+            {/* Bottom panel - always visible */}
+            <Paper sx={{ flexShrink: 0, p: 2 }}>
               <Stack spacing={2}>
                 <TextField
                   label="Teacher Comments (Optional)"
@@ -252,7 +348,7 @@ export default function StepApproval() {
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Enter comments for the student..."
                   multiline
-                  rows={4}
+                  rows={3}
                   fullWidth
                 />
 

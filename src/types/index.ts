@@ -5,6 +5,8 @@ export interface SignupData {
   setEmail: (value: string) => void;
   password: string;
   setPassword: (value: string) => void;
+  confirmPassword: string;
+  setConfirmPassword: (value: string) => void;
   role: string;
   setRole: (value: string) => void;
   teacherId: string;

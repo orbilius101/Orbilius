@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { fetchTeachers, deleteTeacher, deleteStudent } from '../api/adminApi';
-import { getDocuments, buildConstraints, deleteDocument } from '../../utils/firebaseHelpers';
+import {
+  getDocuments,
+  buildConstraints,
+  deleteDocument,
+  getDocument,
+} from '../../utils/firebaseHelpers';
 
 interface Teacher {
   id: string;
@@ -32,6 +37,7 @@ interface ConfirmState {
   id: string;
   name: string;
   type: 'teacher' | 'student';
+  status: 'active' | 'pending';
 }
 
 export function useTeachers(showAlert: (message: string, title: string) => void) {
@@ -48,6 +54,7 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     id: '',
     name: '',
     type: 'teacher',
+    status: 'active',
   });
 
   const showToast = (
@@ -61,17 +68,22 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     setToastState((prev) => ({ ...prev, open: false }));
   };
 
-  const openConfirm = (id: string, name: string, type: 'teacher' | 'student' = 'teacher') => {
-    setConfirmState({ open: true, id, name, type });
+  const openConfirm = (
+    id: string,
+    name: string,
+    type: 'teacher' | 'student' = 'teacher',
+    status: 'active' | 'pending' = 'active'
+  ) => {
+    setConfirmState({ open: true, id, name, type, status });
   };
 
   const closeConfirm = () => {
-    setConfirmState({ open: false, id: '', name: '', type: 'teacher' });
+    setConfirmState({ open: false, id: '', name: '', type: 'teacher', status: 'active' });
   };
 
   const loadTeachers = async () => {
     setLoading(true);
-    
+
     // Fetch active teachers
     const { data, error } = await fetchTeachers();
 
@@ -96,10 +108,18 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
             })
           );
 
+          // Convert student timestamps to ISO strings
+          const studentsWithDates = (students || []).map((student: any) => ({
+            ...student,
+            created_at: student.created_at?.toDate
+              ? student.created_at.toDate().toISOString()
+              : student.created_at,
+          }));
+
           return {
             ...teacher,
             status: 'active' as const,
-            students: students || [],
+            students: studentsWithDates,
           };
         })
       );
@@ -115,7 +135,9 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     );
 
     const pendingTeachers: Teacher[] = (pendingInvites || []).map((invite) => {
-      const invitedDate = invite.invited_at?.toDate ? invite.invited_at.toDate() : new Date(invite.invited_at || Date.now());
+      const invitedDate = invite.invited_at?.toDate
+        ? invite.invited_at.toDate()
+        : new Date(invite.invited_at || Date.now());
       return {
         id: invite.id,
         email: invite.email,
@@ -133,12 +155,16 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     setLoading(false);
   };
 
-  const handleDelete = async (teacherId: string, teacherName: string) => {
-    openConfirm(teacherId, teacherName, 'teacher');
+  const handleDelete = async (
+    teacherId: string,
+    teacherName: string,
+    status: 'active' | 'pending' = 'active'
+  ) => {
+    openConfirm(teacherId, teacherName, 'teacher', status);
   };
 
   const handleDeleteStudent = async (studentId: string, studentName: string) => {
-    openConfirm(studentId, studentName, 'student');
+    openConfirm(studentId, studentName, 'student', 'active');
   };
 
   const confirmDelete = async () => {
@@ -151,17 +177,21 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     let data, error;
     if (type === 'teacher') {
       // Check if this is a pending invitation
-      const teacher = teachers.find(t => t.id === id);
+      const teacher = teachers.find((t) => t.id === id);
       if (teacher?.status === 'pending') {
         // Delete from pending_invitations collection
+        console.log('Deleting pending invitation:', id);
         const result = await deleteDocument('pending_invitations', id);
         error = result.error;
         data = result.data;
+        console.log('Pending invitation delete result:', { data, error });
       } else {
-        // Delete active teacher
+        // Delete active teacher via Cloud Function
+        console.log('Deleting active teacher via Cloud Function:', id);
         const result = await deleteTeacher(id);
         data = result.data;
         error = result.error;
+        console.log('Active teacher delete result:', { data, error });
       }
     } else {
       const result = await deleteStudent(id);
@@ -174,23 +204,48 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     if (error) {
       console.error(`Error deleting ${type}:`, error);
       showToast(`Failed to delete ${type}: ${error}`, 'error');
-    } else {
-      console.log('Delete successful, updating state...');
-      showToast(`${name} has been deleted successfully`);
+      showAlert(`Failed to delete ${type}: ${error}`, 'Error');
+      setDeleting(false);
+      return;
+    }
 
-      // Update local state instead of reloading
-      if (type === 'teacher') {
-        // Remove teacher from the list
-        setTeachers((prevTeachers) => prevTeachers.filter((t) => t.id !== id));
-      } else {
-        // Remove student from their teacher's students array
-        setTeachers((prevTeachers) =>
-          prevTeachers.map((teacher) => ({
-            ...teacher,
-            students: teacher.students?.filter((s) => s.id !== id) || [],
-          }))
-        );
-      }
+    // Verify the deletion actually worked before updating UI
+    console.log('Verifying deletion...');
+    const collection =
+      type === 'teacher'
+        ? teachers.find((t) => t.id === id)?.status === 'pending'
+          ? 'pending_invitations'
+          : 'users'
+        : 'users';
+
+    const verifyResult = await getDocument(collection, id);
+
+    if (verifyResult.data) {
+      // Document still exists - deletion failed
+      console.error(`${type} still exists after deletion attempt:`, verifyResult.data);
+      showToast(`Failed to delete ${type}: Record still exists in database`, 'error');
+      showAlert(
+        `Failed to delete ${type}: The deletion did not complete. Please try again.`,
+        'Error'
+      );
+      setDeleting(false);
+      return;
+    }
+
+    console.log('Delete verified successful, removing from UI...');
+    showToast(`${name} has been deleted successfully`);
+
+    // Remove the deleted teacher/student from the local state
+    if (type === 'teacher') {
+      setTeachers((prevTeachers) => prevTeachers.filter((t) => t.id !== id));
+    } else {
+      // For students, remove from their teacher's student list
+      setTeachers((prevTeachers) =>
+        prevTeachers.map((teacher) => ({
+          ...teacher,
+          students: teacher.students.filter((s) => s.id !== id),
+        }))
+      );
     }
 
     setDeleting(false);

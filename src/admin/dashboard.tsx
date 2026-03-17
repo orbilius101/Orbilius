@@ -15,8 +15,13 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
+import { getDocuments, buildConstraints, updateDocument } from '../utils/firebaseHelpers';
+import { CLOUD_FUNCTIONS } from '../config/functions';
 import EmailIcon from '@mui/icons-material/Email';
 import PaletteIcon from '@mui/icons-material/Palette';
+import SchoolIcon from '@mui/icons-material/School';
 
 import { useAuthAdmin } from './hooks/useAuthAdmin';
 import { usePendingProjects } from './hooks/usePendingProjects';
@@ -33,11 +38,10 @@ import ConfirmDialog from './components/ConfirmDialog';
 import InviteModal from './components/InviteModal';
 
 export default function AdminDashboard() {
-  const _navigate = useNavigate();
+  const navigate = useNavigate();
   const [showInviteModal, setShowInviteModal] = React.useState(false);
   const [resendEmail, setResendEmail] = React.useState<string | undefined>(undefined);
-  const [resendConfirmOpen, setResendConfirmOpen] = React.useState(false);
-  const [emailToResend, setEmailToResend] = React.useState<string>('');
+  const [resending, setResending] = React.useState(false);
   const { alertState, showAlert, closeAlert } = useAlert();
   const { currentTheme, setTheme, availableThemes } = useTheme();
   const { loadingAuth } = useAuthAdmin(showAlert);
@@ -65,21 +69,87 @@ export default function AdminDashboard() {
     closeConfirm,
   } = useTeachers(showAlert);
 
-  const handleResendInvitation = (email: string) => {
-    // Show confirmation dialog first
-    setEmailToResend(email);
-    setResendConfirmOpen(true);
+  const handleImpersonate = async (teacherId: string) => {
+    try {
+      // Store current admin user ID in sessionStorage
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        sessionStorage.setItem('impersonating_admin_uid', currentUser.uid);
+        sessionStorage.setItem('impersonating_teacher_uid', teacherId);
+
+        // Navigate to teacher dashboard
+        navigate('/teacher/dashboard');
+      }
+    } catch (error) {
+      console.error('Error impersonating teacher:', error);
+      showAlert('Failed to impersonate teacher. Please try again.', 'Error');
+    }
   };
 
-  const confirmResend = () => {
-    setResendConfirmOpen(false);
-    setResendEmail(emailToResend);
-    setShowInviteModal(true);
-  };
+  const handleResendInvitation = async (email: string) => {
+    setResending(true);
+    try {
+      // Check if invitation already exists
+      const { data: existingInvitations } = await getDocuments(
+        'pending_invitations',
+        buildConstraints({
+          eq: { email, role: 'teacher' },
+        })
+      );
 
-  const cancelResend = () => {
-    setResendConfirmOpen(false);
-    setEmailToResend('');
+      // Generate a unique invitation code
+      const invitationCode = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+
+      if (existingInvitations && existingInvitations.length > 0) {
+        // Update existing invitation
+        const existingInvite = existingInvitations[0];
+        await updateDocument('pending_invitations', existingInvite.id, {
+          status: 'pending',
+          invited_at: Timestamp.now(),
+          invitation_code: invitationCode,
+        });
+      } else {
+        // Create new invitation
+        await addDoc(collection(db, 'pending_invitations'), {
+          email,
+          role: 'teacher',
+          status: 'pending',
+          invited_at: Timestamp.now(),
+          invitation_code: invitationCode,
+        });
+      }
+
+      // Generate signup URL with invitation code
+      const signupUrl = `${window.location.origin}/signup?invite=${invitationCode}`;
+
+      // Send invitation email via Firebase Cloud Function
+      const inviteResponse = await fetch(CLOUD_FUNCTIONS.sendInvite, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          role: 'teacher',
+          signupUrl,
+        }),
+      });
+
+      const inviteResult = await inviteResponse.json();
+
+      if (!inviteResponse.ok) {
+        const errorMessage = inviteResult.details
+          ? `${inviteResult.error}: ${inviteResult.details}`
+          : inviteResult.error || 'Failed to resend invitation.';
+        showAlert(errorMessage, 'Error');
+      } else {
+        showAlert('Invitation resent successfully!', 'Success');
+        refreshTeachers(); // Refresh teachers list
+      }
+    } catch (error) {
+      console.error('Error resending invitation:', error);
+      showAlert('Error resending invitation. Please try again.', 'Error');
+    } finally {
+      setResending(false);
+    }
   };
 
   if (loadingAuth) {
@@ -129,16 +199,19 @@ export default function AdminDashboard() {
           <Box
             sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
           >
-            <Typography variant="h5" gutterBottom>
-              Teachers ({teachers.length})
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SchoolIcon />
+              <Typography variant="h5">
+                Teachers ({teachers.length})
+              </Typography>
+            </Box>
             <Button
               variant="contained"
               color="primary"
               startIcon={<EmailIcon />}
               onClick={() => setShowInviteModal(true)}
             >
-              Send Invitation
+              Invite Teacher
             </Button>
           </Box>
           {loadingTeachers ? (
@@ -151,6 +224,7 @@ export default function AdminDashboard() {
               onDelete={handleDelete}
               onDeleteStudent={handleDeleteStudent}
               onResendInvitation={handleResendInvitation}
+              onImpersonate={handleImpersonate}
             />
           )}
         </Paper>
@@ -204,23 +278,17 @@ export default function AdminDashboard() {
           open={confirmState.open}
           title={`Delete ${confirmState.type === 'teacher' ? 'Teacher' : 'Student'}`}
           message={
-            confirmState.type === 'teacher'
-              ? `Are you sure you want to delete ${confirmState.name}? This will also delete all their students and projects.`
-              : `Are you sure you want to delete ${confirmState.name}? This will also delete all their projects.`
+            confirmState.status === 'active'
+              ? confirmState.type === 'teacher'
+                ? `⚠️ WARNING: You are about to permanently delete ${confirmState.name} and ALL associated data.\n\nThis action will delete:\n• Teacher account\n• All students under this teacher\n• All projects from those students\n• All project submissions and files\n• All comments and feedback\n\nThis action CANNOT be undone. Are you absolutely sure you want to proceed?`
+                : `⚠️ WARNING: You are about to permanently delete ${confirmState.name} and ALL associated data.\n\nThis action will delete:\n• Student account\n• All student projects\n• All project submissions and files\n• All comments and feedback\n\nThis action CANNOT be undone. Are you absolutely sure you want to proceed?`
+              : `Are you sure you want to delete the invitation for ${confirmState.name}?`
           }
           onConfirm={confirmDelete}
           onCancel={closeConfirm}
           confirmText="Delete"
           cancelText="Cancel"
-        />
-
-        {/* Resend Confirmation Dialog */}
-        <ConfirmDialog
-          open={resendConfirmOpen}
-          title="Resend Invitation"
-          message={`Are you sure you want to resend the invitation to ${emailToResend}?`}
-          onConfirm={confirmResend}
-          onCancel={cancelResend}
+          requireTypedConfirmation={confirmState.status === 'active' ? 'delete' : undefined}
         />
       </Container>
     </Box>

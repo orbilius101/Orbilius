@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import EmailIcon from '@mui/icons-material/Email';
 import InviteModal from '../../../admin/components/InviteModal';
+import ImpersonationBanner from '../../../admin/components/ImpersonationBanner';
 import StepSubmissionModal from '../StepSubmissionModal/StepSubmissionModal';
 import StudentsList from './StudentsList';
 import ConfirmDialog from '../../../admin/components/ConfirmDialog';
+import { getDocuments, buildConstraints, deleteDocument, updateDocument } from '../../../utils/firebaseHelpers';
+import { ref as storageRef, deleteObject } from 'firebase/storage';
+import { storage } from '../../../firebaseConfig';
 import {
   Box,
   Container,
@@ -11,32 +15,24 @@ import {
   Button,
   Paper,
   Stack,
-  IconButton,
   AppBar,
   Toolbar,
   Chip,
-  Tooltip,
-  TableContainer,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
-  ContentCopy as CopyIcon,
   Logout as LogoutIcon,
-  HourglassEmpty as InProgressIcon,
-  Send as SubmittedIcon,
-  CheckCircle as ApprovedIcon,
-  RadioButtonUnchecked as NotStartedIcon,
-  Assignment as AssignmentIcon,
+  Notifications as NotificationsIcon,
+  UnfoldMore as UnfoldMoreIcon,
+  UnfoldLess as UnfoldLessIcon,
 } from '@mui/icons-material';
+import Badge from '@mui/material/Badge';
 import { useDashboardData } from './hooks/useData';
 import { useDashboardHandlers } from './hooks/useHandlers';
 import { useStudents } from './hooks/useStudents';
@@ -63,49 +59,32 @@ export default function TeacherDashboard() {
     stepNumber: null,
     project: null,
   });
+  const [allStudentsExpanded, setAllStudentsExpanded] = useState(true);
+  const [deleteSubmissionState, setDeleteSubmissionState] = useState<{
+    open: boolean;
+    project: Project | null;
+    stepNumber: number | null;
+    deleting: boolean;
+  }>({ open: false, project: null, stepNumber: null, deleting: false });
 
-  const { user, userProfile, projects, navigate, alertState, showAlert, closeAlert } = data;
+  const {
+    user,
+    userProfile,
+    projects,
+    navigate,
+    alertState,
+    showAlert,
+    closeAlert,
+    refreshProjects,
+  } = data;
+
+  // Check if admin is impersonating a teacher
+  const impersonatingTeacherId = sessionStorage.getItem('impersonating_teacher_uid');
+  const effectiveTeacherId = impersonatingTeacherId || user?.uid;
 
   // Initialize students hook
-  const studentsHook = useStudents(user?.uid, showAlert);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Not Started':
-        return <NotStartedIcon fontSize="small" sx={{ color: 'text.disabled', mr: 0.5 }} />;
-      case 'In Progress':
-        return <InProgressIcon fontSize="small" sx={{ color: 'warning.main', mr: 0.5 }} />;
-      case 'Submitted':
-        return <SubmittedIcon fontSize="small" sx={{ color: 'info.main', mr: 0.5 }} />;
-      case 'Approved':
-        return <ApprovedIcon fontSize="small" sx={{ color: 'success.main', mr: 0.5 }} />;
-      default:
-        return null;
-    }
-  };
-
-  const getProgressBarSegments = (project: Project) => {
-    const segments = [];
-    const stepNames = [
-      'Initial Research',
-      'Proposal',
-      'Data Collection',
-      'Analysis',
-      'Final Report',
-    ];
-    for (let i = 1; i <= 5; i++) {
-      const stepStatus = project[`step${i}_status`];
-      segments.push({
-        isApproved: stepStatus === 'Approved',
-        isInProgress: i === project.current_step && stepStatus !== 'Approved',
-        isSubmitted: stepStatus === 'Submitted',
-        stepName: stepNames[i - 1],
-        status: stepStatus || 'Not Started',
-        stepNumber: i,
-      });
-    }
-    return segments;
-  };
+  const studentsHook = useStudents(effectiveTeacherId, showAlert, refreshProjects);
+  const students = studentsHook.students;
 
   // Debug logging
   console.log('Teacher Dashboard - User ID:', user?.uid);
@@ -129,6 +108,57 @@ export default function TeacherDashboard() {
     getActionButtonText,
     handleActionClick,
   } = handlers;
+
+  const handleEmailStudent = (studentEmail: string) => {
+    const mailtoLink = `mailto:${studentEmail}`;
+    window.open(mailtoLink);
+  };
+
+  const handleEmailProjectStudent = (project: Project) => {
+    const studentEmail = project.student?.email || project.email;
+    const studentFirstName = project.student?.first_name || project.first_name;
+    const currentStepStatus = project[`step${project.current_step}_status`];
+    const currentStepName = getCurrentStepName(project.current_step);
+
+    if (!studentEmail) {
+      showAlert('Student email not found. Please check the project data.', 'Error');
+      return;
+    }
+
+    let subject, body;
+
+    if (currentStepStatus === 'Submitted') {
+      subject = `Feedback on ${project.project_title} - Step ${project.current_step}`;
+      body = `Hello ${studentFirstName},
+
+I have reviewed your submission for Step ${project.current_step}: ${currentStepName} of your project "${project.project_title}".
+
+Please log into the Orbilius platform to view my feedback and next steps.
+
+If you have any questions, please don't hesitate to reach out.
+
+Best regards,
+${userProfile?.first_name || 'Your Teacher'}`;
+    } else {
+      subject = `Follow-up on ${project.project_title} - Step ${project.current_step}`;
+      body = `Hello ${studentFirstName},
+
+I wanted to follow up on your project "${project.project_title}".
+
+You are currently on Step ${project.current_step}: ${currentStepName}.
+Current status: ${currentStepStatus}
+
+Please log into the Orbilius platform to continue your work or view any feedback.
+
+If you need any assistance, please let me know.
+
+Best regards,
+${userProfile?.first_name || 'Your Teacher'}`;
+    }
+
+    const mailtoLink = `mailto:${studentEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink);
+  };
 
   const handleCopyTeacherId = () => {
     navigator.clipboard.writeText(user?.uid);
@@ -192,8 +222,69 @@ export default function TeacherDashboard() {
     });
   };
 
+  const handleOpenDeleteSubmission = (project: Project, stepNumber: number) => {
+    setDeleteSubmissionState({ open: true, project, stepNumber, deleting: false });
+  };
+
+  const handleDeleteSubmission = async () => {
+    const { project, stepNumber } = deleteSubmissionState;
+    if (!project || !stepNumber) return;
+
+    setDeleteSubmissionState((s) => ({ ...s, deleting: true }));
+
+    try {
+      // Find the submission document
+      const { data: submissions } = await getDocuments(
+        'submissions',
+        buildConstraints({ eq: { project_id: project.project_id, step_number: stepNumber } })
+      );
+
+      if (submissions && (submissions as any[]).length > 0) {
+        const submission = (submissions as any[])[0];
+
+        // Delete file from Firebase Storage if present
+        if (submission.file_url) {
+          try {
+            const urlObj = new URL(submission.file_url);
+            const pathMatch = urlObj.pathname.match(/\/o\/(.+?)(\?|$)/);
+            if (pathMatch?.[1]) {
+              const filePath = decodeURIComponent(pathMatch[1]);
+              await deleteObject(storageRef(storage, filePath));
+            }
+          } catch (storageErr) {
+            console.warn('Could not delete storage file:', storageErr);
+          }
+        }
+
+        // Delete the submission document
+        await deleteDocument('submissions', submission.id);
+      }
+
+      // Reset step status on the project
+      const updates: Record<string, any> = {
+        [`step${stepNumber}_status`]: 'Not Started',
+      };
+      // If this step is at or ahead of current_step, roll back current_step
+      if (stepNumber <= project.current_step) {
+        updates.current_step = stepNumber;
+        updates.current_step_status = 'Not Started';
+      }
+      await updateDocument('projects', project.project_id, updates);
+
+      // Refresh
+      await data.refreshProjects(effectiveTeacherId);
+      setDeleteSubmissionState({ open: false, project: null, stepNumber: null, deleting: false });
+      showAlert(`Step ${stepNumber} submission deleted and reset to Not Started.`, 'Deleted');
+    } catch (err: any) {
+      console.error('Delete submission failed:', err);
+      showAlert(err.message || 'Failed to delete submission.', 'Error');
+      setDeleteSubmissionState((s) => ({ ...s, deleting: false }));
+    }
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <ImpersonationBanner />
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <Box
@@ -230,266 +321,106 @@ export default function TeacherDashboard() {
             <Typography variant="h4" component="h1">
               Teacher Dashboard
             </Typography>
-            <Chip
-              icon={<AssignmentIcon />}
-              label={`${projectsNeedingReview} Project${projectsNeedingReview === 1 ? '' : 's'} Need${projectsNeedingReview === 1 ? 's' : ''} Review`}
-              sx={{
-                bgcolor: '#ffd700 !important',
-                color: '#0a1929 !important',
-                fontWeight: 600,
-                fontSize: '1rem',
-                px: 1,
-                height: '40px',
-                '& .MuiChip-icon': {
-                  color: '#0a1929',
-                },
-                '& .MuiChip-label': {
-                  color: '#0a1929',
-                },
-                animation: projectsNeedingReview > 0 ? 'pulse 2s ease-in-out infinite' : 'none',
-                '@keyframes pulse': {
-                  '0%': {
-                    transform: 'scale(1)',
-                  },
-                  '50%': {
-                    transform: 'scale(1.05)',
-                  },
-                  '100%': {
-                    transform: 'scale(1)',
-                  },
-                },
-              }}
-            />
+            {projectsNeedingReview > 0 && (
+              <Tooltip title={`${projectsNeedingReview} project${projectsNeedingReview === 1 ? '' : 's'} need${projectsNeedingReview === 1 ? 's' : ''} review`} arrow>
+                <Badge
+                  badgeContent={projectsNeedingReview}
+                  color="error"
+                  sx={{
+                    '& .MuiBadge-badge': { fontSize: '0.7rem', fontWeight: 700 },
+                    animation: 'bellRing 2s ease-in-out infinite',
+                    '@keyframes bellRing': {
+                      '0%':   { transform: 'rotate(0deg)' },
+                      '5%':   { transform: 'rotate(15deg)' },
+                      '10%':  { transform: 'rotate(-13deg)' },
+                      '15%':  { transform: 'rotate(11deg)' },
+                      '20%':  { transform: 'rotate(-9deg)' },
+                      '25%':  { transform: 'rotate(7deg)' },
+                      '30%':  { transform: 'rotate(-5deg)' },
+                      '35%':  { transform: 'rotate(3deg)' },
+                      '40%':  { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(0deg)' },
+                    },
+                  }}
+                >
+                  <NotificationsIcon sx={{ color: '#ffd700', fontSize: 28 }} />
+                </Badge>
+              </Tooltip>
+            )}
           </Box>
-          {projects.length > 0 ? (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>
-                      <Typography fontWeight="bold">Student Name</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontWeight="bold">Grade</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontWeight="bold">Project Title</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontWeight="bold">Current Cycle Step</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontWeight="bold">Timeline</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontWeight="bold">Step Status</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontWeight="bold">Action</Typography>
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {projects.map((project) => (
-                    <TableRow key={project.project_id} hover>
-                      <TableCell>
-                        {project.student?.last_name || project.last_name},{' '}
-                        {project.student?.first_name || project.first_name}
-                      </TableCell>
-                      <TableCell>{project.grade}</TableCell>
-                      <TableCell>
-                        {project[`step${project.current_step}_status`] === 'Submitted' ? (
-                          <Typography
-                            component="span"
-                            onClick={() =>
-                              navigate(
-                                `/teacher/step-approval/${project.project_id}/${project.current_step}`
-                              )
-                            }
-                            sx={{
-                              color: 'primary.main',
-                              fontWeight: 500,
-                              textDecoration: 'underline',
-                              cursor: 'pointer',
-                              '&:hover': {
-                                color: 'primary.dark',
-                              },
-                            }}
-                          >
-                            {project.project_title}
-                          </Typography>
-                        ) : (
-                          project.project_title
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Box>
-                          <Typography variant="body2">
-                            {project.current_step}/5 - {getCurrentStepName(project.current_step)}
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 0.5, mt: 1 }}>
-                            {getProgressBarSegments(project).map((segment, index) => (
-                              <Tooltip
-                                key={index}
-                                title={`${segment.stepName}: ${segment.status}${segment.isApproved ? ' (Click to view)' : ''}${segment.isSubmitted ? ' (Click to review)' : ''}`}
-                                arrow
-                              >
-                                <Box
-                                  onClick={() => handleStepClick(project, index)}
-                                  sx={{
-                                    flex: 1,
-                                    height: 6,
-                                    bgcolor: segment.isApproved
-                                      ? 'success.main'
-                                      : segment.isSubmitted
-                                        ? '#ffd700'
-                                        : segment.isInProgress
-                                          ? 'warning.main'
-                                          : 'grey.300',
-                                    borderRadius: 1,
-                                    cursor:
-                                      segment.isApproved || segment.isSubmitted
-                                        ? 'pointer'
-                                        : 'default',
-                                    transition: segment.isSubmitted ? 'none' : 'all 0.2s',
-                                    animation: segment.isSubmitted
-                                      ? 'ledBlink 2s ease-in-out infinite'
-                                      : 'none',
-                                    '@keyframes ledBlink': {
-                                      '0%': {
-                                        bgcolor: '#ffd700',
-                                        boxShadow: '0 0 10px 2px rgba(255, 215, 0, 0.8)',
-                                      },
-                                      '50%': {
-                                        bgcolor: '#8b7500',
-                                        boxShadow: '0 0 0 0 rgba(139, 117, 0, 0)',
-                                      },
-                                      '100%': {
-                                        bgcolor: '#ffd700',
-                                        boxShadow: '0 0 10px 2px rgba(255, 215, 0, 0.8)',
-                                      },
-                                    },
-                                    '&:hover': segment.isApproved
-                                      ? {
-                                          transform: 'translateY(-2px)',
-                                          boxShadow: 2,
-                                          bgcolor: 'success.dark',
-                                        }
-                                      : segment.isSubmitted
-                                        ? {
-                                            transform: 'translateY(-2px)',
-                                            boxShadow: '0 0 12px 4px rgba(255, 215, 0, 0.6)',
-                                          }
-                                        : {},
-                                  }}
-                                />
-                              </Tooltip>
-                            ))}
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>{getCurrentStepDueDate(project)}</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {getStatusIcon(getCurrentStepSubmissionStatus(project))}
-                          {getCurrentStepSubmissionStatus(project)}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          onClick={() => handleActionClick(project)}
-                        >
-                          {getActionButtonText(project)}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Typography>No projects assigned yet.</Typography>
-          )}
 
-          {/* Students Section */}
-          <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h5">Students</Typography>
+          {/* Students Section with Projects */}
+          {students.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="h5" gutterBottom>
+                Welcome to Orbilius!
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                You don't have any students yet. Invite students to join your class and start their
+                science fair journey.
+              </Typography>
               <Button
                 variant="contained"
                 color="primary"
                 startIcon={<EmailIcon />}
                 onClick={() => setShowInviteModal(true)}
+                size="large"
               >
-                Invite Student
+                Invite Your First Student
               </Button>
-            </Box>
-            <StudentsList
-              students={studentsHook.students}
-              onDelete={studentsHook.openConfirm}
-              onResendInvitation={handleResendInvitation}
-            />
-          </Paper>
-
-          <Paper sx={{ p: 3 }}>
-            <Stack spacing={2}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h5">Student Signup Information</Typography>
+            </Paper>
+          ) : (
+            <Paper sx={{ p: 3 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h5">Students & Projects</Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Tooltip title={allStudentsExpanded ? 'Collapse All' : 'Expand All'}>
+                    <IconButton
+                      onClick={() => setAllStudentsExpanded(!allStudentsExpanded)}
+                      size="small"
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                      }}
+                    >
+                      {allStudentsExpanded ? <UnfoldLessIcon /> : <UnfoldMoreIcon />}
+                    </IconButton>
+                  </Tooltip>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<EmailIcon />}
+                    onClick={() => setShowInviteModal(true)}
+                  >
+                    Invite Student
+                  </Button>
+                </Box>
               </Box>
-              <Typography variant="body1">
-                Students need your Teacher ID to sign up. Share this ID with your students:
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="body2" fontWeight="bold">
-                  Your Teacher ID:
-                </Typography>
-                <Typography
-                  component="code"
-                  sx={{
-                    bgcolor: '#061b42',
-                    color: '#F1F5F9',
-                    border: '1px solid #1a3a6b',
-                    p: 1,
-                    borderRadius: 1,
-                    fontFamily: 'monospace',
-                    flex: 1,
-                  }}
-                >
-                  {user?.uid}
-                </Typography>
-                <IconButton onClick={handleCopyTeacherId} color="primary">
-                  <CopyIcon />
-                </IconButton>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="body2" fontWeight="bold">
-                  Signup Link:
-                </Typography>
-                <Typography
-                  component="code"
-                  sx={{
-                    bgcolor: '#061b42',
-                    color: '#F1F5F9',
-                    border: '1px solid #1a3a6b',
-                    p: 1,
-                    borderRadius: 1,
-                    fontFamily: 'monospace',
-                    flex: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {window.location.origin}/signup?teacherId={user?.uid}
-                </Typography>
-                <IconButton onClick={handleCopySignupLink} color="primary">
-                  <CopyIcon />
-                </IconButton>
-              </Box>
-            </Stack>
-          </Paper>
+              <StudentsList
+                students={studentsHook.students}
+                projects={projects}
+                onDelete={studentsHook.openConfirm}
+                onResendInvitation={handleResendInvitation}
+                onEmailStudent={handleEmailStudent}
+                onEmailProjectStudent={handleEmailProjectStudent}
+                onStepClick={handleStepClick}
+                onViewSubmission={(project, stepNumber) => handleStepClick(project, stepNumber - 1)}
+                onDeleteSubmission={handleOpenDeleteSubmission}
+                getCurrentStepName={getCurrentStepName}
+                getCurrentStepSubmissionStatus={getCurrentStepSubmissionStatus}
+                navigate={navigate}
+                allExpanded={allStudentsExpanded}
+              />
+            </Paper>
+          )}
 
           {/* Invitation Modal */}
           {showInviteModal && (
@@ -497,17 +428,14 @@ export default function TeacherDashboard() {
               open={showInviteModal}
               onClose={handleCloseInviteModal}
               role="student"
-              teacherId={user?.uid}
+              teacherId={effectiveTeacherId}
               showAlert={showAlert}
               initialEmail={initialEmail}
             />
           )}
 
           {/* Resend Confirmation Dialog */}
-          <Dialog
-            open={resendConfirmOpen}
-            onClose={() => setResendConfirmOpen(false)}
-          >
+          <Dialog open={resendConfirmOpen} onClose={() => setResendConfirmOpen(false)}>
             <DialogTitle>Resend Invitation</DialogTitle>
             <DialogContent>
               <DialogContentText>
@@ -526,11 +454,30 @@ export default function TeacherDashboard() {
           <ConfirmDialog
             open={studentsHook.confirmState.open}
             title={`Delete ${studentsHook.confirmState.type}`}
-            message={`Are you sure you want to delete ${studentsHook.confirmState.name}?`}
+            message={
+              studentsHook.confirmState.status === 'active'
+                ? `⚠️ WARNING: You are about to permanently delete ${studentsHook.confirmState.name} and ALL associated data.\n\nThis action will delete:\n• Student account\n• All student projects\n• All project submissions and files\n• All comments and feedback\n\nThis action CANNOT be undone. Are you absolutely sure you want to proceed?`
+                : `Are you sure you want to delete the invitation for ${studentsHook.confirmState.name}?`
+            }
             onConfirm={studentsHook.confirmDelete}
             onCancel={studentsHook.closeConfirm}
             confirmText="Delete"
             cancelText="Cancel"
+            requireTypedConfirmation={
+              studentsHook.confirmState.status === 'active' ? 'delete' : undefined
+            }
+          />
+
+          {/* Delete Submission Confirmation Dialog */}
+          <ConfirmDialog
+            open={deleteSubmissionState.open}
+            title="Delete Submission"
+            message={`This will permanently delete the Step ${deleteSubmissionState.stepNumber} submission for "${deleteSubmissionState.project?.project_title}" and reset the step to Not Started. The student will need to re-submit.\n\nThis action cannot be undone.`}
+            onConfirm={handleDeleteSubmission}
+            onCancel={() => setDeleteSubmissionState({ open: false, project: null, stepNumber: null, deleting: false })}
+            confirmText={deleteSubmissionState.deleting ? 'Deleting...' : 'Delete'}
+            cancelText="Cancel"
+            requireTypedConfirmation="delete"
           />
         </Stack>
       </Container>

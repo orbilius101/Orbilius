@@ -7,10 +7,6 @@ import {
   Button,
   Typography,
   Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -32,15 +28,15 @@ export default function Signup() {
     firstName: false,
     lastName: false,
     password: false,
+    confirmPassword: false,
     email: false,
-    teacherId: false,
   });
   const data = useSignupData();
   const handlers = useSignupHandlers({ ...data, setShowEmailModal });
-  
+
   // Check if this is an invitation signup (has invitation data from invite code)
   const isInvitation = data.invitationData !== null;
-  
+
   // Check if teacher ID was pre-filled from URL parameter or invitation
   const params = new URLSearchParams(window.location.search);
   const hasTeacherIdParam = params.get('teacherId') !== null;
@@ -62,14 +58,15 @@ export default function Signup() {
   const isFirstNameValid = data.firstName.trim().length > 0;
   const isLastNameValid = data.lastName.trim().length > 0;
   const isPasswordValid = isValidPassword(data.password);
+  const isPasswordMatch = data.password === data.confirmPassword && data.confirmPassword.length > 0;
   const isEmailValid = isValidEmail(data.email);
-  const isTeacherIdValid = data.role !== 'student' || data.teacherId.trim().length > 0;
 
   // Check if form is valid for submission
-  const isFormValid = isFirstNameValid && isLastNameValid && isPasswordValid && isEmailValid && isTeacherIdValid;
+  const isFormValid =
+    isFirstNameValid && isLastNameValid && isPasswordValid && isPasswordMatch && isEmailValid;
 
   const handleBlur = (field: keyof typeof touchedFields) => {
-    setTouchedFields(prev => ({ ...prev, [field]: true }));
+    setTouchedFields((prev) => ({ ...prev, [field]: true }));
   };
 
   const {
@@ -77,8 +74,9 @@ export default function Signup() {
     setEmail,
     password,
     setPassword,
+    confirmPassword,
+    setConfirmPassword,
     role,
-    setRole,
     teacherId,
     setTeacherId,
     firstName,
@@ -120,6 +118,29 @@ export default function Signup() {
             </Typography>
           </Stack>
 
+          {isInvitation && (
+            <Box
+              sx={{
+                mb: 3,
+                p: 2.5,
+                bgcolor: 'primary.main',
+                borderRadius: 2,
+                color: 'primary.contrastText',
+                boxShadow: 2,
+              }}
+            >
+              <Typography variant="h6" align="center" sx={{ fontWeight: 600, mb: 0.5 }}>
+                Welcome to Orbilius!
+              </Typography>
+              <Typography variant="body1" align="center" sx={{ fontWeight: 500 }}>
+                You've been invited as a {role === 'teacher' ? 'Teacher' : 'Student'}
+              </Typography>
+              <Typography variant="body2" align="center" sx={{ mt: 1.5, opacity: 0.95 }}>
+                Complete and submit the form below to create your account
+              </Typography>
+            </Box>
+          )}
+
           <Stack spacing={2}>
             <TextField
               type="text"
@@ -130,8 +151,11 @@ export default function Signup() {
               fullWidth
               variant="outlined"
               required
+              autoComplete="off"
               error={touchedFields.firstName && !isFirstNameValid}
-              helperText={touchedFields.firstName && !isFirstNameValid ? 'First name is required' : ''}
+              helperText={
+                touchedFields.firstName && !isFirstNameValid ? 'First name is required' : ''
+              }
             />
 
             <TextField
@@ -143,6 +167,7 @@ export default function Signup() {
               fullWidth
               variant="outlined"
               required
+              autoComplete="off"
               error={touchedFields.lastName && !isLastNameValid}
               helperText={touchedFields.lastName && !isLastNameValid ? 'Last name is required' : ''}
             />
@@ -157,8 +182,11 @@ export default function Signup() {
               variant="outlined"
               required
               disabled={isInvitation}
+              autoComplete="off"
               error={touchedFields.email && !isEmailValid}
-              helperText={touchedFields.email && !isEmailValid ? 'Please enter a valid email address' : ''}
+              helperText={
+                touchedFields.email && !isEmailValid ? 'Please enter a valid email address' : ''
+              }
             />
 
             <TextField
@@ -170,41 +198,30 @@ export default function Signup() {
               fullWidth
               variant="outlined"
               required
+              autoComplete="new-password"
               error={touchedFields.password && !isPasswordValid}
               helperText={
-                touchedFields.password && !isPasswordValid 
-                  ? 'Password must be at least 6 characters' 
+                touchedFields.password && !isPasswordValid
+                  ? 'Password must be at least 6 characters'
                   : ''
               }
             />
 
-            <FormControl fullWidth>
-              <InputLabel>Role</InputLabel>
-              <Select value={role} onChange={(e) => setRole(e.target.value)} label="Role" disabled={isInvitation}>
-                <MenuItem value="student">Student</MenuItem>
-                <MenuItem value="teacher">Teacher</MenuItem>
-              </Select>
-            </FormControl>
-
-            {role === 'student' && (
-              <TextField
-                type="text"
-                label="Teacher ID"
-                value={teacherId}
-                onChange={(e) => setTeacherId(e.target.value)}
-                onBlur={() => handleBlur('teacherId')}
-                fullWidth
-                variant="outlined"
-                required
-                disabled={isTeacherIdPrefilled}
-                error={touchedFields.teacherId && !isTeacherIdValid}
-                helperText={
-                  touchedFields.teacherId && !isTeacherIdValid
-                    ? 'Teacher ID is required'
-                    : ''
-                }
-              />
-            )}
+            <TextField
+              type="password"
+              label="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              onBlur={() => handleBlur('confirmPassword')}
+              fullWidth
+              variant="outlined"
+              required
+              autoComplete="new-password"
+              error={touchedFields.confirmPassword && !isPasswordMatch}
+              helperText={
+                touchedFields.confirmPassword && !isPasswordMatch ? 'Passwords must match' : ''
+              }
+            />
 
             <Button
               onClick={handleSignUp}

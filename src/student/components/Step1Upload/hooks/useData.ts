@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { auth } from '../../../../firebaseConfig';
-import { getDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
+import { getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 
 export function useStep1UploadData(navigate: any) {
   const [file, setFile] = useState(null);
@@ -10,9 +10,11 @@ export function useStep1UploadData(navigate: any) {
   const [teacherComments, setTeacherComments] = useState('Waiting for feedback...');
   const [status, setStatus] = useState('Not Submitted');
   const [projectId, setProjectId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchExistingData = async () => {
+      setLoading(true);
       try {
         const user = auth.currentUser;
 
@@ -21,22 +23,47 @@ export function useStep1UploadData(navigate: any) {
           return;
         }
 
-        const { data: projectData, error: projectError } = await getDocument('projects', user.uid);
+        const { data: projectDataArray, error: projectError } = await getDocuments(
+          'projects',
+          buildConstraints({ eq: { student_id: user.uid }, limit: 1 })
+        );
+
+        console.log('Step1Upload - Project fetch result:', {
+          projectDataArray,
+          projectError,
+          hasData: !!(projectDataArray as any[])?.length,
+        });
 
         if (projectError) {
           console.error('Error fetching project:', projectError.message);
-          setErrorMsg('Error loading project data');
+          setErrorMsg('Error loading project data: ' + projectError.message);
+          setLoading(false);
           return;
         }
 
-        if (!projectData) {
+        if (!(projectDataArray as any[])?.length) {
+          console.error('No project found for user:', user.uid);
           setErrorMsg('No project found. Please create a project first.');
+          setLoading(false);
           return;
         }
 
-        const currentProjectId = (projectData as any).project_id;
+        const projectData = (projectDataArray as any[])[0];
+        // Use 'id' field which is the document ID in Firestore
+        const currentProjectId = projectData.id;
+
+        console.log('Step1Upload - Project data:', projectData);
+        console.log('Step1Upload - Setting projectId:', currentProjectId);
+
+        if (!currentProjectId) {
+          console.error('Step1Upload - project id is missing from project data!');
+          setErrorMsg('Project ID not found. Please contact support.');
+          setLoading(false);
+          return;
+        }
+
         setProjectId(currentProjectId);
-        setStatus((projectData as any).step1_status || 'Not Submitted');
+        setStatus(projectData.step1_status || 'Not Submitted');
 
         const { data: submissionDataArray, error: submissionError } = await getDocuments(
           'submissions',
@@ -56,9 +83,12 @@ export function useStep1UploadData(navigate: any) {
         ) {
           setTeacherComments((submissionDataArray as any[])[0].teacher_comments);
         }
+
+        setLoading(false);
       } catch (err: any) {
         console.error('Error fetching existing data:', err.message);
-        setErrorMsg('Error loading data');
+        setErrorMsg('Error loading data: ' + err.message);
+        setLoading(false);
       }
     };
 
@@ -78,5 +108,6 @@ export function useStep1UploadData(navigate: any) {
     status,
     setStatus,
     projectId,
+    loading,
   };
 }

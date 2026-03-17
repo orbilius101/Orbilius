@@ -18,6 +18,8 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Email as EmailIcon,
+  Visibility as VisibilityIcon,
+  People as PeopleIcon,
 } from '@mui/icons-material';
 
 interface Student {
@@ -41,12 +43,19 @@ interface Teacher {
 
 interface TeachersListProps {
   teachers: Teacher[];
-  onDelete: (teacherId: string, teacherName: string) => void;
+  onDelete: (teacherId: string, teacherName: string, status: 'active' | 'pending') => void;
   onDeleteStudent: (studentId: string, studentName: string) => void;
   onResendInvitation?: (email: string) => void;
+  onImpersonate?: (teacherId: string) => void;
 }
 
-export default function TeachersList({ teachers, onDelete, onDeleteStudent, onResendInvitation }: TeachersListProps) {
+export default function TeachersList({
+  teachers,
+  onDelete,
+  onDeleteStudent,
+  onResendInvitation,
+  onImpersonate,
+}: TeachersListProps) {
   const [expandedTeacherId, setExpandedTeacherId] = useState<string | null>(null);
 
   const toggleExpand = (teacherId: string) => {
@@ -95,7 +104,9 @@ export default function TeachersList({ teachers, onDelete, onDeleteStudent, onRe
                     </IconButton>
                   </TableCell>
                   <TableCell>
-                    {teacher.status === 'pending' ? teacher.email : `${teacher.first_name} ${teacher.last_name}`}
+                    {teacher.status === 'pending'
+                      ? teacher.email
+                      : `${teacher.first_name} ${teacher.last_name}`}
                   </TableCell>
                   <TableCell>{teacher.email}</TableCell>
                   <TableCell>
@@ -118,6 +129,18 @@ export default function TeachersList({ teachers, onDelete, onDeleteStudent, onRe
                     />
                   </TableCell>
                   <TableCell align="center">
+                    {teacher.status === 'active' && onImpersonate && (
+                      <Tooltip title="Impersonate Teacher">
+                        <IconButton
+                          color="info"
+                          onClick={() => onImpersonate(teacher.id)}
+                          size="small"
+                          sx={{ mr: 1 }}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     {teacher.status === 'pending' && onResendInvitation && (
                       <Tooltip title="Resend Invitation">
                         <IconButton
@@ -138,7 +161,8 @@ export default function TeachersList({ teachers, onDelete, onDeleteStudent, onRe
                             teacher.id,
                             teacher.status === 'pending'
                               ? teacher.email
-                              : `${teacher.first_name} ${teacher.last_name}`
+                              : `${teacher.first_name} ${teacher.last_name}`,
+                            teacher.status
                           )
                         }
                         size="small"
@@ -164,12 +188,15 @@ export default function TeachersList({ teachers, onDelete, onDeleteStudent, onRe
                             borderTop: (theme) => `1px solid ${theme.palette.divider}`,
                           }}
                         >
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}
-                          >
-                            Students ({studentCount})
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                            <PeopleIcon fontSize="small" />
+                            <Typography
+                              variant="subtitle2"
+                              sx={{ fontWeight: 600, color: 'text.primary' }}
+                            >
+                              Students ({studentCount})
+                            </Typography>
+                          </Box>
                           <Table size="small">
                             <TableHead>
                               <TableRow sx={{ bgcolor: 'background.default' }}>

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { auth } from '../../../firebaseConfig';
 import { applyActionCode } from 'firebase/auth';
+import { getDocument } from '../../../utils/firebaseHelpers';
 
 export function useLandingPageHandlers(data: any) {
   const { searchParams, navigate, showAlert } = data;
@@ -15,7 +16,7 @@ export function useLandingPageHandlers(data: any) {
         try {
           // Apply the email verification code
           await applyActionCode(auth, oobCode);
-          
+
           showAlert('Email verified successfully! Please log in.', 'Success');
           navigate('/login');
           return;
@@ -30,10 +31,17 @@ export function useLandingPageHandlers(data: any) {
       const currentUser = auth.currentUser;
 
       if (currentUser) {
-        // User is already authenticated - redirect to dashboard
-        // Note: Firebase doesn't store role in user_metadata by default
-        // You may need to fetch from Firestore or use custom claims
-        navigate('/student/dashboard');
+        // Fetch user type from Firestore and redirect to appropriate dashboard
+        const { data: userData } = await getDocument('users', currentUser.uid);
+        const userType = (userData as any)?.user_type;
+
+        if (userType === 'teacher') {
+          navigate('/teacher/dashboard');
+        } else if (userType === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/student/dashboard');
+        }
       }
     };
 

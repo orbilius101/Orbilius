@@ -1,7 +1,7 @@
 export function useStep1IndexHandlers({ getDiscoveryLogUrl, getInstructionsUrl, showAlert }: any) {
   const handleDownloadBibliography = async () => {
     try {
-      const publicUrl = getDiscoveryLogUrl();
+      const publicUrl = await getDiscoveryLogUrl();
 
       if (publicUrl) {
         const link = document.createElement('a');
@@ -22,7 +22,7 @@ export function useStep1IndexHandlers({ getDiscoveryLogUrl, getInstructionsUrl, 
 
   const handleDownloadHelpGuide = async () => {
     try {
-      const publicUrl = getInstructionsUrl();
+      const publicUrl = await getInstructionsUrl();
 
       if (publicUrl) {
         const link = document.createElement('a');

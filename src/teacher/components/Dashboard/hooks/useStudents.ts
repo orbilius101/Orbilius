@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getDocuments, buildConstraints, deleteDocument } from '../../../../utils/firebaseHelpers';
+import { CLOUD_FUNCTIONS } from '../../../../config/functions';
 
 interface Student {
   id: string;
@@ -9,6 +10,7 @@ interface Student {
   created_at: string;
   status: 'active' | 'pending';
   invited_at?: string;
+  grade?: string;
 }
 
 interface ConfirmState {
@@ -16,9 +18,14 @@ interface ConfirmState {
   id: string;
   name: string;
   type: 'student';
+  status?: 'active' | 'pending';
 }
 
-export function useStudents(teacherId: string | undefined, showAlert: (message: string, title: string) => void) {
+export function useStudents(
+  teacherId: string | undefined,
+  showAlert: (message: string, title: string) => void,
+  refreshProjects?: (teacherId: string) => Promise<void>
+) {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -30,7 +37,8 @@ export function useStudents(teacherId: string | undefined, showAlert: (message: 
   });
 
   const openConfirm = (id: string, name: string) => {
-    setConfirmState({ open: true, id, name, type: 'student' });
+    const student = students.find((s) => s.id === id);
+    setConfirmState({ open: true, id, name, type: 'student', status: student?.status });
   };
 
   const closeConfirm = () => {
@@ -44,9 +52,9 @@ export function useStudents(teacherId: string | undefined, showAlert: (message: 
     }
 
     setLoading(true);
-    
+
     console.log('useStudents: Loading students for teacher:', teacherId);
-    
+
     // Fetch active students
     const { data: activeStudentsData, error } = await getDocuments(
       'users',
@@ -63,14 +71,37 @@ export function useStudents(teacherId: string | undefined, showAlert: (message: 
       showAlert('Failed to load students: ' + error.message, 'Error');
     } else {
       console.log('useStudents: Found active students:', activeStudentsData?.length || 0);
-      activeStudents = (activeStudentsData || []).map((student) => ({
-        id: student.id,
-        email: student.email,
-        first_name: student.first_name,
-        last_name: student.last_name,
-        created_at: student.created_at,
-        status: 'active' as const,
-      }));
+
+      // Map students and fetch their grades from projects
+      activeStudents = await Promise.all(
+        (activeStudentsData || []).map(async (student) => {
+          // Fetch student's first project to get grade
+          const { data: projectData } = await getDocuments(
+            'projects',
+            buildConstraints({
+              eq: { student_id: student.id },
+              limit: 1,
+            })
+          );
+
+          const grade =
+            projectData && projectData.length > 0
+              ? String((projectData[0] as { grade?: string }).grade || '')
+              : undefined;
+
+          return {
+            id: student.id,
+            email: student.email,
+            first_name: student.first_name,
+            last_name: student.last_name,
+            created_at: student.created_at?.toDate
+              ? student.created_at.toDate().toISOString()
+              : student.created_at,
+            status: 'active' as const,
+            grade: grade,
+          };
+        })
+      );
     }
 
     // Fetch pending invitations for students
@@ -79,7 +110,7 @@ export function useStudents(teacherId: string | undefined, showAlert: (message: 
       // First, try to fetch with all constraints
       let pendingInvites = null;
       let inviteError = null;
-      
+
       try {
         const result = await getDocuments(
           'pending_invitations',
@@ -111,30 +142,40 @@ export function useStudents(teacherId: string | undefined, showAlert: (message: 
         setStudents(activeStudents);
       } else {
         console.log('useStudents: Found pending invitations:', pendingInvites?.length || 0);
-        
-        const pendingStudents: Student[] = (pendingInvites || []).map((invite) => {
-          const invitedDate = invite.invited_at?.toDate ? invite.invited_at.toDate() : new Date(invite.invited_at || Date.now());
-          return {
-            id: invite.id,
-            email: invite.email,
-            first_name: '',
-            last_name: '',
-            created_at: '',
-            status: 'pending' as const,
-            invited_at: invitedDate.toISOString(),
-          };
-        });
+
+        // Get emails of active students to avoid duplicates
+        const activeStudentEmails = new Set(activeStudents.map((s) => s.email));
+
+        const pendingStudents: Student[] = (pendingInvites || [])
+          .filter((invite) => !activeStudentEmails.has(invite.email)) // Filter out invitations for already active students
+          .map((invite) => {
+            const invitedDate = invite.invited_at?.toDate
+              ? invite.invited_at.toDate()
+              : new Date(invite.invited_at || Date.now());
+            return {
+              id: invite.id,
+              email: invite.email,
+              first_name: '',
+              last_name: '',
+              created_at: '',
+              status: 'pending' as const,
+              invited_at: invitedDate.toISOString(),
+            };
+          });
 
         // Merge active students and pending invitations
         setStudents([...pendingStudents, ...activeStudents]);
       }
     } catch (err) {
       console.error('Exception fetching pending invitations:', err);
-      showAlert('Failed to load pending invitations: ' + (err instanceof Error ? err.message : String(err)), 'Error');
+      showAlert(
+        'Failed to load pending invitations: ' + (err instanceof Error ? err.message : String(err)),
+        'Error'
+      );
       // Still show active students even if pending invitations fail
       setStudents(activeStudents);
     }
-    
+
     setLoading(false);
   };
 
@@ -145,11 +186,11 @@ export function useStudents(teacherId: string | undefined, showAlert: (message: 
 
     try {
       const studentToDelete = students.find((s) => s.id === confirmState.id);
-      
+
       if (studentToDelete?.status === 'pending') {
         // Delete pending invitation
         const { error } = await deleteDocument('pending_invitations', confirmState.id);
-        
+
         if (error) {
           showAlert('Failed to delete invitation: ' + error.message, 'Error');
         } else {
@@ -157,13 +198,37 @@ export function useStudents(teacherId: string | undefined, showAlert: (message: 
           await loadStudents();
         }
       } else {
-        // For active students, we would need to implement a delete function
-        // that removes the student and their associated projects
-        showAlert('Deleting active students is not yet implemented', 'Info');
+        // Delete active student using Cloud Function
+        console.log('Deleting active student:', confirmState.id);
+
+        const response = await fetch(CLOUD_FUNCTIONS.deleteStudent, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId: confirmState.id }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          const errorMessage = result.details
+            ? `${result.error}: ${result.details}`
+            : result.error || 'Failed to delete student.';
+          showAlert(errorMessage, 'Error');
+        } else {
+          showAlert('Student and all associated projects deleted successfully', 'Success');
+          await loadStudents();
+          // Refresh projects list to remove deleted student's projects
+          if (refreshProjects && teacherId) {
+            await refreshProjects(teacherId);
+          }
+        }
       }
     } catch (error) {
       console.error('Error deleting student:', error);
-      showAlert('Failed to delete: ' + (error instanceof Error ? error.message : String(error)), 'Error');
+      showAlert(
+        'Failed to delete: ' + (error instanceof Error ? error.message : String(error)),
+        'Error'
+      );
     } finally {
       setDeleting(false);
       closeConfirm();

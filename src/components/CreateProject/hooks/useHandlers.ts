@@ -24,6 +24,17 @@ export function useCreateProjectHandlers(data: any) {
       return;
     }
 
+    // Validate required fields
+    if (!projectTitle || projectTitle.trim() === '') {
+      showAlert('Please enter a project title.', 'Error');
+      return;
+    }
+
+    if (!grade || grade.trim() === '') {
+      showAlert('Please select your grade.', 'Error');
+      return;
+    }
+
     const dueDates = generateDueDates();
 
     // Log the data being inserted for debugging

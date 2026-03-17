@@ -43,17 +43,27 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
     const unsubscribe = onSnapshot(
       settingsRef,
-      (docSnapshot) => {
+      async (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
           if (data.theme) {
             setCurrentTheme(data.theme as ThemeName);
           }
+        } else {
+          // Document doesn't exist - create it with default theme
+          console.log('Settings document not found, will be created on first theme change');
+          // Use default theme
+          setCurrentTheme('midnight');
         }
         setLoading(false);
       },
       (error) => {
         console.error('Error fetching theme:', error);
+        // If permissions error, just use default theme
+        if (error.code === 'permission-denied') {
+          console.log('No permission to read settings, using default theme');
+          setCurrentTheme('midnight');
+        }
         setLoading(false);
       }
     );
@@ -65,16 +75,26 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   const setTheme = async (theme: ThemeName) => {
     try {
+      // Try to update existing document, or create if it doesn't exist
+      const settingsRef = doc(db, 'settings', 'theme');
       const { error } = await updateDocument('settings', 'theme', { theme });
 
       if (error) {
         console.error('Error updating theme:', error);
-        throw error;
+        // If document doesn't exist, try to create it using setDoc
+        if (error.message?.includes('No document')) {
+          const { setDoc } = await import('firebase/firestore');
+          await setDoc(settingsRef, { theme });
+        } else {
+          throw error;
+        }
       }
 
       setCurrentTheme(theme);
     } catch (err) {
       console.error('Failed to update theme:', err);
+      // Still update local state even if database update fails
+      setCurrentTheme(theme);
     }
   };
 

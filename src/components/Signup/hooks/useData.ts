@@ -4,14 +4,15 @@ import { SignupData } from '../../../types';
 import { useAlert } from '../../../hooks/useAlert';
 import { getDocuments, buildConstraints } from '../../../utils/firebaseHelpers';
 
-export function useSignupData(): SignupData & { 
-  alertState: any; 
+export function useSignupData(): SignupData & {
+  alertState: any;
   closeAlert: () => void;
   invitationData: any;
   loadingInvitation: boolean;
 } {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('student');
   const [teacherId, setTeacherId] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -27,7 +28,7 @@ export function useSignupData(): SignupData & {
     const inviteCode = params.get('invite');
     const teacherIdParam = params.get('teacherId');
     const roleParam = params.get('role');
-    
+
     // Handle invitation code
     if (inviteCode) {
       setLoadingInvitation(true);
@@ -43,7 +44,7 @@ export function useSignupData(): SignupData & {
           showAlert('Invalid or expired invitation code', 'Error');
           return;
         }
-        
+
         const invitation = data[0];
         setInvitationData(invitation);
         setEmail(invitation.email || '');
@@ -66,6 +67,8 @@ export function useSignupData(): SignupData & {
     setEmail,
     password,
     setPassword,
+    confirmPassword,
+    setConfirmPassword,
     role,
     setRole,
     teacherId,
