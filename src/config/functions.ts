@@ -23,5 +23,5 @@ export const CLOUD_FUNCTIONS = {
   deleteTeacher: 'https://deleteteacher-vxzm7ahria-uc.a.run.app',
   sendInvite: 'https://sendinvite-vxzm7ahria-uc.a.run.app',
   updateUser: 'https://us-central1-orbilius-81978.cloudfunctions.net/updateUser',
-  confirmEmailChange: 'https://us-central1-orbilius-81978.cloudfunctions.net/confirmEmailChange',
+  confirmEmailChange: 'https://confirmemailchange-vxzm7ahria-uc.a.run.app',
 };
