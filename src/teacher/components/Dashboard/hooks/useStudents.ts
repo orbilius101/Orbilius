@@ -79,7 +79,7 @@ export function useStudents(
           const { data: projectData } = await getDocuments(
             'projects',
             buildConstraints({
-              eq: { student_id: student.id },
+              eq: { student_id: student.id, teacher_id: teacherId },
               limit: 1,
             })
           );
