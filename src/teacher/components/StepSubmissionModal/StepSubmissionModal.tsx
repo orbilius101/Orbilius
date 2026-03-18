@@ -207,11 +207,31 @@ export default function StepSubmissionModal({
 
               {/* Teacher Comments - shown above PDF */}
               {teacherComments && (
-                <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                  <Typography variant="subtitle2" sx={{ mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.7rem' }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    bgcolor: 'rgba(255,255,255,0.05)',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      mb: 0.5,
+                      color: 'text.secondary',
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5,
+                      fontSize: '0.7rem',
+                    }}
+                  >
                     Teacher Feedback
                   </Typography>
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', color: 'text.primary' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ whiteSpace: 'pre-wrap', color: 'text.primary' }}
+                  >
                     {teacherComments}
                   </Typography>
                 </Box>

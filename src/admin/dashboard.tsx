@@ -209,9 +209,7 @@ export default function AdminDashboard() {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <SchoolIcon />
-              <Typography variant="h5">
-                Teachers ({teachers.length})
-              </Typography>
+              <Typography variant="h5">Teachers ({teachers.length})</Typography>
             </Box>
             <Button
               variant="contained"

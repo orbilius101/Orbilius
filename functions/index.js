@@ -397,7 +397,11 @@ exports.confirmEmailChange = onRequest({ cors: true, invoker: 'public' }, async 
       return res.status(400).json({ error: 'Invalid or expired confirmation link.' });
     }
     if (!data.pending_email_expires || Date.now() > data.pending_email_expires) {
-      return res.status(400).json({ error: 'This confirmation link has expired. Please ask an administrator to resend.' });
+      return res
+        .status(400)
+        .json({
+          error: 'This confirmation link has expired. Please ask an administrator to resend.',
+        });
     }
 
     const newEmail = data.pending_email;

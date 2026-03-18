@@ -35,10 +35,21 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 
 // Memoized PDF viewer — prevents re-renders when parent state (e.g. comment) changes
 const PdfViewer = React.memo(function PdfViewer({
-  file, scale, pageNumber, pdfVersion, onLoadSuccess, onLoadError, onRenderSuccess,
+  file,
+  scale,
+  pageNumber,
+  pdfVersion,
+  onLoadSuccess,
+  onLoadError,
+  onRenderSuccess,
 }: {
-  file: string; scale: number; pageNumber: number; pdfVersion: string;
-  onLoadSuccess: (pdf: any) => void; onLoadError: (err: any) => void; onRenderSuccess: (page: any) => void;
+  file: string;
+  scale: number;
+  pageNumber: number;
+  pdfVersion: string;
+  onLoadSuccess: (pdf: any) => void;
+  onLoadError: (err: any) => void;
+  onRenderSuccess: (page: any) => void;
 }) {
   return (
     <Document
@@ -109,7 +120,7 @@ export default function StepApproval() {
 
   const onDocumentLoadSuccess = useCallback(({ numPages: n }: { numPages: number }) => {
     data.setNumPages(n);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onDocumentLoadError = useCallback((error: any) => {
@@ -117,8 +128,11 @@ export default function StepApproval() {
   }, []);
 
   const handleFitPage = useCallback(() => {
-    if (!containerRef.current) { setScale(1); return; }
-    const containerWidth = containerRef.current.clientWidth - 32;   // subtract p:2 padding
+    if (!containerRef.current) {
+      setScale(1);
+      return;
+    }
+    const containerWidth = containerRef.current.clientWidth - 32; // subtract p:2 padding
     const containerHeight = containerRef.current.clientHeight - 32;
     const widthScale = containerWidth / pdfPageWidthRef.current;
     const heightScale = containerHeight / pdfPageHeightRef.current;
@@ -172,8 +186,22 @@ export default function StepApproval() {
   }
 
   return (
-    <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
-      <Container maxWidth="xl" sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, py: 2 }}>
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Container
+        maxWidth="xl"
+        sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, py: 2 }}
+      >
         <Stack spacing={1} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {/* Header */}
           <Box sx={{ flexShrink: 0 }}>
@@ -190,10 +218,16 @@ export default function StepApproval() {
             </Box>
           </Box>
 
-          <Stack spacing={1} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <Stack
+            spacing={1}
+            sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+          >
             {submissionFile && (
               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <Stack spacing={1} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <Stack
+                  spacing={1}
+                  sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                >
                   {/* Toolbar */}
                   <Box
                     sx={{
@@ -270,8 +304,15 @@ export default function StepApproval() {
                         size="small"
                         startIcon={<OpenInNewIcon />}
                         onClick={() => {
-                          const popup = window.open(submissionFile as string, '_blank', 'width=900,height=700');
-                          if (popup) { popupRef.current = popup; setIsPoppedOut(true); }
+                          const popup = window.open(
+                            submissionFile as string,
+                            '_blank',
+                            'width=900,height=700'
+                          );
+                          if (popup) {
+                            popupRef.current = popup;
+                            setIsPoppedOut(true);
+                          }
                         }}
                       >
                         Pop Out
@@ -378,14 +419,20 @@ export default function StepApproval() {
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
                   <Button
                     variant="outlined"
-                    onClick={() => { popupRef.current?.close(); handleSaveComment(); }}
+                    onClick={() => {
+                      popupRef.current?.close();
+                      handleSaveComment();
+                    }}
                     disabled={!comment.trim() || isSavingComment}
                   >
                     {isSavingComment ? 'Saving...' : 'Save Comment & Return to Student'}
                   </Button>
                   <Button
                     variant="contained"
-                    onClick={() => { popupRef.current?.close(); handleApprove(); }}
+                    onClick={() => {
+                      popupRef.current?.close();
+                      handleApprove();
+                    }}
                     disabled={isApproving}
                     color="success"
                   >

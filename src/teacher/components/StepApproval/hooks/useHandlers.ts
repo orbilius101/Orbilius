@@ -20,7 +20,10 @@ export function useStepApprovalHandlers(data: any) {
     console.error('PDF load error:', error);
     // Don't clear submissionFile here — pdfjs can fire worker errors during re-renders
     // even after a successful load. Only log/alert; keep the viewer visible.
-    showAlert('Could not preview the submitted file. Use the download link to view it.', 'Preview Unavailable');
+    showAlert(
+      'Could not preview the submitted file. Use the download link to view it.',
+      'Preview Unavailable'
+    );
   };
 
   const handleSaveComment = async () => {

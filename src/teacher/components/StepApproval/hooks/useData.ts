@@ -4,7 +4,6 @@ import { auth } from '../../../../firebaseConfig';
 import { getDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 import { useAlert } from '../../../../hooks/useAlert';
 
-
 export function useStepApprovalData() {
   const { projectId, stepNumber } = useParams();
   const navigate = useNavigate();

@@ -47,13 +47,27 @@ export default function Step1Upload() {
   const dragCounterRef = useRef(0);
   const justDroppedRef = useRef(false);
 
-  const handleDragEnter = (e: React.DragEvent) => { e.preventDefault(); dragCounterRef.current++; setIsDragging(true); };
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); dragCounterRef.current--; if (dragCounterRef.current === 0) setIsDragging(false); };
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current++;
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) setIsDragging(false);
+  };
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); dragCounterRef.current = 0; setIsDragging(false);
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDragging(false);
     justDroppedRef.current = true;
-    setTimeout(() => { justDroppedRef.current = false; }, 300);
+    setTimeout(() => {
+      justDroppedRef.current = false;
+    }, 300);
     const dropped = e.dataTransfer.files[0];
     if (!dropped) return;
     handleFileChange({ target: { files: [dropped], value: '' } } as any);
@@ -76,8 +90,28 @@ export default function Step1Upload() {
           </Button>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ width: 52, height: 52, borderRadius: '50%', bgcolor: '#ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Typography sx={{ color: 'background.default', fontWeight: 700, fontSize: '1.4rem', lineHeight: 1 }}>1</Typography>
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                borderRadius: '50%',
+                bgcolor: '#ffd700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Typography
+                sx={{
+                  color: 'background.default',
+                  fontWeight: 700,
+                  fontSize: '1.4rem',
+                  lineHeight: 1,
+                }}
+              >
+                1
+              </Typography>
             </Box>
             <Typography variant="h4" component="h2">
               Project Cycle Phases
@@ -123,7 +157,11 @@ export default function Step1Upload() {
                 p: 4,
                 border: '2px dashed',
                 borderColor: isDragging ? 'primary.light' : file ? 'primary.main' : 'divider',
-                bgcolor: isDragging ? 'action.selected' : file ? 'primary.dark' : 'background.paper',
+                bgcolor: isDragging
+                  ? 'action.selected'
+                  : file
+                    ? 'primary.dark'
+                    : 'background.paper',
                 transition: 'all 0.3s',
                 cursor: 'pointer',
                 '&:hover': {
@@ -131,11 +169,16 @@ export default function Step1Upload() {
                   bgcolor: 'action.hover',
                 },
               }}
-              onClick={() => { if (!justDroppedRef.current) document.getElementById('file-input')?.click(); }}
+              onClick={() => {
+                if (!justDroppedRef.current) document.getElementById('file-input')?.click();
+              }}
               onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              onDragEnd={() => { dragCounterRef.current = 0; setIsDragging(false); }}
+              onDragEnd={() => {
+                dragCounterRef.current = 0;
+                setIsDragging(false);
+              }}
               onDrop={handleDrop}
             >
               <input

@@ -49,13 +49,27 @@ export default function Step5Upload() {
   const dragCounterRef = useRef(0);
   const justDroppedRef = useRef(false);
 
-  const handleDragEnter = (e: React.DragEvent) => { e.preventDefault(); dragCounterRef.current++; setIsDragging(true); };
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); dragCounterRef.current--; if (dragCounterRef.current === 0) setIsDragging(false); };
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current++;
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) setIsDragging(false);
+  };
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); dragCounterRef.current = 0; setIsDragging(false);
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDragging(false);
     justDroppedRef.current = true;
-    setTimeout(() => { justDroppedRef.current = false; }, 300);
+    setTimeout(() => {
+      justDroppedRef.current = false;
+    }, 300);
     const dropped = e.dataTransfer.files[0];
     if (!dropped) return;
     handleFileChange({ target: { files: [dropped], value: '' } } as any);
@@ -66,13 +80,37 @@ export default function Step5Upload() {
       <SharedHeader />
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Stack spacing={4}>
-          <Button variant="outlined" onClick={() => navigate('/student/dashboard')} sx={{ alignSelf: 'flex-start' }}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/student/dashboard')}
+            sx={{ alignSelf: 'flex-start' }}
+          >
             ← Back to Dashboard
           </Button>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ width: 52, height: 52, borderRadius: '50%', bgcolor: '#ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Typography sx={{ color: 'background.default', fontWeight: 700, fontSize: '1.4rem', lineHeight: 1 }}>5</Typography>
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                borderRadius: '50%',
+                bgcolor: '#ffd700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Typography
+                sx={{
+                  color: 'background.default',
+                  fontWeight: 700,
+                  fontSize: '1.4rem',
+                  lineHeight: 1,
+                }}
+              >
+                5
+              </Typography>
             </Box>
             <Typography variant="h4" component="h2">
               Project Cycle Phases
@@ -96,7 +134,9 @@ export default function Step5Upload() {
           {status === 'Submitted' || status === 'Approved' ? (
             <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'success.dark', color: 'white' }}>
               <CheckCircleIcon sx={{ fontSize: 60, mb: 2 }} />
-              <Typography variant="h6" gutterBottom>Submission Complete</Typography>
+              <Typography variant="h6" gutterBottom>
+                Submission Complete
+              </Typography>
               <Typography variant="body1">
                 Your submission has been uploaded and is{' '}
                 {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
@@ -104,7 +144,12 @@ export default function Step5Upload() {
               {youtubeLink && (
                 <Typography variant="body2" sx={{ mt: 1 }}>
                   <strong>YouTube Link:</strong>{' '}
-                  <Link href={youtubeLink} target="_blank" rel="noopener noreferrer" sx={{ color: 'white' }}>
+                  <Link
+                    href={youtubeLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ color: 'white' }}
+                  >
                     {youtubeLink}
                   </Link>
                 </Typography>
@@ -117,21 +162,38 @@ export default function Step5Upload() {
                   p: 4,
                   border: '2px dashed',
                   borderColor: isDragging ? 'primary.light' : file ? 'primary.main' : 'divider',
-                  bgcolor: isDragging ? 'action.selected' : file ? 'primary.dark' : 'background.paper',
+                  bgcolor: isDragging
+                    ? 'action.selected'
+                    : file
+                      ? 'primary.dark'
+                      : 'background.paper',
                   transition: 'all 0.3s',
                   cursor: 'pointer',
                   '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' },
                 }}
-                onClick={() => { if (!justDroppedRef.current) document.getElementById('file-input-s5')?.click(); }}
+                onClick={() => {
+                  if (!justDroppedRef.current) document.getElementById('file-input-s5')?.click();
+                }}
                 onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
-                onDragEnd={() => { dragCounterRef.current = 0; setIsDragging(false); }}
+                onDragEnd={() => {
+                  dragCounterRef.current = 0;
+                  setIsDragging(false);
+                }}
                 onDrop={handleDrop}
               >
-                <input id="file-input-s5" type="file" accept="application/pdf" onChange={handleFileChange} style={{ display: 'none' }} />
+                <input
+                  id="file-input-s5"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                />
                 <Stack spacing={2} alignItems="center">
-                  <CloudUploadIcon sx={{ fontSize: 60, color: file ? 'primary.main' : 'text.secondary' }} />
+                  <CloudUploadIcon
+                    sx={{ fontSize: 60, color: file ? 'primary.main' : 'text.secondary' }}
+                  />
                   <Typography variant="h6" color={file ? 'primary.main' : 'text.primary'}>
                     {file ? file.name : 'Click to select PDF file'}
                   </Typography>
@@ -154,7 +216,8 @@ export default function Step5Upload() {
 
           {file && status !== 'Submitted' && status !== 'Approved' && (
             <Button
-              variant="contained" size="large"
+              variant="contained"
+              size="large"
               onClick={() => handleSubmit(file, youtubeLink)}
               disabled={uploading || !file || !youtubeLink.trim() || !projectId}
               fullWidth
@@ -168,7 +231,11 @@ export default function Step5Upload() {
           {uploading && (
             <Box>
               <LinearProgress />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 1, textAlign: 'center' }}
+              >
                 Uploading your file...
               </Typography>
             </Box>

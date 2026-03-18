@@ -5,7 +5,12 @@ import ImpersonationBanner from '../../../admin/components/ImpersonationBanner';
 import StepSubmissionModal from '../StepSubmissionModal/StepSubmissionModal';
 import StudentsList from './StudentsList';
 import ConfirmDialog from '../../../admin/components/ConfirmDialog';
-import { getDocuments, buildConstraints, deleteDocument, updateDocument } from '../../../utils/firebaseHelpers';
+import {
+  getDocuments,
+  buildConstraints,
+  deleteDocument,
+  updateDocument,
+} from '../../../utils/firebaseHelpers';
 import { ref as storageRef, deleteObject } from 'firebase/storage';
 import { storage } from '../../../firebaseConfig';
 import {
@@ -322,7 +327,10 @@ ${userProfile?.first_name || 'Your Teacher'}`;
               Teacher Dashboard
             </Typography>
             {projectsNeedingReview > 0 && (
-              <Tooltip title={`${projectsNeedingReview} project${projectsNeedingReview === 1 ? '' : 's'} need${projectsNeedingReview === 1 ? 's' : ''} review`} arrow>
+              <Tooltip
+                title={`${projectsNeedingReview} project${projectsNeedingReview === 1 ? '' : 's'} need${projectsNeedingReview === 1 ? 's' : ''} review`}
+                arrow
+              >
                 <Badge
                   badgeContent={projectsNeedingReview}
                   color="error"
@@ -330,15 +338,15 @@ ${userProfile?.first_name || 'Your Teacher'}`;
                     '& .MuiBadge-badge': { fontSize: '0.7rem', fontWeight: 700 },
                     animation: 'bellRing 2s ease-in-out infinite',
                     '@keyframes bellRing': {
-                      '0%':   { transform: 'rotate(0deg)' },
-                      '5%':   { transform: 'rotate(15deg)' },
-                      '10%':  { transform: 'rotate(-13deg)' },
-                      '15%':  { transform: 'rotate(11deg)' },
-                      '20%':  { transform: 'rotate(-9deg)' },
-                      '25%':  { transform: 'rotate(7deg)' },
-                      '30%':  { transform: 'rotate(-5deg)' },
-                      '35%':  { transform: 'rotate(3deg)' },
-                      '40%':  { transform: 'rotate(0deg)' },
+                      '0%': { transform: 'rotate(0deg)' },
+                      '5%': { transform: 'rotate(15deg)' },
+                      '10%': { transform: 'rotate(-13deg)' },
+                      '15%': { transform: 'rotate(11deg)' },
+                      '20%': { transform: 'rotate(-9deg)' },
+                      '25%': { transform: 'rotate(7deg)' },
+                      '30%': { transform: 'rotate(-5deg)' },
+                      '35%': { transform: 'rotate(3deg)' },
+                      '40%': { transform: 'rotate(0deg)' },
                       '100%': { transform: 'rotate(0deg)' },
                     },
                   }}
@@ -474,7 +482,14 @@ ${userProfile?.first_name || 'Your Teacher'}`;
             title="Delete Submission"
             message={`This will permanently delete the Step ${deleteSubmissionState.stepNumber} submission for "${deleteSubmissionState.project?.project_title}" and reset the step to Not Started. The student will need to re-submit.\n\nThis action cannot be undone.`}
             onConfirm={handleDeleteSubmission}
-            onCancel={() => setDeleteSubmissionState({ open: false, project: null, stepNumber: null, deleting: false })}
+            onCancel={() =>
+              setDeleteSubmissionState({
+                open: false,
+                project: null,
+                stepNumber: null,
+                deleting: false,
+              })
+            }
             confirmText={deleteSubmissionState.deleting ? 'Deleting...' : 'Delete'}
             cancelText="Cancel"
             requireTypedConfirmation="delete"

@@ -236,7 +236,11 @@ export default function StudentsList({
                         variant="body2"
                         component="span"
                         onClick={() => onEmailStudent(student.email)}
-                        sx={{ cursor: 'pointer', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
+                        sx={{
+                          cursor: 'pointer',
+                          color: 'primary.main',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
                       >
                         {student.email}
                       </Typography>
@@ -258,7 +262,10 @@ export default function StudentsList({
                           justifyContent: 'center',
                         }}
                       >
-                        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600, lineHeight: 1 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: 'primary.main', fontWeight: 600, lineHeight: 1 }}
+                        >
                           {student.grade}
                         </Typography>
                       </Box>
@@ -340,9 +347,15 @@ export default function StudentsList({
                               <TableRow sx={{ bgcolor: 'action.hover' }}>
                                 <TableCell width="32px" />
                                 <TableCell sx={{ fontWeight: 600 }}>Project Title</TableCell>
-                                <TableCell sx={{ fontWeight: 600, width: '40%' }}>Progress</TableCell>
-                                <TableCell sx={{ fontWeight: 600, width: '130px' }}>Status</TableCell>
-                                <TableCell sx={{ fontWeight: 600, width: '80px' }}>Action</TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: '40%' }}>
+                                  Progress
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: '130px' }}>
+                                  Status
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: '80px' }}>
+                                  Action
+                                </TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -354,12 +367,20 @@ export default function StudentsList({
                                     <TableRow>
                                       <TableCell sx={{ py: 0.5 }}>
                                         {activeSteps.length > 0 && (
-                                          <Tooltip title={isProjectExpanded ? 'Hide submissions' : 'View submissions'}>
+                                          <Tooltip
+                                            title={
+                                              isProjectExpanded
+                                                ? 'Hide submissions'
+                                                : 'View submissions'
+                                            }
+                                          >
                                             <IconButton
                                               size="small"
                                               onClick={() => toggleProject(project.project_id)}
                                               sx={{
-                                                transform: isProjectExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                transform: isProjectExpanded
+                                                  ? 'rotate(180deg)'
+                                                  : 'rotate(0deg)',
                                                 transition: 'transform 0.3s',
                                               }}
                                             >
@@ -368,182 +389,296 @@ export default function StudentsList({
                                           </Tooltip>
                                         )}
                                       </TableCell>
-                                  <TableCell>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    {project[`step${project.current_step}_status`] ===
-                                    'Submitted' ? (
-                                      <Typography
-                                        component="span"
-                                        onClick={() =>
-                                          navigate(
-                                            `/teacher/step-approval/${project.project_id}/${project.current_step}`
-                                          )
-                                        }
-                                        sx={{
-                                          color: 'primary.main',
-                                          fontWeight: 500,
-                                          textDecoration: 'underline',
-                                          cursor: 'pointer',
-                                          '&:hover': {
-                                            color: 'primary.dark',
-                                          },
-                                        }}
-                                      >
-                                        {project.project_title}
-                                      </Typography>
-                                    ) : (
-                                      project.project_title
-                                    )}
-                                    {project[`step${project.current_step}_status`] === 'Submitted' && (
-                                      <Button
-                                        size="small"
-                                        variant="outlined"
-                                        onClick={() => navigate(`/teacher/step-approval/${project.project_id}/${project.current_step}`)}
-                                        sx={{
-                                          color: '#ffd700',
-                                          borderColor: '#ffd700',
-                                          fontWeight: 600,
-                                          fontSize: '0.7rem',
-                                          py: 0.25,
-                                          px: 1,
-                                          minWidth: 0,
-                                          whiteSpace: 'nowrap',
-                                          flexShrink: 0,
-                                          '&:hover': { borderColor: '#ffd700', bgcolor: 'rgba(255,215,0,0.1)' },
-                                        }}
-                                      >
-                                        Click to Review
-                                      </Button>
-                                    )}
-                                    </Box>
-                                  </TableCell>
-                                  <TableCell sx={{ width: '40%' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                      <Box sx={{ flex: 1 }}>
-                                      <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
-                                        Step {project.current_step}/5:{' '}
-                                        {getCurrentStepName(project.current_step)}
-                                      </Typography>
-                                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                        {getProgressBarSegments(project).map((segment, index) => (
-                                          <Tooltip
-                                            key={index}
-                                            title={`${segment.stepName}: ${segment.status}${segment.isApproved ? ' (Click to view)' : ''}${segment.isSubmitted ? ' (Click to review)' : ''}`}
-                                            arrow
-                                          >
-                                            <Box
-                                              sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.75 }}
-                                            >
-                                              <Box
-                                              onClick={() => onStepClick(project, index)}
+                                      <TableCell>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                          {project[`step${project.current_step}_status`] ===
+                                          'Submitted' ? (
+                                            <Typography
+                                              component="span"
+                                              onClick={() =>
+                                                navigate(
+                                                  `/teacher/step-approval/${project.project_id}/${project.current_step}`
+                                                )
+                                              }
                                               sx={{
-                                                width: '100%',
-                                                height: 8,
-                                                bgcolor: segment.isApproved
-                                                  ? 'success.main'
-                                                  : segment.isInProgress
-                                                    ? 'warning.main'
-                                                    : 'grey.300',
-                                                background: segment.isSubmitted
-                                                  ? 'repeating-linear-gradient(45deg, #ffd700, #ffd700 4px, #4caf50 4px, #4caf50 8px)'
-                                                  : undefined,
-                                                borderRadius: 1,
-                                                cursor:
-                                                  segment.isApproved || segment.isSubmitted
-                                                    ? 'pointer'
-                                                    : 'default',
-                                                transition: 'all 0.2s',
-                                                '&:hover': segment.isApproved
-                                                  ? {
-                                                      transform: 'translateY(-2px)',
-                                                      boxShadow: 2,
-                                                      bgcolor: 'success.dark',
-                                                    }
-                                                  : segment.isSubmitted
-                                                    ? {
-                                                        transform: 'translateY(-2px)',
-                                                        boxShadow:
-                                                          '0 0 12px 4px rgba(255, 215, 0, 0.6)',
-                                                      }
-                                                    : {},
+                                                color: 'primary.main',
+                                                fontWeight: 500,
+                                                textDecoration: 'underline',
+                                                cursor: 'pointer',
+                                                '&:hover': {
+                                                  color: 'primary.dark',
+                                                },
                                               }}
-                                              />
-                                              {segment.dueDate && (
-                                                <Typography
-                                                  variant="caption"
-                                                  sx={{ fontSize: '0.6rem', color: 'text.secondary', lineHeight: 1, textAlign: 'center', whiteSpace: 'nowrap' }}
-                                                >
-                                                  {segment.dueDate}
-                                                </Typography>
+                                            >
+                                              {project.project_title}
+                                            </Typography>
+                                          ) : (
+                                            project.project_title
+                                          )}
+                                          {project[`step${project.current_step}_status`] ===
+                                            'Submitted' && (
+                                            <Button
+                                              size="small"
+                                              variant="outlined"
+                                              onClick={() =>
+                                                navigate(
+                                                  `/teacher/step-approval/${project.project_id}/${project.current_step}`
+                                                )
+                                              }
+                                              sx={{
+                                                color: '#ffd700',
+                                                borderColor: '#ffd700',
+                                                fontWeight: 600,
+                                                fontSize: '0.7rem',
+                                                py: 0.25,
+                                                px: 1,
+                                                minWidth: 0,
+                                                whiteSpace: 'nowrap',
+                                                flexShrink: 0,
+                                                '&:hover': {
+                                                  borderColor: '#ffd700',
+                                                  bgcolor: 'rgba(255,215,0,0.1)',
+                                                },
+                                              }}
+                                            >
+                                              Click to Review
+                                            </Button>
+                                          )}
+                                        </Box>
+                                      </TableCell>
+                                      <TableCell sx={{ width: '40%' }}>
+                                        <Box
+                                          sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
+                                        >
+                                          <Box sx={{ flex: 1 }}>
+                                            <Typography
+                                              variant="body2"
+                                              sx={{ mb: 0.5, fontWeight: 500 }}
+                                            >
+                                              Step {project.current_step}/5:{' '}
+                                              {getCurrentStepName(project.current_step)}
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                              {getProgressBarSegments(project).map(
+                                                (segment, index) => (
+                                                  <Tooltip
+                                                    key={index}
+                                                    title={`${segment.stepName}: ${segment.status}${segment.isApproved ? ' (Click to view)' : ''}${segment.isSubmitted ? ' (Click to review)' : ''}`}
+                                                    arrow
+                                                  >
+                                                    <Box
+                                                      sx={{
+                                                        flex: 1,
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        gap: 0.75,
+                                                      }}
+                                                    >
+                                                      <Box
+                                                        onClick={() => onStepClick(project, index)}
+                                                        sx={{
+                                                          width: '100%',
+                                                          height: 8,
+                                                          bgcolor: segment.isApproved
+                                                            ? 'success.main'
+                                                            : segment.isInProgress
+                                                              ? 'warning.main'
+                                                              : 'grey.300',
+                                                          background: segment.isSubmitted
+                                                            ? 'repeating-linear-gradient(45deg, #ffd700, #ffd700 4px, #4caf50 4px, #4caf50 8px)'
+                                                            : undefined,
+                                                          borderRadius: 1,
+                                                          cursor:
+                                                            segment.isApproved ||
+                                                            segment.isSubmitted
+                                                              ? 'pointer'
+                                                              : 'default',
+                                                          transition: 'all 0.2s',
+                                                          '&:hover': segment.isApproved
+                                                            ? {
+                                                                transform: 'translateY(-2px)',
+                                                                boxShadow: 2,
+                                                                bgcolor: 'success.dark',
+                                                              }
+                                                            : segment.isSubmitted
+                                                              ? {
+                                                                  transform: 'translateY(-2px)',
+                                                                  boxShadow:
+                                                                    '0 0 12px 4px rgba(255, 215, 0, 0.6)',
+                                                                }
+                                                              : {},
+                                                        }}
+                                                      />
+                                                      {segment.dueDate && (
+                                                        <Typography
+                                                          variant="caption"
+                                                          sx={{
+                                                            fontSize: '0.6rem',
+                                                            color: 'text.secondary',
+                                                            lineHeight: 1,
+                                                            textAlign: 'center',
+                                                            whiteSpace: 'nowrap',
+                                                          }}
+                                                        >
+                                                          {segment.dueDate}
+                                                        </Typography>
+                                                      )}
+                                                    </Box>
+                                                  </Tooltip>
+                                                )
                                               )}
                                             </Box>
-                                          </Tooltip>
-                                        ))}
-                                      </Box>
-                                      </Box>
-                                    </Box>
-                                  </TableCell>
-                                  <TableCell sx={{ width: '130px' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                      {getStatusIcon(getCurrentStepSubmissionStatus(project))}
-                                      <Typography variant="body2">
-                                        {getCurrentStepSubmissionStatus(project)}
-                                      </Typography>
-                                    </Box>
-                                  </TableCell>
-                                  <TableCell sx={{ width: '80px' }}>
-                                    <Tooltip title="Email student about this project">
-                                      <IconButton
-                                        size="small"
-                                        onClick={() => onEmailProjectStudent(project)}
-                                        color="primary"
-                                      >
-                                        <EmailIcon />
-                                      </IconButton>
-                                    </Tooltip>
-                                  </TableCell>
+                                          </Box>
+                                        </Box>
+                                      </TableCell>
+                                      <TableCell sx={{ width: '130px' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                          {getStatusIcon(getCurrentStepSubmissionStatus(project))}
+                                          <Typography variant="body2">
+                                            {getCurrentStepSubmissionStatus(project)}
+                                          </Typography>
+                                        </Box>
+                                      </TableCell>
+                                      <TableCell sx={{ width: '80px' }}>
+                                        <Tooltip title="Email student about this project">
+                                          <IconButton
+                                            size="small"
+                                            onClick={() => onEmailProjectStudent(project)}
+                                            color="primary"
+                                          >
+                                            <EmailIcon />
+                                          </IconButton>
+                                        </Tooltip>
+                                      </TableCell>
                                     </TableRow>
 
                                     {/* Collapsible steps submissions table */}
                                     {activeSteps.length > 0 && (
                                       <TableRow>
-                                        <TableCell colSpan={6} sx={{ py: 0, borderBottom: isProjectExpanded ? undefined : 'none' }}>
-                                          <Collapse in={isProjectExpanded} timeout="auto" unmountOnExit>
-                                            <Box sx={{ mx: 2, my: 1, p: 1.5, bgcolor: '#071e3d', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                                              <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                        <TableCell
+                                          colSpan={6}
+                                          sx={{
+                                            py: 0,
+                                            borderBottom: isProjectExpanded ? undefined : 'none',
+                                          }}
+                                        >
+                                          <Collapse
+                                            in={isProjectExpanded}
+                                            timeout="auto"
+                                            unmountOnExit
+                                          >
+                                            <Box
+                                              sx={{
+                                                mx: 2,
+                                                my: 1,
+                                                p: 1.5,
+                                                bgcolor: '#071e3d',
+                                                borderRadius: 1,
+                                                border: '1px solid',
+                                                borderColor: 'divider',
+                                              }}
+                                            >
+                                              <Typography
+                                                variant="caption"
+                                                sx={{
+                                                  fontWeight: 600,
+                                                  color: 'text.secondary',
+                                                  textTransform: 'uppercase',
+                                                  letterSpacing: 0.5,
+                                                }}
+                                              >
                                                 Submitted / Approved Steps
                                               </Typography>
                                               <Table size="small" sx={{ mt: 1 }}>
                                                 <TableHead>
                                                   <TableRow>
-                                                    <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem' }}>Step</TableCell>
-                                                    <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem' }}>Name</TableCell>
-                                                    <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem' }}>Status</TableCell>
-                                                    <TableCell align="right" sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem' }}>Actions</TableCell>
+                                                    <TableCell
+                                                      sx={{
+                                                        fontWeight: 600,
+                                                        color: 'text.secondary',
+                                                        fontSize: '0.75rem',
+                                                      }}
+                                                    >
+                                                      Step
+                                                    </TableCell>
+                                                    <TableCell
+                                                      sx={{
+                                                        fontWeight: 600,
+                                                        color: 'text.secondary',
+                                                        fontSize: '0.75rem',
+                                                      }}
+                                                    >
+                                                      Name
+                                                    </TableCell>
+                                                    <TableCell
+                                                      sx={{
+                                                        fontWeight: 600,
+                                                        color: 'text.secondary',
+                                                        fontSize: '0.75rem',
+                                                      }}
+                                                    >
+                                                      Status
+                                                    </TableCell>
+                                                    <TableCell
+                                                      align="right"
+                                                      sx={{
+                                                        fontWeight: 600,
+                                                        color: 'text.secondary',
+                                                        fontSize: '0.75rem',
+                                                      }}
+                                                    >
+                                                      Actions
+                                                    </TableCell>
                                                   </TableRow>
                                                 </TableHead>
                                                 <TableBody>
                                                   {activeSteps.map((step) => (
                                                     <TableRow key={step.stepNumber}>
-                                                      <TableCell sx={{ fontSize: '0.8rem' }}>{step.stepNumber}</TableCell>
-                                                      <TableCell sx={{ fontSize: '0.8rem' }}>{step.name}</TableCell>
+                                                      <TableCell sx={{ fontSize: '0.8rem' }}>
+                                                        {step.stepNumber}
+                                                      </TableCell>
+                                                      <TableCell sx={{ fontSize: '0.8rem' }}>
+                                                        {step.name}
+                                                      </TableCell>
                                                       <TableCell>
                                                         <Chip
                                                           label={step.status}
                                                           size="small"
-                                                          color={step.status === 'Approved' ? 'success' : 'warning'}
+                                                          color={
+                                                            step.status === 'Approved'
+                                                              ? 'success'
+                                                              : 'warning'
+                                                          }
                                                           variant="outlined"
-                                                          icon={step.status === 'Approved' ? <ApprovedIcon /> : <SubmittedIcon />}
+                                                          icon={
+                                                            step.status === 'Approved' ? (
+                                                              <ApprovedIcon />
+                                                            ) : (
+                                                              <SubmittedIcon />
+                                                            )
+                                                          }
                                                         />
                                                       </TableCell>
                                                       <TableCell align="right">
-                                                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                                                        <Box
+                                                          sx={{
+                                                            display: 'flex',
+                                                            gap: 0.5,
+                                                            justifyContent: 'flex-end',
+                                                          }}
+                                                        >
                                                           <Tooltip title="View submission">
                                                             <Button
                                                               size="small"
                                                               variant="outlined"
                                                               startIcon={<ViewIcon />}
-                                                              onClick={() => onViewSubmission(project, step.stepNumber)}
+                                                              onClick={() =>
+                                                                onViewSubmission(
+                                                                  project,
+                                                                  step.stepNumber
+                                                                )
+                                                              }
                                                               sx={{ fontSize: '0.75rem', py: 0.25 }}
                                                             >
                                                               View
@@ -555,7 +690,12 @@ export default function StudentsList({
                                                               variant="outlined"
                                                               color="error"
                                                               startIcon={<DeleteIcon />}
-                                                              onClick={() => onDeleteSubmission(project, step.stepNumber)}
+                                                              onClick={() =>
+                                                                onDeleteSubmission(
+                                                                  project,
+                                                                  step.stepNumber
+                                                                )
+                                                              }
                                                               sx={{ fontSize: '0.75rem', py: 0.25 }}
                                                             >
                                                               Delete
