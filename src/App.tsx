@@ -21,6 +21,7 @@ import StepFiveIndex from './student/components/Step5Index/Step5Index';
 import StepFiveUpload from './student/components/Step5Upload/Step5Upload';
 import StepApproval from './teacher/components/StepApproval/StepApproval';
 import SiteHeader from './components/SiteHeader/SiteHeader';
+import VerifyEmailChange from './components/VerifyEmailChange/VerifyEmailChange';
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
         <Route path="/student/step5/stepFiveUpload" element={<StepFiveUpload />} />
         <Route path="/teacher/step-approval/:projectId/:stepNumber" element={<StepApproval />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/verify-email-change" element={<VerifyEmailChange />} />
       </Routes>
     </BrowserRouter>
   );

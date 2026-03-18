@@ -120,10 +120,10 @@ export default function EditUserModal({
             disabled={saving}
           />
           {emailChanged && (
-            <Alert severity="warning">
-              Email will change from <strong>{user.email}</strong> to{' '}
-              <strong>{email.trim()}</strong>. A verification link will be sent to the new
-              address — the user must click it to confirm.
+            <Alert severity="info">
+              A confirmation link will be sent to <strong>{email.trim()}</strong>. The user's
+              current email <strong>{user.email}</strong> will keep working until they click the
+              link to confirm. The link expires in 24 hours.
             </Alert>
           )}
         </Stack>

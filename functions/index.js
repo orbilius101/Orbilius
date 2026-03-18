@@ -307,70 +307,116 @@ exports.updateUser = onRequest({ cors: true, invoker: 'public' }, async (req, re
     }
 
     const currentData = userDoc.data();
-    const emailChanged = email && email !== currentData.email;
+    const emailChanged = email && email.trim() !== currentData.email;
 
-    // Update Firestore
+    // Update name fields in Firestore and Auth immediately
     const updateData = { updated_at: admin.firestore.FieldValue.serverTimestamp() };
     if (first_name !== undefined) updateData.first_name = first_name;
     if (last_name !== undefined) updateData.last_name = last_name;
-    if (email !== undefined) updateData.email = email;
+
+    if (emailChanged) {
+      // Store pending email + token; do NOT change actual email yet
+      const crypto = require('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      const expires = Date.now() + 24 * 60 * 60 * 1000; // 24h
+      updateData.pending_email = email.trim();
+      updateData.pending_email_token = token;
+      updateData.pending_email_expires = expires;
+    }
+
     await db.collection('users').doc(userId).update(updateData);
 
-    // Update Firebase Auth
-    const authUpdateData = {};
+    // Update display name in Auth
     const fn = first_name !== undefined ? first_name : currentData.first_name;
     const ln = last_name !== undefined ? last_name : currentData.last_name;
-    authUpdateData.displayName = `${fn} ${ln}`;
-    if (emailChanged) {
-      authUpdateData.email = email;
-      authUpdateData.emailVerified = false;
-    }
-    await auth.updateUser(userId, authUpdateData);
+    await auth.updateUser(userId, { displayName: `${fn} ${ln}` });
 
-    // Send verification email to new address if email changed
+    // Send verification email to NEW address
     if (emailChanged) {
-      try {
-        const verificationLink = await auth.generateEmailVerificationLink(email);
-        const transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_APP_PASSWORD,
-          },
-        });
-        await transporter.sendMail({
-          from: `Orbilius <${process.env.GMAIL_USER}>`,
-          to: email,
-          subject: 'Verify your new email address for Orbilius',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #1976d2;">Verify Your New Email Address</h2>
-              <p>Your email address for Orbilius has been updated by an administrator. Please verify your new address by clicking the button below:</p>
-              <a href="${verificationLink}"
-                 style="display: inline-block; background-color: #1976d2; color: white;
-                        padding: 12px 24px; text-decoration: none; border-radius: 4px;
-                        margin: 16px 0;">
-                Verify Email Address
-              </a>
-              <p style="color: #666; font-size: 14px;">
-                Or copy and paste this link into your browser:<br/>
-                <a href="${verificationLink}">${verificationLink}</a>
-              </p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-              <p style="color: #999; font-size: 12px;">
-                If you didn't expect this change, please contact your administrator immediately.
-              </p>
-            </div>
-          `,
-        });
-      } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
-      }
+      const token = updateData.pending_email_token;
+      const confirmUrl = `${req.headers.origin || 'https://orbilius-81978.web.app'}/verify-email-change?token=${token}&userId=${userId}`;
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+      });
+      await transporter.sendMail({
+        from: `Orbilius <${process.env.GMAIL_USER}>`,
+        to: email.trim(),
+        subject: 'Confirm your new email address for Orbilius',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1976d2;">Confirm Your New Email Address</h2>
+            <p>An administrator has requested to change your Orbilius login email to this address.</p>
+            <p>Click the button below to confirm. Your old email will continue to work until you confirm.</p>
+            <a href="${confirmUrl}"
+               style="display: inline-block; background-color: #1976d2; color: white;
+                      padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 16px 0;">
+              Confirm New Email Address
+            </a>
+            <p style="color: #666; font-size: 14px;">This link expires in 24 hours.<br/>
+              Or copy and paste: <a href="${confirmUrl}">${confirmUrl}</a>
+            </p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+            <p style="color: #999; font-size: 12px;">
+              If you didn't expect this, you can safely ignore this email — your current email remains unchanged.
+            </p>
+          </div>
+        `,
+      });
     }
 
     return res.status(200).json({ success: true, emailVerificationSent: !!emailChanged });
   } catch (error) {
     console.error('updateUser error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Confirm a pending email change via token
+ */
+exports.confirmEmailChange = onRequest({ cors: true, invoker: 'public' }, async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { token, userId } = req.body;
+  if (!token || !userId) {
+    return res.status(400).json({ error: 'token and userId are required' });
+  }
+
+  try {
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const data = userDoc.data();
+
+    if (!data.pending_email_token || data.pending_email_token !== token) {
+      return res.status(400).json({ error: 'Invalid or expired confirmation link.' });
+    }
+    if (!data.pending_email_expires || Date.now() > data.pending_email_expires) {
+      return res.status(400).json({ error: 'This confirmation link has expired. Please ask an administrator to resend.' });
+    }
+
+    const newEmail = data.pending_email;
+
+    // Apply email change to Firebase Auth
+    await auth.updateUser(userId, { email: newEmail, emailVerified: true });
+
+    // Apply to Firestore and clear pending fields
+    await db.collection('users').doc(userId).update({
+      email: newEmail,
+      pending_email: admin.firestore.FieldValue.delete(),
+      pending_email_token: admin.firestore.FieldValue.delete(),
+      pending_email_expires: admin.firestore.FieldValue.delete(),
+      updated_at: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return res.status(200).json({ success: true, newEmail });
+  } catch (error) {
+    console.error('confirmEmailChange error:', error);
     return res.status(500).json({ error: error.message });
   }
 });
