@@ -127,7 +127,7 @@ export default function StepSubmissionModal({
           }
 
           // Set teacher comments and submitted date
-          setTeacherComments(latestSubmission.teacher_comments || 'No comments provided');
+          setTeacherComments(latestSubmission.teacher_comments || '');
           setSubmittedAt(latestSubmission.submitted_at);
         }
       } catch (error) {
@@ -204,6 +204,18 @@ export default function StepSubmissionModal({
                   </Typography>
                 )}
               </Box>
+
+              {/* Teacher Comments - shown above PDF */}
+              {teacherComments && (
+                <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.7rem' }}>
+                    Teacher Feedback
+                  </Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', color: 'text.primary' }}>
+                    {teacherComments}
+                  </Typography>
+                </Box>
+              )}
 
               {/* PDF Viewer */}
               {submissionFile && (
@@ -312,18 +324,6 @@ export default function StepSubmissionModal({
                       </Document>
                     </Box>
                   </Stack>
-                </Box>
-              )}
-
-              {/* Teacher Comments */}
-              {teacherComments && (
-                <Box sx={{ mt: 2, p: 2, bgcolor: 'info.50', borderRadius: 1 }}>
-                  <Typography variant="h6" sx={{ mb: 1 }}>
-                    Teacher Feedback
-                  </Typography>
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                    {teacherComments}
-                  </Typography>
                 </Box>
               )}
 

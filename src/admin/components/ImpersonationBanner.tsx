@@ -27,8 +27,8 @@ export default function ImpersonationBanner() {
         zIndex: 1100,
         bgcolor: 'warning.main',
         color: 'warning.contrastText',
-        py: 1.5,
-        px: 3,
+        py: 0.5,
+        px: 2,
         borderRadius: 0,
         display: 'flex',
         alignItems: 'center',
@@ -36,10 +36,10 @@ export default function ImpersonationBanner() {
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
           ⚠️ Admin Mode:
         </Typography>
-        <Typography variant="body1">
+        <Typography variant="body2">
           You are impersonating a teacher. Data shown is from the teacher's perspective.
         </Typography>
       </Box>

@@ -18,7 +18,8 @@ export function useStepApprovalHandlers(data: any) {
 
   const onDocumentLoadError = (error) => {
     console.error('PDF load error:', error);
-    data.setSubmissionFile(null);
+    // Don't clear submissionFile here — pdfjs can fire worker errors during re-renders
+    // even after a successful load. Only log/alert; keep the viewer visible.
     showAlert('Could not preview the submitted file. Use the download link to view it.', 'Preview Unavailable');
   };
 

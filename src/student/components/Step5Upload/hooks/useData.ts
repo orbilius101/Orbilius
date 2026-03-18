@@ -37,7 +37,7 @@ export function useStep5UploadData(navigate: any) {
         }
 
         const projectData = (projectDataArray as any[])[0];
-        const currentProjectId = projectData.project_id;
+        const currentProjectId = projectData.id;
         setProjectId(currentProjectId);
         setStatus(projectData.step5_status || 'Not Submitted');
 

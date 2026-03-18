@@ -1,8 +1,20 @@
-import { Box, Container, Typography, Button, TextField, Stack, Alert, Paper } from '@mui/material';
-import SharedHeader from '../SharedHeader/SharedHeader';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Stack,
+  Alert,
+  Paper,
+  LinearProgress,
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef } from 'react';
 import { useStep3UploadData } from './hooks/useData';
 import { useStep3UploadHandlers } from './hooks/useHandlers';
+import SharedHeader from '../SharedHeader/SharedHeader';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 export default function Step3Upload() {
   const navigate = useNavigate();
@@ -15,7 +27,6 @@ export default function Step3Upload() {
     setSuccess,
     errorMsg,
     setErrorMsg,
-    teacherComments,
     status,
     setStatus,
     projectId,
@@ -30,72 +41,119 @@ export default function Step3Upload() {
     setStatus,
   });
 
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = useRef(0);
+  const justDroppedRef = useRef(false);
+
+  const handleDragEnter = (e: React.DragEvent) => { e.preventDefault(); dragCounterRef.current++; setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); dragCounterRef.current--; if (dragCounterRef.current === 0) setIsDragging(false); };
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); dragCounterRef.current = 0; setIsDragging(false);
+    justDroppedRef.current = true;
+    setTimeout(() => { justDroppedRef.current = false; }, 300);
+    const dropped = e.dataTransfer.files[0];
+    if (!dropped) return;
+    handleFileChange({ target: { files: [dropped], value: '' } } as any);
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <SharedHeader />
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Stack spacing={4}>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/student/dashboard')}
-            sx={{ alignSelf: 'flex-start' }}
-          >
+          <Button variant="outlined" onClick={() => navigate('/student/dashboard')} sx={{ alignSelf: 'flex-start' }}>
             ← Back to Dashboard
           </Button>
 
-          <Typography variant="h4" component="h2">
-            Project Cycle Phases
-            <br />
-            Step 3: Planning Docs
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ width: 52, height: 52, borderRadius: '50%', bgcolor: '#ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Typography sx={{ color: 'background.default', fontWeight: 700, fontSize: '1.4rem', lineHeight: 1 }}>3</Typography>
+            </Box>
+            <Typography variant="h4" component="h2">
+              Project Cycle Phases
+              <br />
+              Step 3: Planning Docs
+            </Typography>
+          </Box>
 
           <Typography variant="body1">
-            Congrats on completing your design brief! Please make sure that your file is in PDF
+            Congrats on completing your planning docs! Please make sure that your file is in PDF
             format and upload the document by clicking the button. After your teacher approves this
             step, you will be able to access Step 4.
           </Typography>
 
-          {status !== 'Submitted' && status !== 'Approved' ? (
-            <Paper sx={{ p: 3 }}>
-              <Stack spacing={2}>
-                <Box>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    Select PDF File:
-                  </Typography>
-                  <input type="file" accept="application/pdf" onChange={handleFileChange} />
-                </Box>
-
-                <Button
-                  variant="contained"
-                  onClick={() => handleUpload(file)}
-                  disabled={uploading || !file}
-                  fullWidth
-                >
-                  {uploading ? 'Uploading...' : 'Upload Planning Docs Here'}
-                </Button>
-              </Stack>
-            </Paper>
-          ) : (
-            <Alert severity="success">
-              ✅ Your submission has been uploaded and is{' '}
-              {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
+          {success && (
+            <Alert severity="success" icon={<CheckCircleIcon />}>
+              ✅ Upload successful! Your submission is awaiting teacher review.
             </Alert>
           )}
-
-          {success && <Alert severity="success">Upload successful!</Alert>}
           {errorMsg && <Alert severity="error">{errorMsg}</Alert>}
 
-          <Paper sx={{ p: 3 }}>
-            <Stack spacing={2}>
-              <Typography variant="h6">Step 3: Planning Status</Typography>
-              <TextField value={status} disabled fullWidth />
+          {status === 'Submitted' || status === 'Approved' ? (
+            <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'success.dark', color: 'white' }}>
+              <CheckCircleIcon sx={{ fontSize: 60, mb: 2 }} />
+              <Typography variant="h6" gutterBottom>Submission Complete</Typography>
+              <Typography variant="body1">
+                Your submission has been uploaded and is{' '}
+                {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
+              </Typography>
+            </Paper>
+          ) : (
+            <Paper
+              sx={{
+                p: 4,
+                border: '2px dashed',
+                borderColor: isDragging ? 'primary.light' : file ? 'primary.main' : 'divider',
+                bgcolor: isDragging ? 'action.selected' : file ? 'primary.dark' : 'background.paper',
+                transition: 'all 0.3s',
+                cursor: 'pointer',
+                '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' },
+              }}
+              onClick={() => { if (!justDroppedRef.current) document.getElementById('file-input-s3')?.click(); }}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDragEnd={() => { dragCounterRef.current = 0; setIsDragging(false); }}
+              onDrop={handleDrop}
+            >
+              <input id="file-input-s3" type="file" accept="application/pdf" onChange={handleFileChange} style={{ display: 'none' }} />
+              <Stack spacing={2} alignItems="center">
+                <CloudUploadIcon sx={{ fontSize: 60, color: file ? 'primary.main' : 'text.secondary' }} />
+                <Typography variant="h6" color={file ? 'primary.main' : 'text.primary'}>
+                  {file ? file.name : 'Click to select PDF file'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {file ? 'Click again to change file' : 'or drag and drop your PDF here'}
+                </Typography>
+              </Stack>
+            </Paper>
+          )}
 
-              <Typography variant="h6">Teacher Comments:</Typography>
-              <TextField value={teacherComments} disabled multiline rows={4} fullWidth />
-            </Stack>
-          </Paper>
+          {file && status !== 'Submitted' && status !== 'Approved' && (
+            <Button
+              variant="contained" size="large"
+              onClick={() => handleUpload(file)}
+              disabled={uploading || !projectId}
+              fullWidth
+              startIcon={<CloudUploadIcon />}
+              sx={{ py: 2, fontSize: '1.1rem', fontWeight: 600 }}
+            >
+              {uploading ? 'Uploading...' : 'Upload Planning Docs'}
+            </Button>
+          )}
+
+          {uploading && (
+            <Box>
+              <LinearProgress />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                Uploading your file...
+              </Typography>
+            </Box>
+          )}
         </Stack>
       </Container>
     </Box>
   );
 }
+

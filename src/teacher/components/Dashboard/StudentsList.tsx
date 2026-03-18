@@ -441,11 +441,12 @@ export default function StudentsList({
                                                 height: 8,
                                                 bgcolor: segment.isApproved
                                                   ? 'success.main'
-                                                  : segment.isSubmitted
-                                                    ? '#ffd700'
-                                                    : segment.isInProgress
-                                                      ? 'warning.main'
-                                                      : 'grey.300',
+                                                  : segment.isInProgress
+                                                    ? 'warning.main'
+                                                    : 'grey.300',
+                                                background: segment.isSubmitted
+                                                  ? 'repeating-linear-gradient(45deg, #ffd700, #ffd700 4px, #4caf50 4px, #4caf50 8px)'
+                                                  : undefined,
                                                 borderRadius: 1,
                                                 cursor:
                                                   segment.isApproved || segment.isSubmitted

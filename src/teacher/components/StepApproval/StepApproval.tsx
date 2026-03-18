@@ -33,6 +33,34 @@ import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 // Use CDN that matches installed pdfjs-dist version
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+// Memoized PDF viewer — prevents re-renders when parent state (e.g. comment) changes
+const PdfViewer = React.memo(function PdfViewer({
+  file, scale, pageNumber, pdfVersion, onLoadSuccess, onLoadError, onRenderSuccess,
+}: {
+  file: string; scale: number; pageNumber: number; pdfVersion: string;
+  onLoadSuccess: (pdf: any) => void; onLoadError: (err: any) => void; onRenderSuccess: (page: any) => void;
+}) {
+  return (
+    <Document
+      file={file}
+      onLoadSuccess={onLoadSuccess}
+      onLoadError={onLoadError}
+      options={{
+        cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfVersion}/cmaps/`,
+        cMapPacked: true,
+      }}
+    >
+      <Page
+        pageNumber={pageNumber}
+        renderTextLayer={false}
+        renderAnnotationLayer={false}
+        scale={scale}
+        onRenderSuccess={onRenderSuccess}
+      />
+    </Document>
+  );
+});
+
 export default function StepApproval() {
   const [showYouTubePlayer, setShowYouTubePlayer] = React.useState<boolean>(false);
   const [isPoppedOut, setIsPoppedOut] = useState(false);
@@ -77,13 +105,16 @@ export default function StepApproval() {
     closeAlert,
   } = data;
 
-  const {
-    onDocumentLoadSuccess,
-    onDocumentLoadError,
-    handleSaveComment,
-    handleApprove,
-    getStepName,
-  } = handlers;
+  const { handleSaveComment, handleApprove, getStepName } = handlers;
+
+  const onDocumentLoadSuccess = useCallback(({ numPages: n }: { numPages: number }) => {
+    data.setNumPages(n);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onDocumentLoadError = useCallback((error: any) => {
+    console.error('PDF load error:', error);
+  }, []);
 
   const handleFitPage = useCallback(() => {
     if (!containerRef.current) { setScale(1); return; }
@@ -141,7 +172,7 @@ export default function StepApproval() {
   }
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', overflow: 'hidden' }}>
+    <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       <Container maxWidth="xl" sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, py: 2 }}>
         <Stack spacing={1} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {/* Header */}
@@ -293,23 +324,15 @@ export default function StepApproval() {
                         p: 2,
                       }}
                     >
-                      <Document
-                        file={submissionFile}
+                      <PdfViewer
+                        file={submissionFile as string}
+                        scale={scale}
+                        pageNumber={pageNumber}
+                        pdfVersion={pdfjs.version}
                         onLoadSuccess={onDocumentLoadSuccess}
                         onLoadError={onDocumentLoadError}
-                        options={{
-                          cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
-                          cMapPacked: true,
-                        }}
-                      >
-                        <Page
-                          pageNumber={pageNumber}
-                          renderTextLayer={false}
-                          renderAnnotationLayer={false}
-                          scale={scale}
-                          onRenderSuccess={handlePageRenderSuccess}
-                        />
-                      </Document>
+                        onRenderSuccess={handlePageRenderSuccess}
+                      />
                     </Box>
                   )}
                 </Stack>
@@ -355,14 +378,14 @@ export default function StepApproval() {
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
                   <Button
                     variant="outlined"
-                    onClick={handleSaveComment}
+                    onClick={() => { popupRef.current?.close(); handleSaveComment(); }}
                     disabled={!comment.trim() || isSavingComment}
                   >
                     {isSavingComment ? 'Saving...' : 'Save Comment & Return to Student'}
                   </Button>
                   <Button
                     variant="contained"
-                    onClick={handleApprove}
+                    onClick={() => { popupRef.current?.close(); handleApprove(); }}
                     disabled={isApproving}
                     color="success"
                   >

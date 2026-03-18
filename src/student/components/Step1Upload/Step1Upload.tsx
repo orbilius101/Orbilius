@@ -9,7 +9,7 @@ import {
   LinearProgress,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useStep1UploadData } from './hooks/useData';
 import { useStep1UploadHandlers } from './hooks/useHandlers';
 import SharedHeader from '../SharedHeader/SharedHeader';
@@ -44,26 +44,18 @@ export default function Step1Upload() {
   });
 
   const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = useRef(0);
+  const justDroppedRef = useRef(false);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
+  const handleDragEnter = (e: React.DragEvent) => { e.preventDefault(); dragCounterRef.current++; setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); dragCounterRef.current--; if (dragCounterRef.current === 0) setIsDragging(false); };
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+    e.preventDefault(); dragCounterRef.current = 0; setIsDragging(false);
+    justDroppedRef.current = true;
+    setTimeout(() => { justDroppedRef.current = false; }, 300);
     const dropped = e.dataTransfer.files[0];
     if (!dropped) return;
-    // Reuse handleFileChange by synthesizing a compatible event
     handleFileChange({ target: { files: [dropped], value: '' } } as any);
   };
 
@@ -83,11 +75,16 @@ export default function Step1Upload() {
             ← Back to Dashboard
           </Button>
 
-          <Typography variant="h4" component="h2">
-            Project Cycle Phases
-            <br />
-            Step 1: Initial Research Upload
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ width: 52, height: 52, borderRadius: '50%', bgcolor: '#ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Typography sx={{ color: 'background.default', fontWeight: 700, fontSize: '1.4rem', lineHeight: 1 }}>1</Typography>
+            </Box>
+            <Typography variant="h4" component="h2">
+              Project Cycle Phases
+              <br />
+              Step 1: Initial Research Upload
+            </Typography>
+          </Box>
 
           <Typography variant="body1">
             Congrats on completing your initial research! Please make sure that your file is in PDF
@@ -134,9 +131,11 @@ export default function Step1Upload() {
                   bgcolor: 'action.hover',
                 },
               }}
-              onClick={() => document.getElementById('file-input')?.click()}
+              onClick={() => { if (!justDroppedRef.current) document.getElementById('file-input')?.click(); }}
+              onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
+              onDragEnd={() => { dragCounterRef.current = 0; setIsDragging(false); }}
               onDrop={handleDrop}
             >
               <input
