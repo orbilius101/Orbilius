@@ -22,4 +22,5 @@ export const CLOUD_FUNCTIONS = {
   deleteStudent: 'https://deletestudent-vxzm7ahria-uc.a.run.app',
   deleteTeacher: 'https://deleteteacher-vxzm7ahria-uc.a.run.app',
   sendInvite: 'https://sendinvite-vxzm7ahria-uc.a.run.app',
+  updateUser: 'https://updateuser-vxzm7ahria-uc.a.run.app',
 };

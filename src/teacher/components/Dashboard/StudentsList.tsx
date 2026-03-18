@@ -412,7 +412,7 @@ export default function StudentsList({
                                           '&:hover': { borderColor: '#ffd700', bgcolor: 'rgba(255,215,0,0.1)' },
                                         }}
                                       >
-                                        Review
+                                        Click to Review
                                       </Button>
                                     )}
                                     </Box>

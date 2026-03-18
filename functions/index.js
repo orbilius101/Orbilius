@@ -289,6 +289,92 @@ exports.deleteTeacher = onRequest({ cors: true, invoker: 'public' }, async (req,
 /**
  * Send invitation email to new user
  */
+exports.updateUser = onRequest({ cors: true, invoker: 'public' }, async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { userId, first_name, last_name, email } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
+
+  try {
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const currentData = userDoc.data();
+    const emailChanged = email && email !== currentData.email;
+
+    // Update Firestore
+    const updateData = { updated_at: admin.firestore.FieldValue.serverTimestamp() };
+    if (first_name !== undefined) updateData.first_name = first_name;
+    if (last_name !== undefined) updateData.last_name = last_name;
+    if (email !== undefined) updateData.email = email;
+    await db.collection('users').doc(userId).update(updateData);
+
+    // Update Firebase Auth
+    const authUpdateData = {};
+    const fn = first_name !== undefined ? first_name : currentData.first_name;
+    const ln = last_name !== undefined ? last_name : currentData.last_name;
+    authUpdateData.displayName = `${fn} ${ln}`;
+    if (emailChanged) {
+      authUpdateData.email = email;
+      authUpdateData.emailVerified = false;
+    }
+    await auth.updateUser(userId, authUpdateData);
+
+    // Send verification email to new address if email changed
+    if (emailChanged) {
+      try {
+        const verificationLink = await auth.generateEmailVerificationLink(email);
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD,
+          },
+        });
+        await transporter.sendMail({
+          from: `Orbilius <${process.env.GMAIL_USER}>`,
+          to: email,
+          subject: 'Verify your new email address for Orbilius',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #1976d2;">Verify Your New Email Address</h2>
+              <p>Your email address for Orbilius has been updated by an administrator. Please verify your new address by clicking the button below:</p>
+              <a href="${verificationLink}"
+                 style="display: inline-block; background-color: #1976d2; color: white;
+                        padding: 12px 24px; text-decoration: none; border-radius: 4px;
+                        margin: 16px 0;">
+                Verify Email Address
+              </a>
+              <p style="color: #666; font-size: 14px;">
+                Or copy and paste this link into your browser:<br/>
+                <a href="${verificationLink}">${verificationLink}</a>
+              </p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+              <p style="color: #999; font-size: 12px;">
+                If you didn't expect this change, please contact your administrator immediately.
+              </p>
+            </div>
+          `,
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+      }
+    }
+
+    return res.status(200).json({ success: true, emailVerificationSent: !!emailChanged });
+  } catch (error) {
+    console.error('updateUser error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 exports.sendInvite = onRequest({ cors: true, invoker: 'public' }, async (req, res) => {
   console.log('sendInvite called', { method: req.method });
   console.log('Request body:', JSON.stringify(req.body, null, 2));

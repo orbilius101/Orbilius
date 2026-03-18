@@ -36,12 +36,20 @@ import ProjectReviewModal from './components/ReviewModal/ProjectReviewModal';
 import AlertDialog from '../components/AlertDialog/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
 import InviteModal from './components/InviteModal';
+import EditUserModal from './components/EditUserModal';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [showInviteModal, setShowInviteModal] = React.useState(false);
   const [resendEmail, setResendEmail] = React.useState<string | undefined>(undefined);
   const [resending, setResending] = React.useState(false);
+  const [editingUser, setEditingUser] = React.useState<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    userType: 'teacher' | 'student';
+  } | null>(null);
   const { alertState, showAlert, closeAlert } = useAlert();
   const { currentTheme, setTheme, availableThemes } = useTheme();
   const { loadingAuth } = useAuthAdmin(showAlert);
@@ -225,9 +233,35 @@ export default function AdminDashboard() {
               onDeleteStudent={handleDeleteStudent}
               onResendInvitation={handleResendInvitation}
               onImpersonate={handleImpersonate}
+              onEditTeacher={(teacher) =>
+                setEditingUser({
+                  id: teacher.id,
+                  first_name: teacher.first_name,
+                  last_name: teacher.last_name,
+                  email: teacher.email,
+                  userType: 'teacher',
+                })
+              }
+              onEditStudent={(student) =>
+                setEditingUser({
+                  id: student.id,
+                  first_name: student.first_name,
+                  last_name: student.last_name,
+                  email: student.email,
+                  userType: 'student',
+                })
+              }
             />
           )}
         </Paper>
+        {/* Edit User Modal */}
+        <EditUserModal
+          open={!!editingUser}
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSaved={refreshTeachers}
+          showAlert={showAlert}
+        />
         {/* Invitation Modal */}
         {showInviteModal && (
           <InviteModal

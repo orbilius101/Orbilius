@@ -20,6 +20,7 @@ import {
   Email as EmailIcon,
   Visibility as VisibilityIcon,
   People as PeopleIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 
 interface Student {
@@ -47,6 +48,8 @@ interface TeachersListProps {
   onDeleteStudent: (studentId: string, studentName: string) => void;
   onResendInvitation?: (email: string) => void;
   onImpersonate?: (teacherId: string) => void;
+  onEditTeacher?: (teacher: Teacher) => void;
+  onEditStudent?: (student: Student) => void;
 }
 
 export default function TeachersList({
@@ -55,6 +58,8 @@ export default function TeachersList({
   onDeleteStudent,
   onResendInvitation,
   onImpersonate,
+  onEditTeacher,
+  onEditStudent,
 }: TeachersListProps) {
   const [expandedTeacherId, setExpandedTeacherId] = useState<string | null>(null);
 
@@ -129,6 +134,18 @@ export default function TeachersList({
                     />
                   </TableCell>
                   <TableCell align="center">
+                    {teacher.status === 'active' && onEditTeacher && (
+                      <Tooltip title="Edit Teacher">
+                        <IconButton
+                          color="primary"
+                          onClick={() => onEditTeacher(teacher)}
+                          size="small"
+                          sx={{ mr: 1 }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     {teacher.status === 'active' && onImpersonate && (
                       <Tooltip title="Impersonate Teacher">
                         <IconButton
@@ -238,6 +255,18 @@ export default function TeachersList({
                                     {new Date(student.created_at).toLocaleDateString()}
                                   </TableCell>
                                   <TableCell align="center">
+                                    {onEditStudent && (
+                                      <Tooltip title="Edit Student">
+                                        <IconButton
+                                          color="primary"
+                                          onClick={() => onEditStudent(student)}
+                                          size="small"
+                                          sx={{ mr: 1 }}
+                                        >
+                                          <EditIcon fontSize="small" />
+                                        </IconButton>
+                                      </Tooltip>
+                                    )}
                                     <Tooltip title="Delete Student">
                                       <IconButton
                                         color="error"
