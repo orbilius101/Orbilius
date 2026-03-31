@@ -7,7 +7,7 @@
   *A comprehensive React-based web application designed to streamline the management of student projects through a structured 5-step workflow with teacher oversight, admin certification, and approval processes.*
   
   [![Built with React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
-  [![Powered by Supabase](https://img.shields.io/badge/Supabase-Database-green.svg)](https://supabase.com/)
+  [![Powered by Firebase](https://img.shields.io/badge/Firebase-Backend-orange.svg)](https://firebase.google.com/)
   [![Vite](https://img.shields.io/badge/Vite-Build-purple.svg)](https://vitejs.dev/)
 </div>
 
@@ -17,29 +17,26 @@
 
 ### New to Orbilius? Start Here!
 
-Setting up a new Supabase project is fast and automated:
-
-1. **📖 Read**: [QUICK_SETUP.md](./QUICK_SETUP.md) - Streamlined 5-step guide (10 minutes)
-2. **⚙️ Run**: `pnpm run setup` - Interactive setup wizard
-3. **✅ Verify**: `pnpm run verify:setup` - Check your configuration
+1. **📖 Read**: [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) - Firebase project setup guide
+2. **📦 Install**: `pnpm install` - Install dependencies
+3. **⚙️ Configure**: Copy `.env.example` to `.env` and add your Firebase credentials
 4. **🚀 Launch**: `pnpm dev` - Start the application
 
 ### Setup Guides
 
-Choose the guide that fits your needs:
+- 📖 **[FIREBASE_SETUP.md](./FIREBASE_SETUP.md)** - Firebase project configuration
+- 🚀 **[FIREBASE_DEPLOYMENT.md](./FIREBASE_DEPLOYMENT.md)** - Deployment guide
 
-- 📖 **[QUICK_SETUP.md](./QUICK_SETUP.md)** - Fast 5-step setup (recommended for new users)
-- 📚 **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** - Detailed walkthrough with explanations
-- ☑️ **[SETUP_CHECKLIST.md](./SETUP_CHECKLIST.md)** - Interactive checklist format
-- 📋 **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Overview of all setup resources
-
-### Automated Setup Commands
+### Common Commands
 
 ```bash
-pnpm setup              # Interactive setup wizard
-pnpm verify:setup       # Verify your configuration
-pnpm dev                # Start development server
-pnpm build              # Build for production
+pnpm dev                        # Start development server
+pnpm build                      # Build for production
+pnpm firebase:deploy            # Build and deploy everything
+pnpm firebase:deploy:hosting    # Deploy frontend only
+pnpm firebase:deploy:functions  # Deploy Cloud Functions only
+pnpm firebase:deploy:rules      # Deploy Firestore/Storage rules
+pnpm firebase:emulators         # Run Firebase emulators locally
 ```
 
 ---
@@ -50,7 +47,6 @@ pnpm build              # Build for production
 - [Core Features](#core-features)
 - [System Architecture](#system-architecture)
 - [Installation](#installation)
-- [Database Setup](#database-setup)
 - [Development](#development)
 - [Deployment](#deployment)
 - [Tech Stack](#tech-stack)
@@ -113,11 +109,11 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 ### 🔧 Technical Features
 
 - **Real-time Updates**: Instant synchronization of project status changes
-- **Secure File Storage**: Supabase Storage with Row Level Security (RLS)
+- **Secure File Storage**: Firebase Storage with security rules
 - **Responsive Design**: Optimized for desktop and mobile devices
 - **PDF Processing**: Advanced PDF viewing with react-pdf integration
 - **Multi-role Auth**: Student, teacher, and admin role management
-- **Database Management**: PostgreSQL backend with automatic scaling
+- **Cloud Functions**: Server-side logic for admin operations and email
 
 ---
 
@@ -127,29 +123,25 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 
 - **Component Structure**: Modular React components with TypeScript support
 - **Routing**: React Router for seamless navigation
-- **State Management**: React hooks + Supabase for global state
+- **State Management**: React hooks for local and global state
 - **Styling**: Material-UI (MUI) for consistent design
 - **PDF Handling**: react-pdf with PDF.js for document rendering
 
-### Backend (Supabase)
+### Backend (Firebase)
 
-#### Database Tables
+#### Services
 
-- **`users`**: User profiles with role-based access (student/teacher/admin)
-- **`projects`**: Project information and step tracking
-- **`project_steps`**: Individual step data with teacher comments
-- **`submissions`**: Legacy file submissions and feedback
-- **`step_comments`**: Detailed teacher feedback system
-- **`admin_code`**: Secure admin codes for teacher registration
+- **Firebase Auth**: Multi-role email/password authentication
+- **Cloud Firestore**: NoSQL document database for all app data
+- **Firebase Storage**: File storage for submissions and resources
+- **Cloud Functions**: Server-side logic (email, admin operations)
+- **Firebase Hosting**: CDN-backed hosting for the frontend
 
-#### Key Features
+#### Security
 
-- **Authentication**: Multi-role email/password authentication
-- **Storage**: Two buckets (`student-submissions`, `resources`)
-- **Real-time**: Automatic updates across all user interfaces
-- **Row Level Security**: Comprehensive RLS policies (27 policies)
-- **Functions**: Auto-create users, delete teachers, update admin codes
-- **Triggers**: Automatic timestamp updates on data changes
+- **Firestore Rules**: Role-based access control for database documents
+- **Storage Rules**: Secure file access policies
+- **Cloud Functions**: Admin-privileged operations with request validation
 
 ---
 
@@ -159,7 +151,8 @@ Orbilius PM addresses these challenges by providing a digital platform that ensu
 
 - **Node.js**: Version 18 or higher
 - **pnpm**: Package manager (recommended) or npm
-- **Supabase Account**: Free tier available at [supabase.com](https://supabase.com)
+- **Firebase Account**: Free tier available at [firebase.google.com](https://firebase.google.com)
+- **Firebase CLI**: `npm install -g firebase-tools`
 
 ### Step 1: Clone Repository
 
@@ -172,8 +165,9 @@ cd Orbilius
 
 ```bash
 pnpm install
-# or
-npm install
+
+# Install Cloud Functions dependencies
+cd functions && npm install && cd ..
 ```
 
 ### Step 3: Environment Setup
@@ -182,78 +176,22 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` and add your Supabase credentials:
+Edit `.env` and add your Firebase credentials (from Firebase Console > Project Settings):
 
 ```env
-VITE_SUPABASE_URL=your-supabase-project-url
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-### Step 4: Database Setup
+**Note**: The `VITE_` prefix is required for Vite to expose variables to the client.
 
-**Option 1: Automated Setup (Recommended)**
+### Step 4: Firebase Setup
 
-```bash
-pnpm setup
-```
-
-**Option 2: Manual Setup**
-
-Run the complete schema script in your Supabase SQL Editor:
-
-```bash
-# Copy contents of sql/complete_schema.sql
-# Paste into Supabase Dashboard → SQL Editor → Run
-```
-
-This creates:
-
-- ✅ All 6 tables with correct structure
-- ✅ 27 RLS policies
-- ✅ 4 custom functions
-- ✅ 3 automatic triggers
-- ✅ All indexes for performance
-- ✅ Storage buckets
-
-### Step 5: Verify Setup
-
-```bash
-pnpm verify:setup
-```
-
----
-
-## 🗄️ Database Setup
-
-Your database schema is fully defined in [sql/complete_schema.sql](sql/complete_schema.sql). This includes:
-
-### Tables
-
-1. **users** - User profiles with teacher-student relationships
-2. **projects** - Main project tracking with all step statuses
-3. **project_steps** - Individual step submissions and comments
-4. **submissions** - Legacy submission tracking
-5. **step_comments** - Detailed teacher feedback
-6. **admin_code** - Admin access code management
-
-### RLS Policies (27 total)
-
-- Students can view/update their own projects
-- Teachers can view/update assigned projects
-- Admins can view/update all projects
-- Secure storage access policies
-
-### Functions
-
-- `handle_new_user()` - Auto-creates user profile and initial project
-- `delete_teacher()` - Removes teacher and associated students
-- `update_admin_code()` - Securely updates admin codes
-- `update_updated_at_column()` - Automatic timestamp updates
-
-### Storage Buckets
-
-- `student-submissions` (private) - Student file uploads
-- `resources` (public) - Downloadable resources
+See [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) for detailed instructions on configuring Firestore, Storage, and Authentication in the Firebase Console.
 
 ---
 
@@ -291,25 +229,30 @@ pnpm format
 
 ## 🌐 Deployment
 
-### Vercel (Recommended)
+### Firebase Hosting + Cloud Functions
 
-1. Push your code to GitHub
-2. Import project in Vercel
-3. Add environment variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-4. Deploy!
+1. Login to Firebase CLI: `firebase login`
+2. Build and deploy:
 
-### Environment Variables
-
-Ensure these are set in your deployment platform:
-
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+```bash
+pnpm firebase:deploy
 ```
 
-**Note**: The `VITE_` prefix is required for Vite to expose variables to the client.
+Or deploy individually:
+
+```bash
+pnpm firebase:deploy:hosting    # Frontend only
+pnpm firebase:deploy:functions  # Cloud Functions only
+pnpm firebase:deploy:rules      # Firestore/Storage rules only
+```
+
+### Environment Variables for Cloud Functions
+
+```bash
+firebase functions:config:set resend.api_key="your_resend_api_key"
+```
+
+See [FIREBASE_DEPLOYMENT.md](./FIREBASE_DEPLOYMENT.md) for the full deployment guide.
 
 ---
 
@@ -326,12 +269,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 
 ### Backend
 
-- **Supabase** - Backend as a Service
-  - PostgreSQL database
-  - Authentication
-  - Storage
-  - Real-time subscriptions
-  - Row Level Security
+- **Firebase** - Backend as a Service
+  - Cloud Firestore (NoSQL database)
+  - Firebase Authentication
+  - Firebase Storage
+  - Cloud Functions
+  - Firebase Hosting
 
 ### Development Tools
 
@@ -371,14 +314,12 @@ Orbilius/
 │   ├── assets/                     # Images and logos
 │   ├── App.tsx                     # Main app component
 │   ├── main.tsx                    # App entry point
-│   └── supabaseClient.ts           # Supabase config
-├── sql/                            # Database scripts
-│   ├── complete_schema.sql         # Full database setup
-│   ├── export_schema_sections.sql  # Schema inspection
-│   └── *.sql                       # Migration scripts
-├── scripts/                        # Setup automation
-│   ├── setup-supabase.js
-│   └── verify-setup.js
+│   └── firebaseConfig.ts           # Firebase config
+├── functions/                      # Cloud Functions
+├── firebase.json                   # Firebase project config
+├── firestore.rules                 # Firestore security rules
+├── storage.rules                   # Storage security rules
+├── .firebaserc                     # Firebase project alias
 ├── package.json
 ├── vite.config.js
 ├── tsconfig.json
@@ -389,34 +330,35 @@ Orbilius/
 
 ## 🔧 Troubleshooting
 
-### Database Issues
-
-**Problem**: RLS policy errors  
-**Solution**: Run [sql/complete_schema.sql](sql/complete_schema.sql) to reset all policies
-
-**Problem**: Missing tables  
-**Solution**: Use `pnpm setup` or manually run complete_schema.sql
-
 ### Authentication Issues
 
-**Problem**: Users can't sign up  
-**Solution**: Check email confirmation settings in Supabase Dashboard → Authentication → Settings
+**Problem**: Users can't sign up
+**Solution**: Check Firebase Console > Authentication > Sign-in method > Email/Password is enabled
 
-**Problem**: Admin code not working  
-**Solution**: Check `admin_code` table has a valid entry
+**Problem**: Admin code not working
+**Solution**: Check `admin_code` document exists in Firestore
 
 ### Storage Issues
 
-**Problem**: File uploads failing  
+**Problem**: File uploads failing
 **Solution**:
 
-1. Verify buckets exist: `student-submissions`, `resources`
-2. Check RLS policies on storage buckets
-3. Run [sql/fix_storage_policies.sql](sql/fix_storage_policies.sql)
+1. Check Firebase Storage rules allow authenticated writes
+2. Verify storage bucket exists in Firebase Console
+3. Check `storage.rules` file
+
+### Cloud Functions Issues
+
+**Problem**: Functions not responding
+**Solution**:
+
+1. Check logs: `firebase functions:log`
+2. Verify environment config: `firebase functions:config:get`
+3. Redeploy: `pnpm firebase:deploy:functions`
 
 ### PDF Viewing Issues
 
-**Problem**: PDFs not loading  
+**Problem**: PDFs not loading
 **Solution**:
 
 1. Ensure `pdf.worker.min.js` exists in `public/`
@@ -425,7 +367,7 @@ Orbilius/
 
 ### Development Setup
 
-**Problem**: Vite not starting  
+**Problem**: Vite not starting
 **Solution**:
 
 ```bash
@@ -434,7 +376,7 @@ pnpm install
 pnpm dev
 ```
 
-**Problem**: Environment variables not loading  
+**Problem**: Environment variables not loading
 **Solution**:
 
 1. Ensure `.env` file exists in root
@@ -443,70 +385,18 @@ pnpm dev
 
 ### Common Errors
 
-| Error                       | Solution                              |
-| --------------------------- | ------------------------------------- |
-| `Missing VITE_SUPABASE_URL` | Add to `.env` file                    |
-| `RLS policy violation`      | Check user permissions in database    |
-| `Storage bucket not found`  | Create buckets in Supabase Dashboard  |
-| `PDF worker not found`      | Copy `pdf.worker.min.js` to `public/` |
+| Error                           | Solution                                    |
+| ------------------------------- | ------------------------------------------- |
+| `Missing Firebase config`       | Check `.env` has all `VITE_FIREBASE_*` vars |
+| `Permission denied`             | Check Firestore/Storage security rules      |
+| `Functions deployment failed`   | Run `cd functions && npm install`           |
+| `PDF worker not found`          | Copy `pdf.worker.min.js` to `public/`       |
 
 ---
 
 ## 📚 Additional Resources
 
-- [Supabase Documentation](https://supabase.com/docs)
-- [React Documentation](https://react.dev)
-- [Material-UI Documentation](https://mui.com)
-- [Vite Documentation](https://vitejs.dev)
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-## 💬 Support
-
-- **Issues**: [GitHub Issues](https://github.com/orbilius101/Orbilius/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/orbilius101/Orbilius/discussions)
-
----
-
-<div align="center">
-  Made with ❤️ by the Orbilius Team
-</div>
-
-Orbilius PM is an educational project management platform that facilitates collaboration between students, teachers, and administrators in a structured learning environment. The system guides students through a comprehensive project development process while providing teachers with tools to monitor progress, provide feedback, and approve work at each stage. Administrators can manage system settings and certify completed projects for final submission to the Orbilius archive.
-
-### The Problem It Solves
-
-Traditional project management in educational settings often lacks:
-
-- Clear structure and progression tracking
-- Efficient feedback mechanisms between teachers and students
-- Centralized file storage and submission systems
-- Real-time progress monitoring
-- Standardized approval workflows
-- Administrative oversight and certification processes
-- Seamless communication tools
-
----
-
-## 📚 Additional Resources
-
-- [Supabase Documentation](https://supabase.com/docs)
+- [Firebase Documentation](https://firebase.google.com/docs)
 - [React Documentation](https://react.dev)
 - [Material-UI Documentation](https://mui.com)
 - [Vite Documentation](https://vitejs.dev)
