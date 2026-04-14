@@ -1,5 +1,6 @@
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   sendEmailVerification,
   updateProfile,
 } from 'firebase/auth';
@@ -47,45 +48,59 @@ export function useSignupHandlers(
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Update profile with display name
-      await updateProfile(user, {
-        displayName: `${firstName} ${lastName}`,
-      });
-
-      // Check if this is an invitation signup
       const isInvitationSignup = invitationData !== null && invitationData !== undefined;
 
-      // Create user profile in Firestore
-      await createDocument(
-        'users',
-        {
-          id: user.uid,
-          email: user.email,
-          user_type: role,
-          teacher_id: role === 'student' && teacherId ? teacherId : null,
-          first_name: firstName,
-          last_name: lastName,
-          created_at: new Date().toISOString(),
-          verified_via_invitation: isInvitationSignup ? true : false,
-        },
-        user.uid
-      );
-
-      // Only send email verification if this is NOT an invitation signup
-      // (invitation signups already confirmed email by clicking the link)
-      if (!isInvitationSignup) {
-        await sendEmailVerification(user);
+      // Update profile — non-critical, don't rollback on failure
+      try {
+        await updateProfile(user, {
+          displayName: `${firstName} ${lastName}`,
+        });
+      } catch (profileError) {
+        console.error('Failed to update profile display name:', profileError);
       }
 
-      // Delete the pending invitation after successful signup
+      // Create user profile in Firestore — critical step, rollback Auth user on failure
+      try {
+        await createDocument(
+          'users',
+          {
+            id: user.uid,
+            email: user.email,
+            user_type: role,
+            teacher_id: role === 'student' && teacherId ? teacherId : null,
+            first_name: firstName,
+            last_name: lastName,
+            created_at: new Date().toISOString(),
+            verified_via_invitation: isInvitationSignup ? true : false,
+          },
+          user.uid
+        );
+      } catch (firestoreError) {
+        // Firestore doc failed — delete the Auth user so they can retry
+        console.error('Failed to create Firestore user doc, rolling back Auth user:', firestoreError);
+        try {
+          await deleteUser(user);
+        } catch (deleteError) {
+          console.error('Failed to rollback Auth user:', deleteError);
+        }
+        throw new Error('Account creation failed. Please try again.');
+      }
+
+      // Send email verification for non-invitation signups — non-critical
+      if (!isInvitationSignup) {
+        try {
+          await sendEmailVerification(user);
+        } catch (verifyError) {
+          console.error('Failed to send verification email:', verifyError);
+        }
+      }
+
+      // Delete the pending invitation after successful signup — non-critical
       if (isInvitationSignup) {
         try {
-          // If we have invitation data, delete it directly
           if (invitationData && invitationData.id) {
             await deleteDocument('pending_invitations', invitationData.id);
-            console.log('Deleted pending invitation:', invitationData.id);
           } else {
-            // Fallback: search for pending invitation by email
             const { data: pendingInvites } = await getDocuments(
               'pending_invitations',
               buildConstraints({
@@ -95,47 +110,42 @@ export function useSignupHandlers(
 
             if (pendingInvites && pendingInvites.length > 0) {
               await deleteDocument('pending_invitations', pendingInvites[0].id);
-              console.log('Deleted pending invitation for', user.email);
             }
           }
         } catch (error) {
-          // Don't fail signup if we can't delete the pending invitation
           console.error('Error deleting pending invitation:', error);
         }
       }
 
       setLoading(false);
 
-      // Different messaging based on whether email verification was sent
+      // Redirect based on signup type
       if (isInvitationSignup) {
-        // For invitation signups, user is already verified - redirect to dashboard
         if (role === 'student') {
-          // Check if student has any projects
-          const { data: projectData, error: projectError } = await getDocuments(
-            'projects',
-            buildConstraints({
-              eq: { student_id: user.uid },
-              limit: 1,
-            })
-          );
+          try {
+            const { data: projectData } = await getDocuments(
+              'projects',
+              buildConstraints({
+                eq: { student_id: user.uid },
+                limit: 1,
+              })
+            );
 
-          if (projectError) {
-            showAlert('Account created! Redirecting to dashboard...', 'Success');
-            navigate('/student/dashboard');
-          } else if (!projectData || (projectData as any[]).length === 0) {
-            // No projects found, redirect to create project screen
-            navigate('/createProject');
-          } else {
+            if (!projectData || (projectData as any[]).length === 0) {
+              navigate('/createProject');
+            } else {
+              navigate('/student/dashboard');
+            }
+          } catch {
+            // Project check failed — account is created, just go to dashboard
             navigate('/student/dashboard');
           }
         } else if (role === 'teacher') {
           navigate('/teacher/dashboard');
         } else {
-          // Fallback
           navigate('/login');
         }
       } else {
-        // For non-invitation signups, require email verification
         if (setShowEmailModal) {
           setShowEmailModal(true);
         } else {
