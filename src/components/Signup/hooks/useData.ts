@@ -37,6 +37,7 @@ export function useSignupData(): SignupData & {
         'pending_invitations',
         buildConstraints({
           eq: { invitation_code: inviteCode, status: 'pending' },
+          limit: 1,
         })
       ).then(({ data, error }) => {
         setLoadingInvitation(false);

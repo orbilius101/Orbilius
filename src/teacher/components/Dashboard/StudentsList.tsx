@@ -277,14 +277,18 @@ export default function StudentsList({
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={student.status === 'pending' ? 'Invitation Sent' : 'Active'}
+                      label={
+                        student.status === 'pending'
+                          ? `Invitation Sent${student.invited_at ? ` ${formatDate(student.invited_at)}` : ''}`
+                          : 'Active'
+                      }
                       color={student.status === 'pending' ? 'warning' : 'success'}
                       size="small"
                     />
                   </TableCell>
                   <TableCell>
                     {student.status === 'pending'
-                      ? formatDate(student.invited_at || '')
+                      ? '—'
                       : formatDate(student.created_at)}
                   </TableCell>
                   <TableCell align="center">
