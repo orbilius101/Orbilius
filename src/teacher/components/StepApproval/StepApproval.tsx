@@ -5,7 +5,6 @@ import {
   Container,
   Typography,
   Button,
-  TextField,
   Paper,
   Stack,
   CircularProgress,
@@ -29,6 +28,7 @@ import {
 import { useStepApprovalData } from './hooks/useData';
 import { useStepApprovalHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
+import CommentThread from '../../../components/CommentThread/CommentThread';
 
 // Use CDN that matches installed pdfjs-dist version
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -101,8 +101,6 @@ export default function StepApproval() {
     submissionFile,
     submissionDownloadUrl,
     youtubeLink,
-    comment,
-    setComment,
     numPages,
     pageNumber,
     setPageNumber,
@@ -111,6 +109,7 @@ export default function StepApproval() {
     isApproving,
     isSavingComment,
     stepNumber,
+    projectId,
     navigate,
     alertState,
     closeAlert,
@@ -406,14 +405,10 @@ export default function StepApproval() {
             {/* Bottom panel - always visible */}
             <Paper sx={{ flexShrink: 0, p: 2 }}>
               <Stack spacing={2}>
-                <TextField
-                  label="Teacher Comments (Optional)"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Enter comments for the student..."
-                  multiline
-                  rows={3}
-                  fullWidth
+                <CommentThread
+                  projectId={projectId!}
+                  stepNumber={parseInt(stepNumber!)}
+                  maxHeight="200px"
                 />
 
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
@@ -423,9 +418,9 @@ export default function StepApproval() {
                       popupRef.current?.close();
                       handleSaveComment();
                     }}
-                    disabled={!comment.trim() || isSavingComment}
+                    disabled={isSavingComment}
                   >
-                    {isSavingComment ? 'Saving...' : 'Save Comment & Return to Student'}
+                    {isSavingComment ? 'Saving...' : 'Return to Student for Revision'}
                   </Button>
                   <Button
                     variant="contained"

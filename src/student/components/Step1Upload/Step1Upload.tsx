@@ -13,6 +13,7 @@ import React, { useState, useRef } from 'react';
 import { useStep1UploadData } from './hooks/useData';
 import { useStep1UploadHandlers } from './hooks/useHandlers';
 import SharedHeader from '../SharedHeader/SharedHeader';
+import CommentThread from '../../../components/CommentThread/CommentThread';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
@@ -241,6 +242,12 @@ export default function Step1Upload() {
                 Uploading your file...
               </Typography>
             </Box>
+          )}
+
+          {projectId && (
+            <Paper sx={{ p: 2 }}>
+              <CommentThread projectId={projectId} stepNumber={1} />
+            </Paper>
           )}
         </Stack>
       </Container>

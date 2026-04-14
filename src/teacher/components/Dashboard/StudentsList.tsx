@@ -14,6 +14,7 @@ import {
   Paper,
   Collapse,
   Button,
+  Badge,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -24,8 +25,11 @@ import {
   CheckCircle as ApprovedIcon,
   RadioButtonUnchecked as NotStartedIcon,
   Visibility as ViewIcon,
+  ChatBubbleOutline as ChatBubbleOutlineIcon,
 } from '@mui/icons-material';
 import { Project } from '../../../types';
+import CommentThread from '../../../components/CommentThread/CommentThread';
+import { getDocuments, buildConstraints } from '../../../utils/firebaseHelpers';
 
 interface Student {
   id: string;
@@ -74,6 +78,46 @@ export default function StudentsList({
     return new Set(students.map((s) => s.id));
   });
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [lastCommentDates, setLastCommentDates] = useState<Record<string, string>>({});
+
+  // Fetch comment counts and last comment date per project
+  useEffect(() => {
+    const fetchCounts = async () => {
+      const counts: Record<string, number> = {};
+      const dates: Record<string, string> = {};
+      for (const project of projects) {
+        try {
+          const { data } = await getDocuments(
+            'step_comments',
+            buildConstraints({ eq: { project_id: project.project_id } })
+          );
+          const comments = (data as any[]) || [];
+          counts[project.project_id] = comments.length;
+          if (comments.length > 0) {
+            const latest = comments.reduce((a, b) => {
+              const aTime = a.created_at?.seconds || 0;
+              const bTime = b.created_at?.seconds || 0;
+              return aTime > bTime ? a : b;
+            });
+            const ts = latest.created_at;
+            const date = ts?.toDate ? ts.toDate() : new Date(ts?.seconds ? ts.seconds * 1000 : ts);
+            dates[project.project_id] = date.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+            });
+          }
+        } catch {
+          counts[project.project_id] = 0;
+        }
+      }
+      setCommentCounts(counts);
+      setLastCommentDates(dates);
+    };
+    if (projects.length > 0) fetchCounts();
+  }, [projects]);
 
   // Update expanded state when allExpanded changes
   useEffect(() => {
@@ -354,6 +398,7 @@ export default function StudentsList({
                                 <TableCell sx={{ fontWeight: 600, width: '40%' }}>
                                   Progress
                                 </TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: '50px' }} />
                                 <TableCell sx={{ fontWeight: 600, width: '130px' }}>
                                   Status
                                 </TableCell>
@@ -370,28 +415,26 @@ export default function StudentsList({
                                   <React.Fragment key={project.project_id}>
                                     <TableRow>
                                       <TableCell sx={{ py: 0.5 }}>
-                                        {activeSteps.length > 0 && (
-                                          <Tooltip
-                                            title={
-                                              isProjectExpanded
-                                                ? 'Hide submissions'
-                                                : 'View submissions'
-                                            }
+                                        <Tooltip
+                                          title={
+                                            isProjectExpanded
+                                              ? 'Hide details'
+                                              : 'View details'
+                                          }
+                                        >
+                                          <IconButton
+                                            size="small"
+                                            onClick={() => toggleProject(project.project_id)}
+                                            sx={{
+                                              transform: isProjectExpanded
+                                                ? 'rotate(180deg)'
+                                                : 'rotate(0deg)',
+                                              transition: 'transform 0.3s',
+                                            }}
                                           >
-                                            <IconButton
-                                              size="small"
-                                              onClick={() => toggleProject(project.project_id)}
-                                              sx={{
-                                                transform: isProjectExpanded
-                                                  ? 'rotate(180deg)'
-                                                  : 'rotate(0deg)',
-                                                transition: 'transform 0.3s',
-                                              }}
-                                            >
-                                              <ExpandMoreIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                        )}
+                                            <ExpandMoreIcon fontSize="small" />
+                                          </IconButton>
+                                        </Tooltip>
                                       </TableCell>
                                       <TableCell>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -536,6 +579,30 @@ export default function StudentsList({
                                           </Box>
                                         </Box>
                                       </TableCell>
+                                      <TableCell sx={{ width: '50px' }} align="center">
+                                        {(commentCounts[project.project_id] || 0) > 0 && (
+                                          <Tooltip title={`${commentCounts[project.project_id]} comment${commentCounts[project.project_id] === 1 ? '' : 's'}${lastCommentDates[project.project_id] ? ` · Last: ${lastCommentDates[project.project_id]}` : ''}`}>
+                                            <IconButton
+                                              size="small"
+                                              onClick={() => {
+                                                setExpandedProjects((prev) => {
+                                                  const newSet = new Set(prev);
+                                                  newSet.add(project.project_id);
+                                                  return newSet;
+                                                });
+                                              }}
+                                            >
+                                              <Badge
+                                                badgeContent={commentCounts[project.project_id]}
+                                                color="primary"
+                                                max={99}
+                                              >
+                                                <ChatBubbleOutlineIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                                              </Badge>
+                                            </IconButton>
+                                          </Tooltip>
+                                        )}
+                                      </TableCell>
                                       <TableCell sx={{ width: '130px' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                           {getStatusIcon(getCurrentStepSubmissionStatus(project))}
@@ -557,21 +624,21 @@ export default function StudentsList({
                                       </TableCell>
                                     </TableRow>
 
-                                    {/* Collapsible steps submissions table */}
-                                    {activeSteps.length > 0 && (
-                                      <TableRow>
-                                        <TableCell
-                                          colSpan={6}
-                                          sx={{
-                                            py: 0,
-                                            borderBottom: isProjectExpanded ? undefined : 'none',
-                                          }}
+                                    {/* Collapsible submissions & comments */}
+                                    <TableRow>
+                                      <TableCell
+                                        colSpan={7}
+                                        sx={{
+                                          py: 0,
+                                          borderBottom: isProjectExpanded ? undefined : 'none',
+                                        }}
+                                      >
+                                        <Collapse
+                                          in={isProjectExpanded}
+                                          timeout="auto"
+                                          unmountOnExit
                                         >
-                                          <Collapse
-                                            in={isProjectExpanded}
-                                            timeout="auto"
-                                            unmountOnExit
-                                          >
+                                          {activeSteps.length > 0 && (
                                             <Box
                                               sx={{
                                                 mx: 2,
@@ -712,10 +779,41 @@ export default function StudentsList({
                                                 </TableBody>
                                               </Table>
                                             </Box>
-                                          </Collapse>
-                                        </TableCell>
-                                      </TableRow>
-                                    )}
+                                          )}
+                                          {/* Project comment thread */}
+                                          <Box
+                                            sx={{
+                                              mx: 2,
+                                              my: 1,
+                                              p: 1.5,
+                                              bgcolor: '#071e3d',
+                                              borderRadius: 1,
+                                              border: '1px solid',
+                                              borderColor: 'divider',
+                                            }}
+                                          >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                                              <ChatBubbleOutlineIcon sx={{ fontSize: '0.9rem', color: 'text.secondary' }} />
+                                              <Typography
+                                                variant="caption"
+                                                sx={{
+                                                  fontWeight: 600,
+                                                  color: 'text.secondary',
+                                                  textTransform: 'uppercase',
+                                                  letterSpacing: 0.5,
+                                                }}
+                                              >
+                                                Comments
+                                              </Typography>
+                                            </Box>
+                                            <CommentThread
+                                              projectId={project.project_id}
+                                              maxHeight="250px"
+                                            />
+                                          </Box>
+                                        </Collapse>
+                                      </TableCell>
+                                    </TableRow>
                                   </React.Fragment>
                                 );
                               })}

@@ -29,6 +29,7 @@ import { useDashboardData } from './hooks/useData';
 import { useDashboardHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 import SharedModal from '../SharedModal/SharedModal';
+import CommentThread from '../../../components/CommentThread/CommentThread';
 import { auth } from '../../../firebaseConfig';
 import { useTheme } from '../../../contexts/ThemeContext';
 import yellowLogo from '../../../assets/merle-386x386-yellow.svg';
@@ -330,6 +331,16 @@ export default function StudentDashboard() {
               </TableContainer>
             ) : (
               <Typography>No project found.</Typography>
+            )}
+
+            {project && (
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>Messages</Typography>
+                <CommentThread
+                  projectId={(project as any).project_id || (project as any).id}
+                  maxHeight="300px"
+                />
+              </Paper>
             )}
 
             <Stack

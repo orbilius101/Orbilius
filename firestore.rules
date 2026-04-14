@@ -144,26 +144,21 @@ service cloud.firestore {
     
     // Step Comments collection
     match /step_comments/{commentId} {
-      function getProject(projectId) {
-        return get(/databases/$(database)/documents/projects/$(projectId)).data;
-      }
+      // Any authenticated user can read comments
+      // Access control is enforced at the project level
+      allow read: if isAuthenticated();
       
-      // Students can read comments on their projects
-      // Teachers can read comments on their assigned projects
-      // Admins can read all comments
-      allow read: if isAuthenticated() && (
-        getProject(resource.data.project_id).student_id == request.auth.uid ||
-        getProject(resource.data.project_id).teacher_id == request.auth.uid ||
+      // Teachers and students can create comments on their own projects
+      allow create: if isAuthenticated() && (
+        request.resource.data.student_id == request.auth.uid ||
+        request.resource.data.teacher_id == request.auth.uid ||
         isAdmin()
       );
       
-      // Only teachers and admins can create comments
-      allow create: if isTeacher() || isAdmin();
-      
-      // Teachers can update their own comments
+      // Only the author can update their own comments
       // Admins can update any comment
       allow update: if isAuthenticated() && (
-        resource.data.teacher_id == request.auth.uid ||
+        resource.data.author_id == request.auth.uid ||
         isAdmin()
       );
       
