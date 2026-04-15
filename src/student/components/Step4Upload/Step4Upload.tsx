@@ -14,6 +14,7 @@ import { useStep4UploadData } from './hooks/useData';
 import { useStep4UploadHandlers } from './hooks/useHandlers';
 import SharedHeader from '../SharedHeader/SharedHeader';
 import CommentThread from '../../../components/CommentThread/CommentThread';
+import SubmissionHistory from '../../../components/SubmissionHistory/SubmissionHistory';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
@@ -219,6 +220,12 @@ export default function Step4Upload() {
                 Uploading your file...
               </Typography>
             </Box>
+          )}
+
+          {projectId && (
+            <Paper sx={{ p: 2 }}>
+              <SubmissionHistory projectId={projectId} stepNumber={4} />
+            </Paper>
           )}
 
           {projectId && (
