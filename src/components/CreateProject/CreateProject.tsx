@@ -85,6 +85,7 @@ export default function CreateProject() {
               required
               fullWidth
               variant="outlined"
+              helperText="Unsure of your project? Provide a temporary name, e.g. History Project, Art Project. You can change this later."
             />
 
             <FormControl component="fieldset" required>
