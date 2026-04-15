@@ -121,8 +121,6 @@ export default function TeacherDashboard() {
 
   const handleEmailProjectStudent = (project: Project) => {
     const studentEmail = project.student?.email || project.email;
-    const studentFirstName = project.student?.first_name || project.first_name;
-    const currentStepStatus = project[`step${project.current_step}_status`];
     const currentStepName = getCurrentStepName(project.current_step);
 
     if (!studentEmail) {
@@ -130,38 +128,9 @@ export default function TeacherDashboard() {
       return;
     }
 
-    let subject, body;
+    const subject = `${project.project_title} - Step ${project.current_step}: ${currentStepName}`;
 
-    if (currentStepStatus === 'Submitted') {
-      subject = `Feedback on ${project.project_title} - Step ${project.current_step}`;
-      body = `Hello ${studentFirstName},
-
-I have reviewed your submission for Step ${project.current_step}: ${currentStepName} of your project "${project.project_title}".
-
-Please log into the Orbilius platform to view my feedback and next steps.
-
-If you have any questions, please don't hesitate to reach out.
-
-Best regards,
-${userProfile?.first_name || 'Your Teacher'}`;
-    } else {
-      subject = `Follow-up on ${project.project_title} - Step ${project.current_step}`;
-      body = `Hello ${studentFirstName},
-
-I wanted to follow up on your project "${project.project_title}".
-
-You are currently on Step ${project.current_step}: ${currentStepName}.
-Current status: ${currentStepStatus}
-
-Please log into the Orbilius platform to continue your work or view any feedback.
-
-If you need any assistance, please let me know.
-
-Best regards,
-${userProfile?.first_name || 'Your Teacher'}`;
-    }
-
-    const mailtoLink = `mailto:${studentEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const mailtoLink = `mailto:${studentEmail}?subject=${encodeURIComponent(subject)}`;
     window.open(mailtoLink);
   };
 
