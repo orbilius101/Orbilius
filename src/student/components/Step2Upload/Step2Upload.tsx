@@ -149,6 +149,13 @@ export default function Step2Upload() {
               <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
                 You may close this window or return to your dashboard.
               </Typography>
+              <Button
+                variant="contained"
+                onClick={() => navigate('/student/dashboard')}
+                sx={{ mt: 2, bgcolor: 'white', color: 'success.dark', '&:hover': { bgcolor: 'grey.200' } }}
+              >
+                Return to Dashboard
+              </Button>
             </Paper>
           ) : (
             <Paper
