@@ -26,6 +26,7 @@ import {
   RadioButtonUnchecked as NotStartedIcon,
   Visibility as ViewIcon,
   ChatBubbleOutline as ChatBubbleOutlineIcon,
+  Assignment as RevisionIcon,
 } from '@mui/icons-material';
 import { Project } from '../../../types';
 import CommentThread from '../../../components/CommentThread/CommentThread';
@@ -163,7 +164,7 @@ export default function StudentsList({
     ];
     return [1, 2, 3, 4, 5]
       .map((n) => ({ stepNumber: n, name: stepNames[n - 1], status: project[`step${n}_status`] }))
-      .filter((s) => s.status === 'Submitted' || s.status === 'Approved');
+      .filter((s) => s.status === 'Submitted' || s.status === 'Approved' || s.status === 'Revision Requested');
   };
 
   const getStatusIcon = (status: string) => {
@@ -176,6 +177,8 @@ export default function StudentsList({
         return <SubmittedIcon fontSize="small" sx={{ color: 'info.main', mr: 0.5 }} />;
       case 'Approved':
         return <ApprovedIcon fontSize="small" sx={{ color: 'success.main', mr: 0.5 }} />;
+      case 'Revision Requested':
+        return <RevisionIcon fontSize="small" sx={{ color: 'error.main', mr: 0.5 }} />;
       default:
         return null;
     }
@@ -200,6 +203,7 @@ export default function StudentsList({
         isApproved: stepStatus === 'Approved',
         isInProgress: i === project.current_step && stepStatus !== 'Approved',
         isSubmitted: stepStatus === 'Submitted',
+        isRevisionRequested: stepStatus === 'Revision Requested',
         stepName: stepNames[i - 1],
         status: stepStatus || 'Not Started',
         stepNumber: i,
@@ -394,12 +398,12 @@ export default function StudentsList({
                             <TableHead>
                               <TableRow sx={{ bgcolor: 'action.hover' }}>
                                 <TableCell width="32px" />
-                                <TableCell sx={{ fontWeight: 600 }}>Project Title</TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: '20%' }}>Project Title</TableCell>
                                 <TableCell sx={{ fontWeight: 600, width: '40%' }}>
                                   Progress
                                 </TableCell>
                                 <TableCell sx={{ fontWeight: 600, width: '50px' }} />
-                                <TableCell sx={{ fontWeight: 600, width: '130px' }}>
+                                <TableCell sx={{ fontWeight: 600, width: '180px' }}>
                                   Status
                                 </TableCell>
                                 <TableCell sx={{ fontWeight: 600, width: '80px' }}>
@@ -438,8 +442,9 @@ export default function StudentsList({
                                       </TableCell>
                                       <TableCell>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                          {project[`step${project.current_step}_status`] ===
-                                          'Submitted' ? (
+                                          {['Submitted', 'Revision Requested'].includes(
+                                            project[`step${project.current_step}_status`]
+                                          ) ? (
                                             <Typography
                                               component="span"
                                               onClick={() =>
@@ -529,16 +534,19 @@ export default function StudentsList({
                                                           height: 8,
                                                           bgcolor: segment.isApproved
                                                             ? 'success.main'
-                                                            : segment.isInProgress
-                                                              ? 'warning.main'
-                                                              : 'grey.300',
+                                                            : segment.isRevisionRequested
+                                                              ? 'error.main'
+                                                              : segment.isInProgress
+                                                                ? 'warning.main'
+                                                                : 'grey.300',
                                                           background: segment.isSubmitted
                                                             ? 'repeating-linear-gradient(45deg, #ffd700, #ffd700 4px, #4caf50 4px, #4caf50 8px)'
                                                             : undefined,
                                                           borderRadius: 1,
                                                           cursor:
                                                             segment.isApproved ||
-                                                            segment.isSubmitted
+                                                            segment.isSubmitted ||
+                                                            segment.isRevisionRequested
                                                               ? 'pointer'
                                                               : 'default',
                                                           transition: 'all 0.2s',
@@ -603,7 +611,7 @@ export default function StudentsList({
                                           </Tooltip>
                                         )}
                                       </TableCell>
-                                      <TableCell sx={{ width: '130px' }}>
+                                      <TableCell sx={{ width: '180px' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                           {getStatusIcon(getCurrentStepSubmissionStatus(project))}
                                           <Typography variant="body2">

@@ -31,7 +31,7 @@ export function useStepApprovalHandlers(data: any) {
     try {
       const currentStepStatusField = `step${stepNumber}_status`;
       const updateData = {
-        [currentStepStatusField]: 'In Progress',
+        [currentStepStatusField]: 'Revision Requested',
         current_step: parseInt(stepNumber),
       };
 
@@ -42,7 +42,7 @@ export function useStepApprovalHandlers(data: any) {
         showAlert('Error updating status. Please try again.', 'Error');
       } else {
         showAlert(
-          'Step set back to In Progress. Student can now see feedback and resubmit.',
+          'Revision requested. Student will see your feedback and can resubmit.',
           'Success'
         );
       }

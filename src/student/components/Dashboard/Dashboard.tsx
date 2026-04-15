@@ -24,6 +24,8 @@ import {
   CheckCircle as CheckCircleIcon,
   RadioButtonUnchecked as NotStartedIcon,
   Logout as LogoutIcon,
+  Assignment as RevisionIcon,
+  ChatBubbleOutline as ChatBubbleOutlineIcon,
 } from '@mui/icons-material';
 import { useDashboardData } from './hooks/useData';
 import { useDashboardHandlers } from './hooks/useHandlers';
@@ -91,6 +93,8 @@ export default function StudentDashboard() {
           return <SendIcon fontSize="small" sx={{ color: 'info.main' }} />;
         case 'Approved':
           return <CheckCircleIcon fontSize="small" sx={{ color: 'success.main' }} />;
+        case 'Revision Requested':
+          return <RevisionIcon fontSize="small" sx={{ color: 'error.main' }} />;
         default:
           return null;
       }
@@ -110,6 +114,8 @@ export default function StudentDashboard() {
       if (status === 'In Progress' || status === 'Not Started') {
         return `/student/step${stepNum}/step${stepName}Index`;
       } else if (status === 'Submitted' || status === 'Approved') {
+        return `/student/step${stepNum}/step${stepName}Upload`;
+      } else if (status === 'Revision Requested') {
         return `/student/step${stepNum}/step${stepName}Upload`;
       }
       return null;
@@ -155,7 +161,18 @@ export default function StudentDashboard() {
         <TableCell>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {getStatusIcon()}
-            {status}
+            {status === 'Revision Requested' ? (
+              <Chip
+                label="Revision Requested"
+                color="error"
+                size="small"
+                icon={<ChatBubbleOutlineIcon />}
+                onClick={handleStepClick}
+                sx={{ cursor: 'pointer', fontWeight: 600 }}
+              />
+            ) : (
+              status
+            )}
           </Box>
         </TableCell>
         <TableCell>
