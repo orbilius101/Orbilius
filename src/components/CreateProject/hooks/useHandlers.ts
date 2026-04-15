@@ -3,18 +3,29 @@ import { createDocument } from '../../../utils/firebaseHelpers';
 export function useCreateProjectHandlers(data: any) {
   const { projectTitle, grade, userData, navigate, showAlert } = data;
 
-  // Function to generate due dates with 1 month intervals
+  // Generate due dates based on IB project cycle intervals
   const generateDueDates = () => {
-    const today = new Date();
-    const dueDates: any = {};
+    const start = new Date();
+    const addDays = (date: Date, days: number) => {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    };
+    const fmt = (d: Date) => d.toISOString().split('T')[0];
 
-    for (let i = 1; i <= 5; i++) {
-      const dueDate = new Date(today);
-      dueDate.setMonth(today.getMonth() + i); // Add i months from today
-      dueDates[`step${i}`] = dueDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-    }
+    const step1 = addDays(start, 21);        // 3 weeks after start
+    const step2 = addDays(step1, 7);         // 1 week after step 1
+    const step3 = addDays(step2, 7);         // 1 week after step 2
+    const step4 = addDays(step3, 70);        // 10 weeks after step 3
+    const step5 = addDays(step4, 7);         // 1 week after step 4
 
-    return dueDates;
+    return {
+      step1: fmt(step1),
+      step2: fmt(step2),
+      step3: fmt(step3),
+      step4: fmt(step4),
+      step5: fmt(step5),
+    };
   };
 
   const handleSubmit = async (e) => {
