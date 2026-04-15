@@ -165,6 +165,13 @@ export default function Step5Upload() {
                   </Link>
                 </Typography>
               )}
+              <Button
+                variant="contained"
+                onClick={() => navigate('/student/dashboard')}
+                sx={{ mt: 2, bgcolor: 'white', color: 'success.dark', '&:hover': { bgcolor: 'grey.200' } }}
+              >
+                Return to Dashboard
+              </Button>
             </Paper>
           ) : (
             <Stack spacing={2}>
