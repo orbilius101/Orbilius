@@ -423,7 +423,8 @@ export default function StepApproval() {
 
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
                   <Button
-                    variant="outlined"
+                    variant="contained"
+                    color="warning"
                     onClick={async () => {
                       popupRef.current?.close();
                       // Submit any text in the comment field first
