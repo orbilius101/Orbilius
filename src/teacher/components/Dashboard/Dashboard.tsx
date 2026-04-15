@@ -203,8 +203,8 @@ ${userProfile?.first_name || 'Your Teacher'}`;
     const stepNumber = stepIndex + 1;
     const stepStatus = project[`step${stepNumber}_status`];
 
-    // Navigate to approval page for submitted steps
-    if (stepStatus === 'Submitted') {
+    // Navigate to approval page for submitted or revision-requested steps
+    if (stepStatus === 'Submitted' || stepStatus === 'Revision Requested') {
       navigate(`/teacher/step-approval/${project.project_id}/${stepNumber}`);
     }
     // Open modal for approved steps

@@ -129,6 +129,12 @@ export default function Step3Upload() {
           )}
           {errorMsg && <Alert severity="error">{errorMsg}</Alert>}
 
+          {status === 'Revision Requested' && (
+            <Alert severity="warning" sx={{ fontWeight: 500 }}>
+              Your teacher has requested a revision for this step. Please review their comments below and resubmit.
+            </Alert>
+          )}
+
           {status === 'Submitted' || status === 'Approved' ? (
             <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'success.dark', color: 'white' }}>
               <CheckCircleIcon sx={{ fontSize: 60, mb: 2 }} />

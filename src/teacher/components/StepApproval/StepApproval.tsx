@@ -29,6 +29,7 @@ import { useStepApprovalData } from './hooks/useData';
 import { useStepApprovalHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 import CommentThread from '../../../components/CommentThread/CommentThread';
+import type { CommentThreadHandle } from '../../../components/CommentThread/CommentThread';
 
 // Use CDN that matches installed pdfjs-dist version
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -77,6 +78,7 @@ export default function StepApproval() {
   const [isPoppedOut, setIsPoppedOut] = useState(false);
   const popupRef = useRef<Window | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const commentThreadRef = useRef<CommentThreadHandle>(null);
   const pdfPageWidthRef = useRef<number>(612);
   const pdfPageHeightRef = useRef<number>(792);
 
@@ -114,6 +116,8 @@ export default function StepApproval() {
     alertState,
     closeAlert,
   } = data;
+
+  const [navigateOnClose, setNavigateOnClose] = useState(false);
 
   const { handleSaveComment, handleApprove, getStepName } = handlers;
 
@@ -406,6 +410,7 @@ export default function StepApproval() {
             <Paper sx={{ flexShrink: 0, p: 2 }}>
               <Stack spacing={2}>
                 <CommentThread
+                  ref={commentThreadRef}
                   projectId={projectId!}
                   stepNumber={parseInt(stepNumber!)}
                   maxHeight="200px"
@@ -414,9 +419,14 @@ export default function StepApproval() {
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
                   <Button
                     variant="outlined"
-                    onClick={() => {
+                    onClick={async () => {
                       popupRef.current?.close();
-                      handleSaveComment();
+                      // Submit any text in the comment field first
+                      if (commentThreadRef.current?.getCommentText()) {
+                        await commentThreadRef.current.submitComment();
+                      }
+                      await handleSaveComment();
+                      setNavigateOnClose(true);
                     }}
                     disabled={isSavingComment}
                   >
@@ -506,7 +516,13 @@ export default function StepApproval() {
         open={alertState.open}
         title={alertState.title}
         message={alertState.message}
-        onClose={closeAlert}
+        onClose={() => {
+          closeAlert();
+          if (navigateOnClose) {
+            setNavigateOnClose(false);
+            navigate('/teacher/dashboard');
+          }
+        }}
       />
     </Box>
   );

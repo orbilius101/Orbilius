@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   Box,
   Typography,
@@ -42,7 +42,12 @@ interface CommentThreadProps {
   maxHeight?: string;
 }
 
-export default function CommentThread({ projectId, studentId, teacherId, stepNumber, maxHeight = '300px' }: CommentThreadProps) {
+export interface CommentThreadHandle {
+  submitComment: () => Promise<void>;
+  getCommentText: () => string;
+}
+
+const CommentThread = forwardRef<CommentThreadHandle, CommentThreadProps>(function CommentThread({ projectId, studentId, teacherId, stepNumber, maxHeight = '300px' }, ref) {
   const [comments, setComments] = useState<StepComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
@@ -156,6 +161,11 @@ export default function CommentThread({ projectId, studentId, teacherId, stepNum
       handleSend();
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    submitComment: handleSend,
+    getCommentText: () => newComment.trim(),
+  }));
 
   const formatTimestamp = (ts: any): string => {
     if (!ts) return '';
@@ -365,4 +375,6 @@ export default function CommentThread({ projectId, studentId, teacherId, stepNum
       </Box>
     </Box>
   );
-}
+});
+
+export default CommentThread;

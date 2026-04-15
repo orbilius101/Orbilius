@@ -134,6 +134,12 @@ export default function Step1Upload() {
           )}
           {errorMsg && <Alert severity="error">{errorMsg}</Alert>}
 
+          {status === 'Revision Requested' && (
+            <Alert severity="warning" sx={{ fontWeight: 500 }}>
+              Your teacher has requested a revision for this step. Please review their comments below and resubmit.
+            </Alert>
+          )}
+
           {status === 'Submitted' || status === 'Approved' ? (
             <Paper
               sx={{
