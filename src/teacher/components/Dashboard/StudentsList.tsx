@@ -30,6 +30,7 @@ import {
 } from '@mui/icons-material';
 import { Project } from '../../../types';
 import CommentThread from '../../../components/CommentThread/CommentThread';
+import SubmissionHistory from '../../../components/SubmissionHistory/SubmissionHistory';
 import { getDocuments, buildConstraints } from '../../../utils/firebaseHelpers';
 
 interface Student {
@@ -788,6 +789,30 @@ export default function StudentsList({
                                               </Table>
                                             </Box>
                                           )}
+
+                                          {/* Submission history per step */}
+                                          {activeSteps.length > 0 && (
+                                            <Box
+                                              sx={{
+                                                mx: 2,
+                                                my: 1,
+                                                p: 1.5,
+                                                bgcolor: '#071e3d',
+                                                borderRadius: 1,
+                                                border: '1px solid',
+                                                borderColor: 'divider',
+                                              }}
+                                            >
+                                              {activeSteps.map((step) => (
+                                                <SubmissionHistory
+                                                  key={step.stepNumber}
+                                                  projectId={project.project_id}
+                                                  stepNumber={step.stepNumber}
+                                                />
+                                              ))}
+                                            </Box>
+                                          )}
+
                                           {/* Project comment thread */}
                                           <Box
                                             sx={{

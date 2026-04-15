@@ -30,6 +30,7 @@ import { useStepApprovalHandlers } from './hooks/useHandlers';
 import AlertDialog from '../../../components/AlertDialog/AlertDialog';
 import CommentThread from '../../../components/CommentThread/CommentThread';
 import type { CommentThreadHandle } from '../../../components/CommentThread/CommentThread';
+import SubmissionHistory from '../../../components/SubmissionHistory/SubmissionHistory';
 
 // Use CDN that matches installed pdfjs-dist version
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -409,6 +410,10 @@ export default function StepApproval() {
             {/* Bottom panel - always visible */}
             <Paper sx={{ flexShrink: 0, p: 2 }}>
               <Stack spacing={2}>
+                <SubmissionHistory
+                  projectId={projectId!}
+                  stepNumber={parseInt(stepNumber!)}
+                />
                 <CommentThread
                   ref={commentThreadRef}
                   projectId={projectId!}
