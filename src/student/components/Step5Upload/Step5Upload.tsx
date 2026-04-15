@@ -149,6 +149,9 @@ export default function Step5Upload() {
                 Your submission has been uploaded and is{' '}
                 {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
               </Typography>
+              <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
+                You may close this window or return to your dashboard.
+              </Typography>
               {youtubeLink && (
                 <Typography variant="body2" sx={{ mt: 1 }}>
                   <strong>YouTube Link:</strong>{' '}
@@ -232,7 +235,7 @@ export default function Step5Upload() {
               startIcon={<CloudUploadIcon />}
               sx={{ py: 2, fontSize: '1.1rem', fontWeight: 600 }}
             >
-              {uploading ? 'Uploading...' : 'Submit Project Closeout'}
+              {uploading ? 'Submitting...' : 'Submit to Teacher'}
             </Button>
           )}
 

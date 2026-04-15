@@ -158,6 +158,9 @@ export default function Step1Upload() {
                 Your submission has been uploaded and is{' '}
                 {status === 'Approved' ? 'approved' : 'awaiting teacher review'}.
               </Typography>
+              <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
+                You may close this window or return to your dashboard.
+              </Typography>
             </Paper>
           ) : (
             <Paper
@@ -233,8 +236,8 @@ export default function Step1Upload() {
               {loading
                 ? 'Loading...'
                 : uploading
-                  ? 'Uploading...'
-                  : 'Upload Initial Research Bibliography'}
+                  ? 'Submitting...'
+                  : 'Submit to Teacher'}
             </Button>
           )}
 
