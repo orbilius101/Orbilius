@@ -80,12 +80,16 @@ export default function CreateProject() {
             <TextField
               type="text"
               label="Project Title"
+              placeholder="e.g. History Project, Art Project"
               value={projectTitle}
               onChange={(e) => setProjectTitle(e.target.value)}
               required
               fullWidth
               variant="outlined"
-              helperText="Unsure of your project? Provide a temporary name, e.g. History Project, Art Project. You can change this later."
+              helperText="Unsure of your project? Provide a temporary name. You can change this later."
+              FormHelperTextProps={{
+                sx: { fontStyle: 'italic', fontSize: '0.85rem', color: 'text.secondary' },
+              }}
             />
 
             <FormControl component="fieldset" required>
