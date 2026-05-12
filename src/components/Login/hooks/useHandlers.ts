@@ -80,10 +80,18 @@ export function useLoginHandlers(data: LoginData): LoginHandlers {
     } catch (error: any) {
       // Handle Firebase auth errors
       let errorMessage = error.message;
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMessage = 'Invalid email or password';
+      if (
+        error.code === 'auth/user-not-found' ||
+        error.code === 'auth/wrong-password' ||
+        error.code === 'auth/invalid-credential'
+      ) {
+        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
       } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed login attempts. Please try again later.';
+        errorMessage = 'Too many failed login attempts. Please try again later or reset your password.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled. Please contact your administrator.';
       }
       showAlert(errorMessage, 'Login Error');
     }

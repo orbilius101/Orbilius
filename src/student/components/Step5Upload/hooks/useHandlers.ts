@@ -3,6 +3,32 @@ import { auth, storage } from '../../../../firebaseConfig';
 import { createDocument, updateDocument } from '../../../../utils/firebaseHelpers';
 import { generateSubmissionFilePath, getFileExtension } from '../../../../utils/filePathHelpers';
 
+const YOUTUBE_REGEX =
+  /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+
+function extractYoutubeVideoId(url: string): string | null {
+  const match = url.match(YOUTUBE_REGEX);
+  return match ? match[1] : null;
+}
+
+async function verifyYoutubeVideo(url: string): Promise<{ valid: boolean; reason?: string }> {
+  const videoId = extractYoutubeVideoId(url);
+  if (!videoId) return { valid: false, reason: 'Please enter a valid YouTube URL.' };
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+    );
+    if (res.ok) return { valid: true };
+    if (res.status === 404 || res.status === 401) {
+      return { valid: false, reason: 'This video could not be found or is private on YouTube.' };
+    }
+    return { valid: false, reason: 'Could not verify the YouTube video. Please check the link.' };
+  } catch {
+    // Network error — allow submission rather than blocking on connectivity issues
+    return { valid: true };
+  }
+}
+
 export function useStep5UploadHandlers({
   projectId,
   setFile,
@@ -32,7 +58,13 @@ export function useStep5UploadHandlers({
   };
 
   const handleYoutubeLinkChange = (e, setYoutubeLink) => {
-    setYoutubeLink(e.target.value);
+    const value = e.target.value;
+    setYoutubeLink(value);
+    if (value.trim() && !extractYoutubeVideoId(value)) {
+      setErrorMsg('Please enter a valid YouTube URL (e.g. https://www.youtube.com/watch?v=...).');
+    } else {
+      setErrorMsg('');
+    }
   };
 
   const handleSubmit = async (file, youtubeLink) => {
@@ -54,6 +86,9 @@ export function useStep5UploadHandlers({
 
       if (!file) throw new Error('Please select a file.');
       if (!youtubeLink.trim()) throw new Error('Please provide a YouTube link.');
+
+      const { valid, reason } = await verifyYoutubeVideo(youtubeLink.trim());
+      if (!valid) throw new Error(reason);
 
       const fileExt = getFileExtension(file.name);
       const filePath = generateSubmissionFilePath(userId, projectId, 5, fileExt);
