@@ -166,9 +166,9 @@ export default function Step5Upload() {
                 </Typography>
               )}
               <Button
-                variant="contained"
+                variant="outlined"
                 onClick={() => navigate('/student/dashboard')}
-                sx={{ mt: 2, bgcolor: 'white', color: 'success.dark', '&:hover': { bgcolor: 'grey.200' } }}
+                sx={{ mt: 2, color: 'white', borderColor: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)', borderColor: 'white' } }}
               >
                 Return to Dashboard
               </Button>
