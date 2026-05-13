@@ -61,22 +61,17 @@ export default function InviteModal({
 
   // Check if user exists using secure API route
   const handleSend = async () => {
-    setTouched(true); // Mark field as touched when attempting to send
-    console.log('Sending invitation to:', email, 'as role:', role);
-    console.log('Cloud Functions URL:', CLOUD_FUNCTIONS.checkUserEmail);
+    setTouched(true);
     setLoading(true);
     setError('');
     setSuccess('');
     try {
-      // Use Firebase Cloud Function
-      console.log('Checking if user exists...');
       const response = await fetch(CLOUD_FUNCTIONS.checkUserEmail, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
       const result = await response.json();
-      console.log('checkUserEmail response:', { status: response.status, result });
 
       if (!response.ok) {
         setLoading(false);
@@ -90,7 +85,6 @@ export default function InviteModal({
       }
 
       // Check if there's already a pending invitation for this email
-      console.log('Checking for existing pending invitations...');
       const { data: existingPendingInvites } = await getDocuments(
         'pending_invitations',
         buildConstraints({
@@ -111,8 +105,6 @@ export default function InviteModal({
       // For teachers, create or update pending invitation record in Firestore
       if (role === 'teacher') {
         try {
-          console.log('Checking for existing pending teacher invitation...');
-          // Check if a pending invitation already exists for this email
           const { data: existingInvitations } = await getDocuments(
             'pending_invitations',
             buildConstraints({
@@ -124,18 +116,13 @@ export default function InviteModal({
           const invitationCode = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
 
           if (existingInvitations && existingInvitations.length > 0) {
-            // Update existing invitation
             const existingInvite = existingInvitations[0];
-            console.log('Updating existing pending teacher invitation:', existingInvite.id);
             await updateDocument('pending_invitations', existingInvite.id, {
               status: 'pending',
               invited_at: Timestamp.now(),
               invitation_code: invitationCode,
             });
-            console.log('Pending teacher record updated with code:', invitationCode);
           } else {
-            // Create new invitation
-            console.log('Creating new pending teacher record...');
             await addDoc(collection(db, 'pending_invitations'), {
               email,
               role: 'teacher',
@@ -143,15 +130,10 @@ export default function InviteModal({
               invited_at: Timestamp.now(),
               invitation_code: invitationCode,
             });
-            console.log('Pending teacher record created with code:', invitationCode);
           }
 
-          // Generate signup URL with invitation code
           const signupUrl = `${window.location.origin}/signup?invite=${invitationCode}`;
-          console.log('Generated signup URL:', signupUrl);
 
-          // Send invitation email via Firebase Cloud Function
-          console.log('Sending invitation email...');
           const inviteResponse = await fetch(CLOUD_FUNCTIONS.sendInvite, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -163,10 +145,6 @@ export default function InviteModal({
           });
 
           const inviteResult = await inviteResponse.json();
-          console.log('sendInvite response:', {
-            status: inviteResponse.status,
-            result: inviteResult,
-          });
 
           if (!inviteResponse.ok) {
             setLoading(false);
@@ -198,19 +176,14 @@ export default function InviteModal({
           const invitationCode = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
 
           if (existingInvitations && existingInvitations.length > 0) {
-            // Update existing invitation
             const existingInvite = existingInvitations[0];
-            console.log('Updating existing pending student invitation:', existingInvite.id);
             await updateDocument('pending_invitations', existingInvite.id, {
               status: 'pending',
               invited_at: Timestamp.now(),
               teacher_id: teacherId || null,
               invitation_code: invitationCode,
             });
-            console.log('Pending student record updated with code:', invitationCode);
           } else {
-            // Create new invitation
-            console.log('Creating new pending student record...');
             await addDoc(collection(db, 'pending_invitations'), {
               email,
               role: 'student',
@@ -219,15 +192,10 @@ export default function InviteModal({
               teacher_id: teacherId || null,
               invitation_code: invitationCode,
             });
-            console.log('Pending student record created with code:', invitationCode);
           }
 
-          // Generate signup URL with invitation code
           const signupUrl = `${window.location.origin}/signup?invite=${invitationCode}`;
-          console.log('Generated signup URL:', signupUrl);
 
-          // Send invitation email via Firebase Cloud Function
-          console.log('Sending invitation email...');
           const inviteResponse = await fetch(CLOUD_FUNCTIONS.sendInvite, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -239,17 +207,12 @@ export default function InviteModal({
           });
 
           const inviteResult = await inviteResponse.json();
-          console.log('sendInvite response:', {
-            status: inviteResponse.status,
-            result: inviteResult,
-          });
 
           if (!inviteResponse.ok) {
             setLoading(false);
             const errorMessage = inviteResult.details
               ? `${inviteResult.error}: ${inviteResult.details}`
               : inviteResult.error || 'Failed to send invitation. Please try again.';
-            console.error('Invitation failed:', errorMessage);
             setError(errorMessage);
             return;
           }
@@ -263,10 +226,7 @@ export default function InviteModal({
         // Fallback for other roles (if any)
         // Generate signup URL with role and metadata
         const signupUrl = `${window.location.origin}/signup?role=${role}${role === 'student' && teacherId ? `&teacher=${teacherId}` : ''}`;
-        console.log('Generated signup URL:', signupUrl);
 
-        // Send invitation email via Firebase Cloud Function
-        console.log('Sending invitation email...');
         const inviteResponse = await fetch(CLOUD_FUNCTIONS.sendInvite, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -278,10 +238,6 @@ export default function InviteModal({
         });
 
         const inviteResult = await inviteResponse.json();
-        console.log('sendInvite response:', {
-          status: inviteResponse.status,
-          result: inviteResult,
-        });
 
         if (!inviteResponse.ok) {
           setLoading(false);
@@ -313,20 +269,13 @@ export default function InviteModal({
       }
     } catch (err) {
       console.error('Exception in handleSend:', err);
-      console.error('Error details:', {
-        message: err instanceof Error ? err.message : String(err),
-        name: err instanceof Error ? err.name : 'Unknown',
-        stack: err instanceof Error ? err.stack : undefined,
-      });
       setLoading(false);
 
       let errorMessage = 'Error sending invitation. Please try again.';
 
       if (err instanceof TypeError && err.message.includes('fetch')) {
         errorMessage =
-          'Cannot connect to server. Make sure Firebase emulators are running (pnpm firebase:emulators).';
-        console.error('⚠️  Fetch failed - Cloud Functions URL:', CLOUD_FUNCTIONS.checkUserEmail);
-        console.error('⚠️  Make sure Firebase emulators are running: pnpm firebase:emulators');
+          'Cannot connect to server. Make sure Firebase emulators are running (pnpm firebase:emulators)';
       } else if (err instanceof Error) {
         errorMessage = `Error: ${err.message}`;
       }

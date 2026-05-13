@@ -87,10 +87,6 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     // Fetch active teachers
     const { data, error } = await fetchTeachers();
 
-    console.log('Fetching teachers - Data:', data);
-    console.log('Fetching teachers - Error:', error);
-    console.log('Fetching teachers - Count:', data?.length);
-
     let activeTeachers: Teacher[] = [];
 
     if (error) {
@@ -172,34 +168,25 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     closeConfirm();
 
     setDeleting(true);
-    console.log(`Deleting ${type}:`, id, name);
 
     let data, error;
     if (type === 'teacher') {
       // Check if this is a pending invitation
       const teacher = teachers.find((t) => t.id === id);
       if (teacher?.status === 'pending') {
-        // Delete from pending_invitations collection
-        console.log('Deleting pending invitation:', id);
         const result = await deleteDocument('pending_invitations', id);
         error = result.error;
         data = result.data;
-        console.log('Pending invitation delete result:', { data, error });
       } else {
-        // Delete active teacher via Cloud Function
-        console.log('Deleting active teacher via Cloud Function:', id);
         const result = await deleteTeacher(id);
         data = result.data;
         error = result.error;
-        console.log('Active teacher delete result:', { data, error });
       }
     } else {
       const result = await deleteStudent(id);
       data = result.data;
       error = result.error;
     }
-
-    console.log(`Delete ${type} - Full response:`, { data, error });
 
     if (error) {
       console.error(`Error deleting ${type}:`, error);
@@ -209,8 +196,6 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
       return;
     }
 
-    // Verify the deletion actually worked before updating UI
-    console.log('Verifying deletion...');
     const collection =
       type === 'teacher'
         ? teachers.find((t) => t.id === id)?.status === 'pending'
@@ -221,8 +206,7 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
     const verifyResult = await getDocument(collection, id);
 
     if (verifyResult.data) {
-      // Document still exists - deletion failed
-      console.error(`${type} still exists after deletion attempt:`, verifyResult.data);
+      // Document still exists — deletion failed
       showToast(`Failed to delete ${type}: Record still exists in database`, 'error');
       showAlert(
         `Failed to delete ${type}: The deletion did not complete. Please try again.`,
@@ -232,10 +216,8 @@ export function useTeachers(showAlert: (message: string, title: string) => void)
       return;
     }
 
-    console.log('Delete verified successful, removing from UI...');
     showToast(`${name} has been deleted successfully`);
 
-    // Remove the deleted teacher/student from the local state
     if (type === 'teacher') {
       setTeachers((prevTeachers) => prevTeachers.filter((t) => t.id !== id));
     } else {

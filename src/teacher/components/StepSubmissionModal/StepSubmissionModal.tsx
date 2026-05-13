@@ -114,15 +114,11 @@ export default function StepSubmissionModal({
 
           // Set YouTube link
           if (latestSubmission.youtube_link) {
-            console.log('Setting YouTube link:', latestSubmission.youtube_link);
             setYoutubeLink(latestSubmission.youtube_link);
-          } else {
-            console.log('No YouTube link found');
           }
 
           // Handle file URL
           if (latestSubmission.file_url) {
-            console.log('Fetching PDF from:', latestSubmission.file_url);
             setSubmissionFile(latestSubmission.file_url);
           }
 

@@ -34,7 +34,6 @@ export function useDashboardData() {
         };
 
         setUserProfile(profile);
-        console.log('User loaded:', currentUser.email, profile); // Debug log
 
         // Fetch project for the student
         const { data: projectData, error: projectError } = await getDocuments(

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import React, { useCallback, MutableRefObject } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, storage } from '../../../../firebaseConfig';
 import { createDocument, getDocument, updateDocument } from '../../../../utils/firebaseHelpers';
@@ -11,6 +11,19 @@ export function useStep1UploadHandlers({
   setErrorMsg,
   setSuccess,
   setStatus,
+  setIsDragging,
+  dragCounterRef,
+  justDroppedRef,
+}: {
+  projectId: string | null
+  setFile: (f: any) => void
+  setUploading: (v: boolean) => void
+  setErrorMsg: (msg: string) => void
+  setSuccess: (v: boolean) => void
+  setStatus: (s: string) => void
+  setIsDragging: (v: boolean) => void
+  dragCounterRef: MutableRefObject<number>
+  justDroppedRef: MutableRefObject<boolean>
 }) {
   const handleFileChange = useCallback(
     async (e) => {
@@ -38,7 +51,6 @@ export function useStep1UploadHandlers({
 
   const handleUpload = useCallback(
     async (file) => {
-      console.log('Step1Upload - handleUpload called with projectId:', projectId);
 
       if (!projectId) {
         setErrorMsg('Project not loaded. Please try refreshing the page.');
@@ -79,12 +91,6 @@ export function useStep1UploadHandlers({
           throw new Error('Unable to verify project ownership. Please try again.');
         }
 
-        console.log('Attempting to insert submission:', {
-          project_id: projectId,
-          step_number: 1,
-          file_url: fileUrl,
-        });
-
         const { error: insertError } = await createDocument('submissions', {
           project_id: projectId,
           step_number: 1,
@@ -117,8 +123,50 @@ export function useStep1UploadHandlers({
     [projectId, setErrorMsg, setUploading, setSuccess, setStatus, setFile]
   );
 
+  const handleDragEnter = useCallback((e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    dragCounterRef.current++;
+    setIsDragging(true);
+  }, [dragCounterRef, setIsDragging]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) setIsDragging(false);
+  }, [dragCounterRef, setIsDragging]);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    dragCounterRef.current = 0;
+    setIsDragging(false);
+  }, [dragCounterRef, setIsDragging]);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDragging(false);
+    justDroppedRef.current = true;
+    setTimeout(() => { justDroppedRef.current = false; }, 300);
+    const dropped = e.dataTransfer.files[0];
+    if (!dropped) return;
+    handleFileChange({ target: { files: [dropped], value: '' } } as any);
+  }, [dragCounterRef, setIsDragging, justDroppedRef, handleFileChange]);
+
+  const handleDropZoneClick = useCallback(() => {
+    if (!justDroppedRef.current) document.getElementById('file-input')?.click();
+  }, [justDroppedRef]);
+
   return {
     handleFileChange,
     handleUpload,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDragEnd,
+    handleDrop,
+    handleDropZoneClick,
   };
 }

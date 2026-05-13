@@ -1,3 +1,4 @@
+import React, { MutableRefObject } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, storage } from '../../../../firebaseConfig';
 import { createDocument, updateDocument } from '../../../../utils/firebaseHelpers';
@@ -10,6 +11,19 @@ export function useStep3UploadHandlers({
   setErrorMsg,
   setSuccess,
   setStatus,
+  setIsDragging,
+  dragCounterRef,
+  justDroppedRef,
+}: {
+  projectId: string | null
+  setFile: (f: any) => void
+  setUploading: (v: boolean) => void
+  setErrorMsg: (msg: string) => void
+  setSuccess: (v: boolean) => void
+  setStatus: (s: string) => void
+  setIsDragging: (v: boolean) => void
+  dragCounterRef: MutableRefObject<number>
+  justDroppedRef: MutableRefObject<boolean>
 }) {
   const handleFileChange = async (e) => {
     const selected = e.target.files[0];
@@ -85,8 +99,50 @@ export function useStep3UploadHandlers({
     }
   };
 
+  const handleDragEnter = (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    dragCounterRef.current++;
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDragEnd = () => {
+    dragCounterRef.current = 0;
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDragging(false);
+    justDroppedRef.current = true;
+    setTimeout(() => { justDroppedRef.current = false; }, 300);
+    const dropped = e.dataTransfer.files[0];
+    if (!dropped) return;
+    handleFileChange({ target: { files: [dropped], value: '' } } as any);
+  };
+
+  const handleDropZoneClick = () => {
+    if (!justDroppedRef.current) document.getElementById('file-input-s3')?.click();
+  };
+
   return {
     handleFileChange,
     handleUpload,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDragEnd,
+    handleDrop,
+    handleDropZoneClick,
   };
 }

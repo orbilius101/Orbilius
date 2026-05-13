@@ -9,8 +9,6 @@ import {
   LinearProgress,
   Tooltip,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import React, { useState, useRef } from 'react';
 import { useStep3UploadData } from './hooks/useData';
 import { useStep3UploadHandlers } from './hooks/useHandlers';
 import SharedHeader from '../SharedHeader/SharedHeader';
@@ -20,8 +18,8 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 export default function Step3Upload() {
-  const navigate = useNavigate();
   const {
+    navigate,
     file,
     setFile,
     uploading,
@@ -33,46 +31,32 @@ export default function Step3Upload() {
     status,
     setStatus,
     projectId,
-  } = useStep3UploadData(navigate);
+    isDragging,
+    setIsDragging,
+    dragCounterRef,
+    justDroppedRef,
+  } = useStep3UploadData();
 
-  const { handleFileChange, handleUpload } = useStep3UploadHandlers({
+  const {
+    handleFileChange,
+    handleUpload,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDragEnd,
+    handleDrop,
+    handleDropZoneClick,
+  } = useStep3UploadHandlers({
     projectId,
     setFile,
     setUploading,
     setErrorMsg,
     setSuccess,
     setStatus,
+    setIsDragging,
+    dragCounterRef,
+    justDroppedRef,
   });
-
-  const [isDragging, setIsDragging] = useState(false);
-  const dragCounterRef = useRef(0);
-  const justDroppedRef = useRef(false);
-
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    dragCounterRef.current++;
-    setIsDragging(true);
-  };
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    dragCounterRef.current--;
-    if (dragCounterRef.current === 0) setIsDragging(false);
-  };
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    dragCounterRef.current = 0;
-    setIsDragging(false);
-    justDroppedRef.current = true;
-    setTimeout(() => {
-      justDroppedRef.current = false;
-    }, 300);
-    const dropped = e.dataTransfer.files[0];
-    if (!dropped) return;
-    handleFileChange({ target: { files: [dropped], value: '' } } as any);
-  };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -173,16 +157,11 @@ export default function Step3Upload() {
                 cursor: 'pointer',
                 '&:hover': { borderColor: 'primary.light', bgcolor: file ? 'primary.dark' : 'action.hover' },
               }}
-              onClick={() => {
-                if (!justDroppedRef.current) document.getElementById('file-input-s3')?.click();
-              }}
+              onClick={handleDropZoneClick}
               onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              onDragEnd={() => {
-                dragCounterRef.current = 0;
-                setIsDragging(false);
-              }}
+              onDragEnd={handleDragEnd}
               onDrop={handleDrop}
             >
               <input

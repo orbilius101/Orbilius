@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
+import { MutableRefObject, useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../../../../firebaseConfig';
 import { getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 
-export function useStep4UploadData(navigate: any) {
+export function useStep4UploadData() {
+  const navigate = useNavigate();
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef: MutableRefObject<number> = useRef(0);
+  const justDroppedRef: MutableRefObject<boolean> = useRef(false);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -65,6 +70,11 @@ export function useStep4UploadData(navigate: any) {
   }, [navigate]);
 
   return {
+    navigate,
+    isDragging,
+    setIsDragging,
+    dragCounterRef,
+    justDroppedRef,
     file,
     setFile,
     uploading,

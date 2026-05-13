@@ -46,7 +46,6 @@ export function useLoginHandlers(data: LoginData): LoginHandlers {
         return;
       }
 
-      console.log('User role:', role); // Debug log
 
       if (role === 'student') {
         // Check if student has any projects

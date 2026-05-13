@@ -53,8 +53,6 @@ export function useStudents(
 
     setLoading(true);
 
-    console.log('useStudents: Loading students for teacher:', teacherId);
-
     // Fetch active students
     const { data: activeStudentsData, error } = await getDocuments(
       'users',
@@ -70,8 +68,6 @@ export function useStudents(
       console.error('Error fetching students:', error);
       showAlert('Failed to load students: ' + error.message, 'Error');
     } else {
-      console.log('useStudents: Found active students:', activeStudentsData?.length || 0);
-
       // Map students and fetch their grades from projects
       activeStudents = await Promise.all(
         (activeStudentsData || []).map(async (student) => {
@@ -105,7 +101,6 @@ export function useStudents(
     }
 
     // Fetch pending invitations for students
-    console.log('useStudents: Fetching pending invitations for teacher:', teacherId);
     try {
       // First, try to fetch with all constraints
       let pendingInvites = null;
@@ -141,8 +136,6 @@ export function useStudents(
         // Still show active students even if pending invitations fail
         setStudents(activeStudents);
       } else {
-        console.log('useStudents: Found pending invitations:', pendingInvites?.length || 0);
-
         // Get emails of active students to avoid duplicates
         const activeStudentEmails = new Set(activeStudents.map((s) => s.email));
 
@@ -199,8 +192,6 @@ export function useStudents(
         }
       } else {
         // Delete active student using Cloud Function
-        console.log('Deleting active student:', confirmState.id);
-
         const response = await fetch(CLOUD_FUNCTIONS.deleteStudent, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

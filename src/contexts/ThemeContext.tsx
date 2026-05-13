@@ -50,9 +50,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             setCurrentTheme(data.theme as ThemeName);
           }
         } else {
-          // Document doesn't exist - create it with default theme
-          console.log('Settings document not found, will be created on first theme change');
-          // Use default theme
           setCurrentTheme('midnight');
         }
         setLoading(false);
@@ -61,7 +58,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         console.error('Error fetching theme:', error);
         // If permissions error, just use default theme
         if (error.code === 'permission-denied') {
-          console.log('No permission to read settings, using default theme');
           setCurrentTheme('midnight');
         }
         setLoading(false);
