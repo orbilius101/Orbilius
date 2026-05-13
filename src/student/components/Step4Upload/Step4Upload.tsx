@@ -16,6 +16,7 @@ import CommentThread from '../../../components/CommentThread/CommentThread';
 import SubmissionHistory from '../../../components/SubmissionHistory/SubmissionHistory';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PdfPreview from '../../../components/PdfPreview/PdfPreview';
 
 export default function Step4Upload() {
   const {
@@ -183,6 +184,10 @@ export default function Step4Upload() {
                 </Typography>
               </Stack>
             </Paper>
+          )}
+
+          {file && status !== 'Submitted' && status !== 'Approved' && (
+            <PdfPreview file={file} />
           )}
 
           {file && status !== 'Submitted' && status !== 'Approved' && (
