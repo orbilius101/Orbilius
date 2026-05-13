@@ -7,6 +7,7 @@ import {
   Alert,
   Paper,
   LinearProgress,
+  Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useRef } from 'react';
@@ -178,13 +179,13 @@ export default function Step1Upload() {
                 bgcolor: isDragging
                   ? 'action.selected'
                   : file
-                    ? 'primary.dark'
+                    ? 'primary.main'
                     : 'background.paper',
                 transition: 'all 0.3s',
                 cursor: 'pointer',
                 '&:hover': {
-                  borderColor: 'primary.main',
-                  bgcolor: 'action.hover',
+                  borderColor: 'primary.light',
+                  bgcolor: file ? 'primary.dark' : 'action.hover',
                 },
               }}
               onClick={() => {
@@ -208,12 +209,12 @@ export default function Step1Upload() {
               />
               <Stack spacing={2} alignItems="center">
                 <CloudUploadIcon
-                  sx={{ fontSize: 60, color: file ? 'primary.main' : 'text.secondary' }}
+                  sx={{ fontSize: 60, color: file ? 'white' : 'text.secondary' }}
                 />
-                <Typography variant="h6" color={file ? 'primary.main' : 'text.primary'}>
+                <Typography variant="h6" sx={{ color: file ? 'white' : 'text.primary', fontWeight: file ? 600 : undefined }}>
                   {file ? file.name : 'Click to select PDF file'}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: file ? 'rgba(255,255,255,0.8)' : 'text.secondary' }}>
                   {file ? 'Click again to change file' : 'or drag and drop your PDF here'}
                 </Typography>
               </Stack>
@@ -227,25 +228,41 @@ export default function Step1Upload() {
           )}
 
           {file && status !== 'Submitted' && status !== 'Approved' && (
-            <Button
-              variant="contained"
-              size="large"
-              onClick={() => handleUpload(file)}
-              disabled={uploading || loading || !projectId}
-              fullWidth
-              startIcon={<CloudUploadIcon />}
-              sx={{
-                py: 2,
-                fontSize: '1.1rem',
-                fontWeight: 600,
-              }}
+            <Tooltip
+              title={
+                loading
+                  ? 'Loading project data…'
+                  : uploading
+                    ? 'Uploading in progress…'
+                    : !projectId
+                      ? 'Project data not loaded. Please refresh the page.'
+                      : ''
+              }
+              arrow
             >
-              {loading
-                ? 'Loading...'
-                : uploading
-                  ? 'Submitting...'
-                  : 'Submit to Teacher'}
-            </Button>
+              <span style={{ display: 'block' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => handleUpload(file)}
+                  disabled={uploading || loading || !projectId}
+                  fullWidth
+                  startIcon={<CloudUploadIcon />}
+                  sx={{
+                    py: 2,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    '&.Mui-disabled': { bgcolor: 'primary.main', color: 'rgba(255,255,255,0.5)', opacity: 0.7 },
+                  }}
+                >
+                  {loading
+                    ? 'Loading...'
+                    : uploading
+                      ? 'Submitting...'
+                      : 'Submit to Teacher'}
+                </Button>
+              </span>
+            </Tooltip>
           )}
 
           {uploading && (
