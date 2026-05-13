@@ -19,6 +19,7 @@ export function useStepApprovalData() {
     const [scale, setScale] = useState(1.0)
     const [isApproving, setIsApproving] = useState(false)
     const [isSavingComment, setIsSavingComment] = useState(false)
+    const [draftCommentDialog, setDraftCommentDialog] = useState<'approve' | 'revision' | null>(null)
     const { alertState, showAlert, closeAlert } = useAlert()
 
     // UI state for YouTube player and pop-out window
@@ -143,5 +144,7 @@ export function useStepApprovalData() {
         commentThreadRef,
         pdfPageWidthRef,
         pdfPageHeightRef,
+        draftCommentDialog,
+        setDraftCommentDialog,
     }
 }
