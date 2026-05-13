@@ -157,6 +157,7 @@ export default function Signup() {
               variant="outlined"
               required
               autoComplete="off"
+              inputProps={{ maxLength: 20 }}
               error={touchedFields.firstName && !isFirstNameValid}
               helperText={
                 touchedFields.firstName && !isFirstNameValid ? 'First name is required' : ''
@@ -173,6 +174,7 @@ export default function Signup() {
               variant="outlined"
               required
               autoComplete="off"
+              inputProps={{ maxLength: 20 }}
               error={touchedFields.lastName && !isLastNameValid}
               helperText={touchedFields.lastName && !isLastNameValid ? 'Last name is required' : ''}
             />
