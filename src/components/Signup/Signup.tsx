@@ -11,7 +11,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useState } from 'react';
 import { useSignupData } from './hooks/useData';
 import { useSignupHandlers } from './hooks/useHandlers';
@@ -24,6 +28,7 @@ export default function Signup() {
   const { currentTheme } = useTheme();
   const merleLogo = currentTheme === 'light' ? regularLogo : yellowLogo;
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [touchedFields, setTouchedFields] = useState({
     firstName: false,
     lastName: false,
@@ -190,7 +195,7 @@ export default function Signup() {
             />
 
             <TextField
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               label="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -205,10 +210,19 @@ export default function Signup() {
                   ? 'Password must be at least 6 characters'
                   : ''
               }
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(p => !p)} edge="end" tabIndex={-1}>
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <TextField
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               label="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
