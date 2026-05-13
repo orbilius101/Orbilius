@@ -164,7 +164,13 @@ export default function StudentsList({
       'Archival Records',
     ];
     return [1, 2, 3, 4, 5]
-      .map((n) => ({ stepNumber: n, name: stepNames[n - 1], status: project[`step${n}_status`] }))
+      .map((n) => {
+        const rawDue = project[`step${n}_due_date`]
+        const dueDate = rawDue
+          ? new Date(rawDue).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : null
+        return { stepNumber: n, name: stepNames[n - 1], status: project[`step${n}_status`], dueDate }
+      })
       .filter((s) => s.status === 'Submitted' || s.status === 'Approved' || s.status === 'Revision Requested');
   };
 
@@ -701,6 +707,15 @@ export default function StudentsList({
                                                       Status
                                                     </TableCell>
                                                     <TableCell
+                                                      sx={{
+                                                        fontWeight: 600,
+                                                        color: 'text.secondary',
+                                                        fontSize: '0.75rem',
+                                                      }}
+                                                    >
+                                                      Due Date
+                                                    </TableCell>
+                                                    <TableCell
                                                       align="right"
                                                       sx={{
                                                         fontWeight: 600,
@@ -739,6 +754,9 @@ export default function StudentsList({
                                                             )
                                                           }
                                                         />
+                                                      </TableCell>
+                                                      <TableCell sx={{ fontSize: '0.8rem', color: step.dueDate ? 'text.primary' : 'text.disabled' }}>
+                                                        {step.dueDate ?? '—'}
                                                       </TableCell>
                                                       <TableCell align="right">
                                                         <Box

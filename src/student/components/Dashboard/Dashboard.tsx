@@ -341,7 +341,7 @@ export default function StudentDashboard() {
                       </TableCell>
                       <TableCell>
                         <Typography variant="subtitle1" fontWeight="bold">
-                          Date
+                          Due Date
                         </Typography>
                       </TableCell>
                       <TableCell>
