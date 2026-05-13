@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Card, CardContent, TextField, Button, Typography, Stack } from '@mui/material';
+import { Box, Card, CardContent, TextField, Button, Typography, Stack, InputAdornment, IconButton } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useLoginData } from './hooks/useData';
 import { useLoginHandlers } from './hooks/useHandlers';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -8,6 +11,7 @@ import regularLogo from '../../assets/merle-386x386.svg';
 import AlertDialog from '../AlertDialog/AlertDialog';
 
 export default function Login() {
+  const [showPassword, setShowPassword] = useState(false);
   const { currentTheme } = useTheme();
   const merleLogo = currentTheme === 'light' ? regularLogo : yellowLogo;
   const data = useLoginData();
@@ -58,12 +62,21 @@ export default function Login() {
             />
 
             <TextField
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               label="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               fullWidth
               variant="outlined"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(p => !p)} edge="end" tabIndex={-1}>
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <Button
