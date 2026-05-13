@@ -14,6 +14,10 @@ interface StepApprovalData {
     containerRef: React.RefObject<HTMLDivElement>
     pdfPageWidthRef: React.MutableRefObject<number>
     pdfPageHeightRef: React.MutableRefObject<number>
+    commentThreadRef: React.RefObject<{ getCommentText: () => string; submitComment: () => Promise<void> }>
+    setDraftCommentDialog: (v: 'approve' | 'revision' | null) => void
+    popupRef: React.MutableRefObject<Window | null>
+    setNavigateOnClose: (v: boolean) => void
 }
 
 const STEP_NAMES: Record<number, string> = {
@@ -37,6 +41,10 @@ export function useStepApprovalHandlers(data: StepApprovalData) {
         containerRef,
         pdfPageWidthRef,
         pdfPageHeightRef,
+        commentThreadRef,
+        setDraftCommentDialog,
+        popupRef,
+        setNavigateOnClose,
     } = data
 
     const getStepName = useCallback((stepNum: number | string): string => {
@@ -149,6 +157,52 @@ export function useStepApprovalHandlers(data: StepApprovalData) {
         setIsApproving(false)
     }, [projectId, stepNumber, setIsApproving, showAlert, navigate])
 
+    // Check for unsaved draft comment before executing approve or revision request.
+    // If draft exists, open the confirmation dialog instead.
+    const handleApproveGuarded = useCallback(() => {
+        if (commentThreadRef.current?.getCommentText()?.trim()) {
+            setDraftCommentDialog('approve')
+        } else {
+            popupRef.current?.close()
+            handleApprove()
+        }
+    }, [commentThreadRef, setDraftCommentDialog, popupRef, handleApprove])
+
+    const handleRevisionGuarded = useCallback(() => {
+        if (commentThreadRef.current?.getCommentText()?.trim()) {
+            setDraftCommentDialog('revision')
+        } else {
+            popupRef.current?.close()
+            handleSaveComment()
+            setNavigateOnClose(true)
+        }
+    }, [commentThreadRef, setDraftCommentDialog, popupRef, handleSaveComment, setNavigateOnClose])
+
+    // Called from dialog: submit the draft comment first, then run the action
+    const handleConfirmWithComment = useCallback(async (action: 'approve' | 'revision') => {
+        if (commentThreadRef.current?.getCommentText()?.trim()) {
+            await commentThreadRef.current.submitComment()
+        }
+        popupRef.current?.close()
+        if (action === 'approve') {
+            handleApprove()
+        } else {
+            handleSaveComment()
+            setNavigateOnClose(true)
+        }
+    }, [commentThreadRef, popupRef, handleApprove, handleSaveComment, setNavigateOnClose])
+
+    // Called from dialog: skip the comment and run the action
+    const handleConfirmWithoutComment = useCallback((action: 'approve' | 'revision') => {
+        popupRef.current?.close()
+        if (action === 'approve') {
+            handleApprove()
+        } else {
+            handleSaveComment()
+            setNavigateOnClose(true)
+        }
+    }, [popupRef, handleApprove, handleSaveComment, setNavigateOnClose])
+
     return {
         getStepName,
         extractYouTubeVideoId,
@@ -158,5 +212,9 @@ export function useStepApprovalHandlers(data: StepApprovalData) {
         handlePageRenderSuccess,
         handleSaveComment,
         handleApprove,
+        handleApproveGuarded,
+        handleRevisionGuarded,
+        handleConfirmWithComment,
+        handleConfirmWithoutComment,
     }
 }

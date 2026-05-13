@@ -104,6 +104,8 @@ export default function StepApproval() {
         popupRef,
         containerRef,
         commentThreadRef,
+        draftCommentDialog,
+        setDraftCommentDialog,
     } = data
 
     const {
@@ -115,6 +117,10 @@ export default function StepApproval() {
         handlePageRenderSuccess,
         handleSaveComment,
         handleApprove,
+        handleApproveGuarded,
+        handleRevisionGuarded,
+        handleConfirmWithComment,
+        handleConfirmWithoutComment,
     } = handlers
 
     if (loading) {
@@ -364,14 +370,7 @@ export default function StepApproval() {
                                         variant="contained"
                                         color="warning"
                                         size="large"
-                                        onClick={async () => {
-                                            popupRef.current?.close()
-                                            if (commentThreadRef.current?.getCommentText()) {
-                                                await commentThreadRef.current.submitComment()
-                                            }
-                                            await handleSaveComment()
-                                            setNavigateOnClose(true)
-                                        }}
+                                        onClick={handleRevisionGuarded}
                                         disabled={isSavingComment}
                                         sx={{ fontWeight: 700 }}
                                     >
@@ -380,10 +379,7 @@ export default function StepApproval() {
                                     <Button
                                         variant="contained"
                                         size="large"
-                                        onClick={() => {
-                                            popupRef.current?.close()
-                                            handleApprove()
-                                        }}
+                                        onClick={handleApproveGuarded}
                                         disabled={isApproving}
                                         color="success"
                                         sx={{ fontWeight: 700 }}
@@ -396,6 +392,36 @@ export default function StepApproval() {
                     </Stack>
                 </Stack>
             </Container>
+
+            {/* Draft comment warning dialog */}
+            <Dialog open={draftCommentDialog !== null} onClose={() => setDraftCommentDialog(null)} maxWidth="sm" fullWidth>
+                <DialogTitle>
+                    You have an unsaved comment
+                </DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        You typed a comment but haven't submitted it yet. Would you like to include it with your{' '}
+                        <strong>{draftCommentDialog === 'approve' ? 'Approval' : 'Revision Request'}</strong>?
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDraftCommentDialog(null)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={() => { setDraftCommentDialog(null); handleConfirmWithoutComment(draftCommentDialog!) }}
+                    >
+                        {draftCommentDialog === 'approve' ? 'Approve Without Comment' : 'Request Revision Without Comment'}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color={draftCommentDialog === 'approve' ? 'success' : 'warning'}
+                        onClick={() => { setDraftCommentDialog(null); handleConfirmWithComment(draftCommentDialog!) }}
+                    >
+                        Submit Comment + {draftCommentDialog === 'approve' ? 'Approve' : 'Request Revision'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* YouTube Video Modal */}
             <Dialog
