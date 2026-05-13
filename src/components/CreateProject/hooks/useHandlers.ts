@@ -48,10 +48,6 @@ export function useCreateProjectHandlers(data: any) {
 
     const dueDates = generateDueDates();
 
-    // Log the data being inserted for debugging
-    console.log('Creating project with user ID:', userData.id);
-    console.log('User data:', userData);
-
     const projectData = {
       student_id: userData.id,
       email: userData.email,
@@ -87,7 +83,6 @@ export function useCreateProjectHandlers(data: any) {
         'Error'
       );
     } else {
-      console.log('Project created:', insertData);
       showAlert('Project created successfully!', 'Success');
       navigate('/student/dashboard');
     }

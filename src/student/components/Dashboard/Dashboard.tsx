@@ -16,6 +16,7 @@ import {
   AppBar,
   Toolbar,
   Chip,
+  Alert,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -67,6 +68,7 @@ export default function StudentDashboard() {
     navigate,
     alertState,
     closeAlert,
+    allStepsSubmitted,
   } = data;
 
   const {
@@ -264,6 +266,18 @@ export default function StudentDashboard() {
             <Typography variant="h4" component="h2">
               {userProfile.first_name} {userProfile.last_name}'s Project
             </Typography>
+
+            {allStepsSubmitted && (
+              <Alert severity="success" icon={<CheckCircleIcon />}>
+                <Typography variant="body1" fontWeight={600}>
+                  All steps submitted!
+                </Typography>
+                <Typography variant="body2">
+                  Your project is complete and under review. Your teacher will review each step and
+                  provide feedback shortly.
+                </Typography>
+              </Alert>
+            )}
 
             {project && (
               <Paper sx={{ p: 3 }}>

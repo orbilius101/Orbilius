@@ -1,92 +1,145 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { auth } from '../../../../firebaseConfig';
-import { getDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
-import { useAlert } from '../../../../hooks/useAlert';
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { auth } from '../../../../firebaseConfig'
+import { getDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers'
+import { useAlert } from '../../../../hooks/useAlert'
+import { useStudents } from './useStudents'
+import type { Project, UserProfile } from '../../../../types'
+
+interface SubmissionModalState {
+    open: boolean
+    projectId: string | null
+    stepNumber: number | null
+    project: Project | null
+}
+
+interface DeleteSubmissionState {
+    open: boolean
+    project: Project | null
+    stepNumber: number | null
+    deleting: boolean
+}
 
 export function useDashboardData() {
-  const [user, setUser] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
-  const [projects, setProjects] = useState([]);
-  const navigate = useNavigate();
-  const { alertState, showAlert, closeAlert } = useAlert();
+    const [user, setUser] = useState<any>(null)
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+    const [projects, setProjects] = useState<Project[]>([])
+    const navigate = useNavigate()
+    const { alertState, showAlert, closeAlert } = useAlert()
 
-  const fetchProjects = async (teacherId: string) => {
-    // Fetch all projects assigned to this teacher with student email
-    const { data: projectsData, error: projectsError } = await getDocuments(
-      'projects',
-      buildConstraints({
-        eq: { teacher_id: teacherId },
-        orderBy: { field: 'created_at', direction: 'desc' },
-      })
-    );
+    // Modal / UI state
+    const [showInviteModal, setShowInviteModal] = useState(false)
+    const [initialEmail, setInitialEmail] = useState('')
+    const [resendConfirmOpen, setResendConfirmOpen] = useState(false)
+    const [emailToResend, setEmailToResend] = useState('')
+    const [submissionModal, setSubmissionModal] = useState<SubmissionModalState>({
+        open: false,
+        projectId: null,
+        stepNumber: null,
+        project: null,
+    })
+    const [allStudentsExpanded, setAllStudentsExpanded] = useState(true)
+    const [deleteSubmissionState, setDeleteSubmissionState] = useState<DeleteSubmissionState>({
+        open: false,
+        project: null,
+        stepNumber: null,
+        deleting: false,
+    })
 
-    if (projectsError) {
-      console.error('Error fetching projects:', projectsError.message);
-      setProjects([]);
-    } else {
-      // Fetch student details for each project
-      const projectsWithStudents = await Promise.all(
-        ((projectsData as any[]) || []).map(async (project) => {
-          const { data: studentData } = await getDocument('users', project.student_id);
+    const impersonatingTeacherId = sessionStorage.getItem('impersonating_teacher_uid')
+    const effectiveTeacherId = impersonatingTeacherId || user?.uid
 
-          return {
-            ...project,
-            project_id: project.id, // Map Firestore document ID to project_id
-            student: studentData,
-          };
-        })
-      );
+    const fetchProjects = async (teacherId: string) => {
+        const { data: projectsData, error: projectsError } = await getDocuments(
+            'projects',
+            buildConstraints({
+                eq: { teacher_id: teacherId },
+                orderBy: { field: 'created_at', direction: 'desc' },
+            })
+        )
 
-      setProjects(projectsWithStudents);
+        if (projectsError) {
+            console.error('Error fetching projects:', projectsError.message)
+            setProjects([])
+        } else {
+            const projectsWithStudents = await Promise.all(
+                ((projectsData as any[]) || []).map(async project => {
+                    const { data: studentData } = await getDocument('users', project.student_id)
+                    return {
+                        ...project,
+                        project_id: project.id,
+                        student: studentData,
+                    }
+                })
+            )
+            setProjects(projectsWithStudents as Project[])
+        }
     }
-  };
 
-  useEffect(() => {
-    const fetchUserAndProjects = async () => {
-      const currentUser = auth.currentUser;
+    const studentsHook = useStudents(effectiveTeacherId, showAlert, fetchProjects)
 
-      if (!currentUser) {
-        navigate('/login');
-        return;
-      }
+    const projectsNeedingReview = projects.filter(project => {
+        for (let i = 1; i <= 5; i++) {
+            if (project[`step${i}_status` as keyof Project] === 'Submitted') return true
+        }
+        return false
+    }).length
 
-      setUser(currentUser as any);
+    useEffect(() => {
+        const fetchUserAndProjects = async () => {
+            const currentUser = auth.currentUser
 
-      // Check if admin is impersonating a teacher
-      const impersonatingTeacherId = sessionStorage.getItem('impersonating_teacher_uid');
-      const effectiveUserId = impersonatingTeacherId || currentUser.uid;
+            if (!currentUser) {
+                navigate('/login')
+                return
+            }
 
-      console.log('Impersonating teacher ID:', impersonatingTeacherId);
-      console.log('Effective user ID for data fetch:', effectiveUserId);
+            setUser(currentUser)
 
-      // Fetch user profile (use impersonated teacher's profile if applicable)
-      const { data: profile, error: profileError } = await getDocument('users', effectiveUserId);
+            const impersonatingId = sessionStorage.getItem('impersonating_teacher_uid')
+            const effectiveUserId = impersonatingId || currentUser.uid
 
-      console.log('Teacher Dashboard - Fetching profile for user ID:', effectiveUserId);
-      console.log('Teacher Dashboard - Profile data:', profile);
-      console.log('Teacher Dashboard - Profile error:', profileError);
+            const { data: profile, error: profileError } = await getDocument('users', effectiveUserId)
 
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError.message);
-      } else {
-        setUserProfile(profile);
-      }
+            if (profileError) {
+                console.error('Error fetching user profile:', profileError.message)
+            } else {
+                setUserProfile(profile as UserProfile)
+            }
 
-      await fetchProjects(effectiveUserId);
-    };
+            await fetchProjects(effectiveUserId)
+        }
 
-    fetchUserAndProjects();
-  }, [navigate]);
+        fetchUserAndProjects()
+    }, [navigate])
 
-  return {
-    user,
-    userProfile,
-    projects,
-    navigate,
-    alertState,
-    showAlert,
-    closeAlert,
-    refreshProjects: fetchProjects,
-  };
+    return {
+        user,
+        userProfile,
+        projects,
+        navigate,
+        alertState,
+        showAlert,
+        closeAlert,
+        refreshProjects: fetchProjects,
+        showInviteModal,
+        setShowInviteModal,
+        initialEmail,
+        setInitialEmail,
+        resendConfirmOpen,
+        setResendConfirmOpen,
+        emailToResend,
+        setEmailToResend,
+        submissionModal,
+        setSubmissionModal,
+        allStudentsExpanded,
+        setAllStudentsExpanded,
+        deleteSubmissionState,
+        setDeleteSubmissionState,
+        impersonatingTeacherId,
+        effectiveTeacherId,
+        studentsHook,
+        students: studentsHook.students,
+        projectsNeedingReview,
+    }
 }

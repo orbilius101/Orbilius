@@ -147,11 +147,7 @@ export async function fetchTeachers() {
 }
 
 export async function deleteTeacher(teacherId: string) {
-  // Call Firebase Cloud Function to delete teacher and students
   try {
-    console.log('Calling deleteTeacher Cloud Function for:', teacherId);
-    console.log('Function URL:', CLOUD_FUNCTIONS.deleteTeacher);
-
     const response = await fetch(CLOUD_FUNCTIONS.deleteTeacher, {
       method: 'POST',
       headers: {
@@ -160,10 +156,7 @@ export async function deleteTeacher(teacherId: string) {
       body: JSON.stringify({ teacherId }),
     });
 
-    console.log('Delete teacher response status:', response.status);
-
     const result = await response.json();
-    console.log('Delete teacher response:', result);
 
     if (!response.ok) {
       console.error('Delete teacher failed:', result.error);
@@ -173,11 +166,6 @@ export async function deleteTeacher(teacherId: string) {
     return { data: result, error: null };
   } catch (error: any) {
     console.error('Error calling deleteTeacher API:', error);
-    console.error('Error details:', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-    });
     return { data: null, error: error.message || 'Failed to delete teacher' };
   }
 }

@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
+import { MutableRefObject, useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../../../../firebaseConfig';
 import { getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 
-export function useStep1UploadData(navigate: any) {
+export function useStep1UploadData() {
+  const navigate = useNavigate();
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef: MutableRefObject<number> = useRef(0);
+  const justDroppedRef: MutableRefObject<boolean> = useRef(false);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -28,12 +33,6 @@ export function useStep1UploadData(navigate: any) {
           buildConstraints({ eq: { student_id: user.uid }, limit: 1 })
         );
 
-        console.log('Step1Upload - Project fetch result:', {
-          projectDataArray,
-          projectError,
-          hasData: !!(projectDataArray as any[])?.length,
-        });
-
         if (projectError) {
           console.error('Error fetching project:', projectError.message);
           setErrorMsg('Error loading project data: ' + projectError.message);
@@ -51,9 +50,6 @@ export function useStep1UploadData(navigate: any) {
         const projectData = (projectDataArray as any[])[0];
         // Use 'id' field which is the document ID in Firestore
         const currentProjectId = projectData.id;
-
-        console.log('Step1Upload - Project data:', projectData);
-        console.log('Step1Upload - Setting projectId:', currentProjectId);
 
         if (!currentProjectId) {
           console.error('Step1Upload - project id is missing from project data!');
@@ -96,6 +92,11 @@ export function useStep1UploadData(navigate: any) {
   }, [navigate]);
 
   return {
+    navigate,
+    isDragging,
+    setIsDragging,
+    dragCounterRef,
+    justDroppedRef,
     file,
     setFile,
     uploading,

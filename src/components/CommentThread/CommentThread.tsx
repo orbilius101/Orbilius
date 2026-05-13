@@ -65,16 +65,12 @@ const CommentThread = forwardRef<CommentThreadHandle, CommentThreadProps>(functi
         eqFilter.step_number = stepNumber;
       }
 
-      console.log('CommentThread: fetching comments for', { projectId, stepNumber, eqFilter });
-
       const { data, error } = await getDocuments(
         'step_comments',
         buildConstraints({
           eq: eqFilter,
         })
       );
-
-      console.log('CommentThread: fetch result', { data, error });
 
       if (error) {
         console.error('Error fetching comments:', error);

@@ -34,7 +34,6 @@ export function useDashboardData() {
         };
 
         setUserProfile(profile);
-        console.log('User loaded:', currentUser.email, profile); // Debug log
 
         // Fetch project for the student
         const { data: projectData, error: projectError } = await getDocuments(
@@ -66,6 +65,13 @@ export function useDashboardData() {
     fetchUserAndProfile();
   }, [navigate]);
 
+  const allStepsSubmitted =
+    !!project &&
+    [1, 2, 3, 4, 5].every(n => {
+      const status = (project as any)[`step${n}_status`];
+      return status === 'Submitted' || status === 'Approved';
+    });
+
   return {
     user,
     userProfile,
@@ -83,5 +89,6 @@ export function useDashboardData() {
     alertState,
     showAlert,
     closeAlert,
+    allStepsSubmitted,
   };
 }

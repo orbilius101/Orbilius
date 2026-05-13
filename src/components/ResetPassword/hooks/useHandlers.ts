@@ -14,7 +14,7 @@ export function useResetPasswordHandlers(data: any) {
       // Verify the reset code is valid
       verifyPasswordResetCode(auth, oobCode)
         .then(() => {
-          console.log('Password reset code verified');
+          // Password reset code verified successfully
         })
         .catch((error) => {
           console.error('Invalid or expired reset code:', error);

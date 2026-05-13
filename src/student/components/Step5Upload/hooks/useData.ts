@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
+import { MutableRefObject, useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../../../../firebaseConfig';
-import { getDocument, getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
+import { getDocuments, buildConstraints } from '../../../../utils/firebaseHelpers';
 
-export function useStep5UploadData(navigate: any) {
+export function useStep5UploadData() {
+  const navigate = useNavigate();
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef: MutableRefObject<number> = useRef(0);
+  const justDroppedRef: MutableRefObject<boolean> = useRef(false);
   const [file, setFile] = useState(null);
   const [youtubeLink, setYoutubeLink] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -70,6 +75,11 @@ export function useStep5UploadData(navigate: any) {
   }, [navigate]);
 
   return {
+    navigate,
+    isDragging,
+    setIsDragging,
+    dragCounterRef,
+    justDroppedRef,
     file,
     setFile,
     youtubeLink,
