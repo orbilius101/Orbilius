@@ -18,6 +18,7 @@ import CommentThread from '../../../components/CommentThread/CommentThread';
 import SubmissionHistory from '../../../components/SubmissionHistory/SubmissionHistory';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PdfPreview from '../../../components/PdfPreview/PdfPreview';
 
 export default function Step5Upload() {
   const {
@@ -214,6 +215,10 @@ export default function Step5Upload() {
                 helperText={!youtubeLink.trim() ? 'Required — paste your project YouTube video URL here.' : ''}
               />
             </Stack>
+          )}
+
+          {file && status !== 'Submitted' && status !== 'Approved' && (
+            <PdfPreview file={file} />
           )}
 
           {file && status !== 'Submitted' && status !== 'Approved' && (
