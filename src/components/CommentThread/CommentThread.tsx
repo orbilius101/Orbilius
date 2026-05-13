@@ -5,13 +5,15 @@ import {
   TextField,
   IconButton,
   CircularProgress,
+  Tooltip,
 } from '@mui/material';
-import { Send as SendIcon } from '@mui/icons-material';
+import { Send as SendIcon, DeleteOutline as DeleteIcon } from '@mui/icons-material';
 import { auth } from '../../firebaseConfig';
 import {
   getDocuments,
   getDocument,
   createDocument,
+  updateDocument,
   buildConstraints,
 } from '../../utils/firebaseHelpers';
 
@@ -24,6 +26,10 @@ export interface StepComment {
   author_role: 'teacher' | 'student' | 'admin';
   comment: string;
   created_at: any;
+  deleted?: boolean;
+  deleted_at?: any;
+  deleted_by?: string;
+  deleted_by_role?: string;
 }
 
 const STEP_NAMES = [
@@ -52,6 +58,7 @@ const CommentThread = forwardRef<CommentThreadHandle, CommentThreadProps>(functi
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [hoveredComment, setHoveredComment] = useState<string | null>(null);
   const [panelHeight, setPanelHeight] = useState<number>(parseInt(maxHeight) || 300);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -99,8 +106,13 @@ const CommentThread = forwardRef<CommentThreadHandle, CommentThreadProps>(functi
     }
   }, [projectId, stepNumber]);
 
+  const prevCommentCountRef = useRef(0);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (comments.length > prevCommentCountRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevCommentCountRef.current = comments.length;
   }, [comments]);
 
   const handleSend = async () => {
@@ -156,6 +168,25 @@ const CommentThread = forwardRef<CommentThreadHandle, CommentThreadProps>(functi
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleDelete = async (comment: StepComment) => {
+    const user = auth.currentUser;
+    if (!user || user.uid !== comment.author_id) return;
+    const { data: usersData } = await getDocuments(
+      'users',
+      buildConstraints({ eq: { id: user.uid }, limit: 1 })
+    );
+    const userDoc = usersData && (usersData as any[])[0];
+    const role = userDoc?.user_type || 'student';
+    await updateDocument('step_comments', comment.id, {
+      deleted: true,
+      deleted_by: user.uid,
+      deleted_by_role: role,
+    } as any);
+    setComments(prev =>
+      prev.map(c => c.id === comment.id ? { ...c, deleted: true } : c)
+    );
   };
 
   useImperativeHandle(ref, () => ({
@@ -230,14 +261,19 @@ const CommentThread = forwardRef<CommentThreadHandle, CommentThreadProps>(functi
             const stepLabel = c.step_number > 0
               ? `Step ${c.step_number}: ${STEP_NAMES[c.step_number - 1] || ''}`
               : null;
+            const isOwn = auth.currentUser?.uid === c.author_id;
+            const isHovered = hoveredComment === c.id;
 
             return (
               <Box
                 key={c.id}
+                onMouseEnter={() => setHoveredComment(c.id)}
+                onMouseLeave={() => setHoveredComment(null)}
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: isRight ? 'flex-end' : 'flex-start',
+                  width: '100%',
                   mb: 1.5,
                 }}
               >
@@ -255,40 +291,71 @@ const CommentThread = forwardRef<CommentThreadHandle, CommentThreadProps>(functi
                   {c.author_name}
                 </Typography>
 
-                {/* Speech bubble */}
-                <Box
-                  sx={{
-                    maxWidth: '75%',
-                    px: 2,
-                    py: 1,
-                    bgcolor: isRight ? 'primary.main' : 'rgba(255,255,255,0.12)',
-                    color: isRight ? 'primary.contrastText' : 'text.primary',
-                    borderRadius: 3,
-                    borderTopRightRadius: isRight ? 4 : undefined,
-                    borderTopLeftRadius: isRight ? undefined : 4,
-                    position: 'relative',
-                  }}
-                >
-                  {/* Step label (if showing all project comments) */}
-                  {!stepNumber && stepLabel && (
+                {/* Bubble row: delete button + speech bubble */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%', flexDirection: isRight ? 'row-reverse' : 'row', justifyContent: isRight ? 'flex-start' : 'flex-start' }}>
+                  {/* Delete button — only own comments, visible on hover */}
+                  {isOwn && !c.deleted && (
+                    <Tooltip title="Delete comment">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(c)}
+                        sx={{
+                          opacity: isHovered ? 1 : 0,
+                          transition: 'opacity 0.15s',
+                          color: 'error.main',
+                          p: 0.25,
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+
+                  {/* Speech bubble */}
+                  <Box
+                    sx={{
+                      maxWidth: '50%',
+                      px: 2,
+                      py: 1,
+                      bgcolor: c.deleted
+                        ? 'rgba(255,255,255,0.04)'
+                        : isRight ? 'primary.main' : 'rgba(255,255,255,0.12)',
+                      color: c.deleted ? 'text.disabled' : isRight ? 'primary.contrastText' : 'text.primary',
+                      borderRadius: 3,
+                      borderTopRightRadius: isRight ? 4 : undefined,
+                      borderTopLeftRadius: isRight ? undefined : 4,
+                      position: 'relative',
+                    }}
+                  >
+                    {/* Step label (if showing all project comments) */}
+                    {!stepNumber && stepLabel && !c.deleted && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: 'block',
+                          fontWeight: 600,
+                          fontSize: '0.6rem',
+                          opacity: 0.7,
+                          mb: 0.25,
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.3,
+                        }}
+                      >
+                        {stepLabel}
+                      </Typography>
+                    )}
                     <Typography
-                      variant="caption"
+                      variant="body2"
                       sx={{
-                        display: 'block',
-                        fontWeight: 600,
-                        fontSize: '0.6rem',
-                        opacity: 0.7,
-                        mb: 0.25,
-                        textTransform: 'uppercase',
-                        letterSpacing: 0.3,
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.4,
+                        fontStyle: c.deleted ? 'italic' : undefined,
+                        fontSize: c.deleted ? '0.8rem' : undefined,
                       }}
                     >
-                      {stepLabel}
+                      {c.deleted ? 'This comment was deleted.' : c.comment}
                     </Typography>
-                  )}
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
-                    {c.comment}
-                  </Typography>
+                  </Box>
                 </Box>
 
                 {/* Timestamp below bubble */}
