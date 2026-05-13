@@ -346,7 +346,7 @@ export default function StepApproval() {
                         )}
 
                         {/* Bottom panel — always visible */}
-                        <Paper sx={{ flexShrink: 0, p: 2 }}>
+                        <Paper elevation={4} sx={{ flexShrink: 0, p: 2 }}>
                             <Stack spacing={2}>
                                 <SubmissionHistory
                                     projectId={projectId!}
@@ -363,6 +363,7 @@ export default function StepApproval() {
                                     <Button
                                         variant="contained"
                                         color="warning"
+                                        size="large"
                                         onClick={async () => {
                                             popupRef.current?.close()
                                             if (commentThreadRef.current?.getCommentText()) {
@@ -372,17 +373,20 @@ export default function StepApproval() {
                                             setNavigateOnClose(true)
                                         }}
                                         disabled={isSavingComment}
+                                        sx={{ fontWeight: 700 }}
                                     >
                                         {isSavingComment ? 'Saving...' : 'Return to Student for Revision'}
                                     </Button>
                                     <Button
                                         variant="contained"
+                                        size="large"
                                         onClick={() => {
                                             popupRef.current?.close()
                                             handleApprove()
                                         }}
                                         disabled={isApproving}
                                         color="success"
+                                        sx={{ fontWeight: 700 }}
                                     >
                                         {isApproving ? 'Approving...' : 'Approve Step'}
                                     </Button>

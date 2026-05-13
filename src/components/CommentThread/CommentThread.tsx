@@ -340,10 +340,10 @@ const CommentThread = forwardRef<CommentThreadHandle, CommentThreadProps>(functi
           display: 'flex',
           alignItems: 'center',
           gap: 1,
-          bgcolor: 'rgba(255,255,255,0.08)',
+          bgcolor: 'rgba(255,255,255,0.12)',
           borderRadius: '0 0 8px 8px',
           px: 1.5,
-          py: 0.5,
+          py: 0.75,
         }}
       >
         <TextField
@@ -359,8 +359,9 @@ const CommentThread = forwardRef<CommentThreadHandle, CommentThreadProps>(functi
           variant="outlined"
           sx={{
             '& .MuiInputBase-input': { py: 0.75 },
-            '& .MuiOutlinedInput-root': { bgcolor: 'rgba(255,255,255,0.12)' },
-            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.25)' },
+            '& .MuiOutlinedInput-root': { bgcolor: 'rgba(255,255,255,0.2)' },
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.5)' },
+            '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.75)' },
           }}
         />
         <IconButton
